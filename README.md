@@ -53,3 +53,5 @@ git show는 이전 화면을 별도 파일로 확인할 때 사용합니다. git
 The default graph view uses circular nodes and directed arrows for dependencies. Sequence and tree remain available. All recorded tasks share one recommendation path. Solid arrows represent stored dependencies; dashed arrows suggest the next task without changing stored connections. The selected criterion ranks available tasks while preserving dependency order.
 
 Graph nodes display task names directly inside circles, without numeric sequence labels.
+
+Version 0.7 adds a spatial force graph with category-colored dots, labels, node dragging and local neighborhood highlighting. Controls adjust spacing and reset the layout; recommendation paths can be hidden without removing stored sequence connections. Graph placement is view-only.

@@ -106,5 +106,20 @@
  }
  function zoomAt(view,scale,point){const worldX=(point.x-view.x)/view.scale,worldY=(point.y-view.y)/view.scale;return {scale,x:point.x-worldX*scale,y:point.y-worldY*scale};}
  function fitBounds(bounds,viewport,padding=30,maxScale=1){if(!bounds.width||!bounds.height)return {x:padding,y:padding,scale:1};const scale=Math.max(.0001,Math.min(maxScale,Math.max(1,viewport.width-padding*2)/bounds.width,Math.max(1,viewport.height-padding*2)/bounds.height));return {scale,x:(viewport.width-bounds.width*scale)/2-(bounds.x||0)*scale,y:(viewport.height-bounds.height*scale)/2-(bounds.y||0)*scale};}
- const api={buildTaskGraph,layoutIndependentTasks,layoutNetworkTasks,dayNumber,zoomAt,fitBounds,NODE_W,NODE_H};root.PinitTaskMap=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
+ function layoutForceTasks(model,options={}){
+  if(!model.nodes.length)return {...model,force:true};
+  const spacing=Number(options.spacing)||1,n=model.nodes.length,points=model.nodes.map((node,i)=>{const angle=i*2.3999632297,r=180*Math.sqrt(i+1)*spacing;return {...node,x:Math.cos(angle)*r,y:Math.sin(angle)*r,width:210,height:110,vx:0,vy:0};}),byId=new Map(points.map(p=>[p.id,p]));
+  for(let step=0;step<220;step++){
+   const cooling=1-step/250;
+   for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const a=points[i],b=points[j],dx=b.x-a.x||.01,dy=b.y-a.y||.01,d=Math.max(30,Math.hypot(dx,dy)),push=Math.min(14,22000*spacing*spacing/(d*d));a.vx-=dx/d*push;b.vx+=dx/d*push;a.vy-=dy/d*push;b.vy+=dy/d*push;}
+   for(const edge of model.edges){const a=byId.get(edge.from),b=byId.get(edge.to);if(a===b)continue;const dx=b.x-a.x,dy=b.y-a.y,d=Math.max(1,Math.hypot(dx,dy)),pull=(d-260*spacing)*.018;a.vx+=dx/d*pull;b.vx-=dx/d*pull;a.vy+=dy/d*pull;b.vy-=dy/d*pull;}
+   points.forEach((p,i)=>{p.vx+=((i/Math.max(1,n-1)-.5)*300*spacing-p.x)*.002;p.vy-=p.y*.002;p.vx*=.72;p.vy*=.72;p.x+=p.vx*cooling;p.y+=p.vy*cooling;});
+  }
+  for(let pass=0;pass<100;pass++){let overlap=false;for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const a=points[i],b=points[j],dx=b.x-a.x,dy=b.y-a.y,ox=230-Math.abs(dx),oy=135-Math.abs(dy);if(ox>0&&oy>0){overlap=true;if(ox<oy){const shift=(ox+.1)/2*(dx>=0?1:-1);a.x-=shift;b.x+=shift;}else{const shift=(oy+.1)/2*(dy>=0?1:-1);a.y-=shift;b.y+=shift;}}}if(!overlap)break;}
+  const minX=Math.min(...points.map(p=>p.x)),minY=Math.min(...points.map(p=>p.y));points.forEach(p=>{p.x=p.x-minX+90;p.y=p.y-minY+120;delete p.vx;delete p.vy;});
+  const width=Math.max(...points.map(p=>p.x+p.width))+140,height=Math.max(...points.map(p=>p.y+p.height))+100;
+  const route=e=>({...e,source:byId.get(e.from),target:byId.get(e.to)});
+  return {...model,force:true,nodes:points,edges:model.edges.map(route),orderEdges:(model.orderEdges||[]).map(route),width,height,groups:model.groups.map(g=>({...g,x:40,y:40,width:width-80,height:height-80}))};
+ }
+ const api={buildTaskGraph,layoutIndependentTasks,layoutNetworkTasks,layoutForceTasks,dayNumber,zoomAt,fitBounds,NODE_W,NODE_H};root.PinitTaskMap=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(globalThis);

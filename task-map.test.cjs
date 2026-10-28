@@ -62,3 +62,15 @@ assert.ok(fullOrder.edges.every(e=>e.source.order<e.target.order));
 for(let i=1;i<fullOrder.nodes.length;i++)assert.ok([...fullOrder.edges,...fullOrder.orderEdges].some(e=>e.from===fullOrder.nodes[i-1].id&&e.to===fullOrder.nodes[i].id));
 assert.equal(new Set(fullOrder.nodes.map(n=>n.order)).size,4);
 console.log('Unified recommendations include every task, respect dependencies and retain continuous order links.');
+
+const {layoutForceTasks}=require('./task-map-core.js');
+const forceInput=Array.from({length:40},(_,i)=>({...task(i,i&&i%3?[i-1]:[],[]),importance:i%9+1,due:'2026-10-29'}));
+const forceBase=buildTaskGraph(forceInput,{orientation:'network',independentLayout:'priority',today:'2026-10-28'}),forceSnapshot=JSON.stringify(forceBase);
+for(const spacing of [.7,1,1.8]){
+ const graph=layoutForceTasks(forceBase,{spacing});assert.equal(graph.nodes.length,40);assert.deepEqual(graph.edges.map(e=>[e.from,e.to]),forceBase.edges.map(e=>[e.from,e.to]));
+ for(const node of graph.nodes){assert.ok(Number.isFinite(node.x)&&Number.isFinite(node.y));assert.ok(node.x>=0&&node.y>=0&&node.x+node.width<=graph.width&&node.y+node.height<=graph.height);}
+ for(let i=0;i<graph.nodes.length;i++)for(let j=i+1;j<graph.nodes.length;j++){const a=graph.nodes[i],b=graph.nodes[j];assert.ok(a.x+a.width<=b.x||b.x+b.width<=a.x||a.y+a.height<=b.y||b.y+b.height<=a.y,'force labels overlap');}
+ assert.deepEqual(graph,layoutForceTasks(forceBase,{spacing}));assert.ok(graph.edges.every(e=>graph.nodes.includes(e.source)&&graph.nodes.includes(e.target)));
+}
+assert.equal(JSON.stringify(forceBase),forceSnapshot);assert.equal(layoutForceTasks(buildTaskGraph([])).nodes.length,0);
+console.log('Force graph: deterministic, non-overlapping, bounded, immutable, and all task links preserved.');

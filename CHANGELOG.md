@@ -1,5 +1,11 @@
 # Change history
 
+## 0.7.0 — 2026-10-28
+- Add an Obsidian-inspired spatial graph: small category-colored nodes, task labels, connection-weighted sizes and a deterministic force layout.
+- Add node dragging, neighborhood hover/keyboard focus, spacing control, layout reset and a toggle for recommendation paths.
+- Keep all tasks, dependency arrows, ranking criteria, task details, zoom/pan and sequence/tree views.
+- Add tests for force-layout determinism, label collision, bounds, immutability and edge preservation.
+
 ## 0.6.1 — 2026-10-28
 - Replace numeric graph nodes with task names inside larger circular nodes.
 - Retain full-task ordering, dependency arrows, recommendation links and existing task details.
