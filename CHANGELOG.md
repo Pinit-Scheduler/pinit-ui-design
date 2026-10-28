@@ -1,5 +1,11 @@
 # Change history
 
+## 0.10.0 — 2026-10-28
+- Add an all-task Eisenhower matrix with urgency settings, search, category filters, completed-task access and existing task details.
+- Add task-list/matrix switching and a desktop shortcut, keeping six mobile actions.
+- Balance five equal mobile destinations with a raised Add button at the horizontal center.
+- Test classification boundaries, overdue/undated tasks, completed separation and immutability.
+
 ## 0.9.0 — 2026-10-28
 - Keep only the sequence task map; remove graph, tree and free-placement controls from the delivered UI.
 - Use top-to-bottom sequences on mobile, readable 100% card framing, larger deadlines/titles/meters, and previous/next task navigation.

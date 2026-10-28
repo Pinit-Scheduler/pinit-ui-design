@@ -59,3 +59,5 @@ Version 0.7 adds a spatial force graph with category-colored dots, labels, node 
 Version 0.8 defaults to a directed execution flow. Start/next/waiting labels guide the user; ready sequence continuations stay together. Completed tasks remain visible outside the recommended path. Free spatial placement is still available from the graph layout selector.
 
 Version 0.9 delivers only the sequence map. Desktop follows left-to-right links; mobile uses top-to-bottom links and previous/next navigation at readable scale. The mobile add button occupies the exact center of the navigation bar. Earlier graph sources are retained for history but are not bundled.
+
+Version 0.10 adds an all-task Eisenhower matrix from the task view switch or #matrix. Importance 7–9 counts as important; urgency defaults to two days including overdue tasks. Completed tasks remain accessible separately. Six mobile actions remain: five equal destinations and a centered raised Add button.
