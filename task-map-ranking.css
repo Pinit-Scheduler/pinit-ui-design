@@ -9,3 +9,6 @@
 .map-order-edge{fill:none;stroke:#a2aec5;stroke-width:2;stroke-dasharray:7 6}.network-orb{font-size:30px;font-weight:600;font-variant-numeric:tabular-nums}.map-order-legend{width:100%;color:#6c7d99;font-size:12px}.is-network .map-flow-label{user-select:none}
 
 .network-key{position:absolute;top:64px;left:20px;z-index:4;font-size:12px;color:#71809b;background:var(--surface);padding:4px 7px;border-radius:4px;pointer-events:none}
+
+/* Task names are the graph nodes; no numeric identifiers are shown. */
+.network-orb{width:150px;height:150px;padding:18px;font-size:17px;box-sizing:border-box}.network-task-name{font-size:17px;font-weight:600;line-height:1.5;word-break:keep-all;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden}.network-due{left:calc(50% + 81px);top:8px}.network-meta{margin-top:12px}.network-node.done .network-task-name{color:#6d8a79}

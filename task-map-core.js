@@ -54,7 +54,7 @@
   const byOriginal=new Map(model.nodes.map(n=>[n.id,n])),ready=model.nodes.filter(n=>!incoming.get(n.id)).sort(compare),ordered=[],seen=new Set();
   while(ready.length){const n=ready.shift();ordered.push(n);seen.add(n.id);for(const id of children.get(n.id)){incoming.set(id,incoming.get(id)-1);if(!incoming.get(id)){ready.push(byOriginal.get(id));ready.sort(compare);}}}
   ordered.push(...model.nodes.filter(n=>!seen.has(n.id)).sort(compare));
-  const cols=Math.min(4,ordered.length),nodes=ordered.map((n,i)=>{const row=Math.floor(i/cols),col=i%cols;return {...n,x:70+(row%2?cols-1-col:col)*320,y:120+row*280,width:210,height:172,groupId:'all-tasks',order:i+1};}),byId=new Map(nodes.map(n=>[n.id,n]));
+  const cols=Math.min(4,ordered.length),nodes=ordered.map((n,i)=>{const row=Math.floor(i/cols),col=i%cols;return {...n,x:70+(row%2?cols-1-col:col)*320,y:120+row*280,width:210,height:220,groupId:'all-tasks',order:i+1};}),byId=new Map(nodes.map(n=>[n.id,n]));
   const width=nodes.length?cols*320+40:0,height=nodes.length?Math.ceil(nodes.length/cols)*280+120:0;
   const groups=nodes.length?[{id:'all-tasks',title:'전체 작업 · '+({priority:'우선순위',importance:'중요도',deadline:'마감순'})[mode]+' 추천 순서',ids:nodes.map(n=>n.id),x:40,y:40,width:width-80,height:height-80,done:nodes.filter(n=>n.task.done).length}]:[];
   const existing=new Set(model.edges.map(e=>JSON.stringify([e.from,e.to]))),orderEdges=[];

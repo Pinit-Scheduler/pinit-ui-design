@@ -1,5 +1,10 @@
 # Change history
 
+## 0.6.1 — 2026-10-28
+- Replace numeric graph nodes with task names inside larger circular nodes.
+- Retain full-task ordering, dependency arrows, recommendation links and existing task details.
+- Adjust edge endpoints and node spacing to match the larger task nodes.
+
 ## 0.6.0 — 2026-10-28
 - Make a continuous node-and-arrow graph the default map view, with circular status nodes and straight directed dependency edges.
 - Show branching and merging without enclosing sequence cards; retain sequence and tree views.
