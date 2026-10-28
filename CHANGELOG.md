@@ -1,5 +1,13 @@
 # Change history
 
+## 0.13.0 — 2026-10-29
+- Move task-sequence connections below the full detail grid.
+- Remove tag controls and displays from task cards, details, forms and filters; use category filters and category management instead. Preserve legacy stored values without exposing a second classification system.
+- Replace large category cards with six compact tiles and a compact None choice; keep personal category addition available.
+- Condense previous/next dependency editing into two panels while preserving selection, search, unlinking and repeat constraints.
+- Apply shared display, heading, lead, body and small-text tokens across pages, cards, forms, statistics and navigation.
+- Verify detail ordering, category filtering, tag-free task forms and mobile dependency selection.
+
 ## 0.12.0 — 2026-10-29
 - Shorten regular notifications to 1.5 seconds; replace older feedback and use inline feedback within dialogs to avoid stacked overlays.
 - Position the active timer above the measured mobile navigation/Add-button bounds and retain pause/complete controls.
