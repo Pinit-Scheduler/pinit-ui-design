@@ -1,5 +1,13 @@
 # Change history
 
+## 0.5.0 — 2026-10-28
+- Replace the plain independent-task grid with priority, importance, and deadline maps while preserving connected sequence positions and edges.
+- Priority uses explicit importance (7–9 / 1–6) and deadline proximity (within two days, including overdue / later or undated) quadrants.
+- Importance bands sort by value then deadline; deadline columns sort by date and place undated tasks last.
+- Separate completed independent tasks from open-task ranking. Show axes, counts, empty regions, and a criteria explanation.
+- Preserve zoom, pan, flow navigation, existing task details, and mobile controls; demonstrate all quadrants with isolated sample data.
+- Add regression checks for deterministic classification, date boundaries, missing deadlines, source/dependency preservation and node collisions.
+
 ## 0.4.0 — 2026-10-28
 - Add a Task map tab to desktop and mobile navigation without removing the existing tabs or add action.
 - Group connected tasks and display dependencies in horizontal sequence or vertical tree layouts; render shared children only once.

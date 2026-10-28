@@ -53,6 +53,11 @@ body{font-size:14px}.nav button{font-size:14px}.breadcrumb{font-size:13px}.works
 @media(prefers-reduced-motion:reduce){.map-node,.map-edge{transition:none}}
 .map-only .date-label{display:none}
 
+.map-frame-bar{justify-content:flex-start;gap:8px}.map-frame-bar>.icon-btn{margin-left:auto;flex-shrink:0}.map-frame-bar>.map-rank-selector{max-width:220px;flex-shrink:0}.map-rank-selector select{max-width:120px}.map-flow-group.has-ranking{background:#f9fbff;border-style:solid}.map-rank-description{position:absolute;display:flex;align-items:center;gap:20px;min-height:22px;z-index:1;color:#7d8ca4;font-size:12px;pointer-events:auto}.map-rank-description>span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.map-rank-description>button{font-size:12px;color:var(--blue);flex-shrink:0;text-decoration:underline;text-underline-offset:3px;padding:2px 0}.map-rank-axis-x{position:absolute;font-size:12px;text-align:center;color:#8d9bb2;line-height:20px;pointer-events:none}.map-rank-axis-y{position:absolute;writing-mode:vertical-rl;font-size:12px;color:#8393ac;line-height:20px;pointer-events:none}.map-rank-axis-y span{display:block;margin-top:160px}.map-rank-zone{position:absolute;border:1px solid #dfe6f2;border-radius:10px;background:#f7f9fd;pointer-events:none;overflow:hidden}.map-rank-zone.focus{background:#edf3ff;border-color:#c9d8fc}.map-rank-zone.plan{background:#f1f5fc}.map-rank-zone.due{background:#fcf5eb;border-color:#eedfca}.map-rank-zone.later{background:#f5f7fa}.map-rank-zone.completed{background:#eff5f1;border-color:#dce8df;border-style:dashed}.map-rank-zone.importance{background:#f2f5fb}.map-rank-zone.deadline{background:#f3f6fc}.map-zone-head{position:absolute;inset:0 0 auto;height:58px;padding:11px 15px;display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap}.map-zone-head h3{font-size:14px;font-weight:600;color:#5e769f;line-height:1.6;margin:0;flex:1}.map-zone-head>span{font-size:11px;color:#8c9db6;line-height:1.8}.map-zone-head>p{font-size:10px;line-height:1.7;color:#91a0b6;width:100%;margin-top:-9px}.map-rank-zone.focus .map-zone-head h3{color:#486ac0}.map-rank-zone.due .map-zone-head h3{color:#9e7a4c}.map-rank-zone.completed .map-zone-head h3{color:#7d9987}.map-zone-empty{position:absolute;inset:65px 12px auto;text-align:center;color:#a3afc1;font-size:12px;line-height:1.7}.map-no-independent{font-size:10px;color:var(--muted);width:100%}
+:root[data-prototype-theme=dark] .map-flow-group.has-ranking{background:#202d43}:root[data-prototype-theme=dark] .map-rank-zone{background:#26374e;border-color:#3b4c64}:root[data-prototype-theme=dark] .map-rank-zone.focus{background:#2b4169}:root[data-prototype-theme=dark] .map-rank-zone.due{background:#413c31}:root[data-prototype-theme=dark] .map-rank-zone.completed{background:#273e34}
+@media(max-width:760px){.map-frame-bar{gap:6px}.map-frame-bar>label{font-size:0;gap:0;padding:0 4px;min-width:0;max-width:none;flex:1}.map-frame-bar>.map-rank-selector{width:98px;flex:0 0 98px}.map-rank-caption{display:none}.map-frame-bar select{font-size:11px;width:100%;max-width:none;min-width:0}.map-frame-bar>.icon-btn{margin-left:0}.map-rank-description>button{font-size:13px}}
+@media(max-width:370px){.map-frame-bar>.map-rank-selector{flex-basis:91px;width:91px}.map-frame-bar>label{padding-inline:3px}.map-frame-bar select{font-size:10px}}
+
 </style>
 </head>
 <body>
@@ -337,11 +342,55 @@ renderTimeline();
   if(alone.length){const cols=Math.min(3,alone.length),rows=Math.ceil(alone.length/cols),group={id:'independent',title:'연결되지 않은 작업',ids:alone,x:28,y:top,width:PAD*2+cols*NODE_W+(cols-1)*32,height:HEADER+PAD*2+rows*NODE_H+(rows-1)*30,done:alone.filter(key=>records.get(key).done).length,independent:true};groups.push(group);alone.forEach((id,i)=>addNode(id,group.x+PAD+(i%cols)*(NODE_W+32),top+HEADER+PAD+Math.floor(i/cols)*(NODE_H+30),group.id,0));top+=group.height+28;}
   const width=groups.length?Math.max(...groups.map(g=>g.x+g.width))+28:0,height=groups.length?top:0;
   const routes=edges.map(e=>({...e,source:positions.get(e.from),target:positions.get(e.to)}));
-  return {orientation,nodes,edges:routes,groups,width,height,missingEdges,cycleCount};
+  const model={orientation,nodes,edges:routes,groups,width,height,missingEdges,cycleCount};
+  return options.independentLayout?layoutIndependentTasks(model,options):model;
+ }
+ function dayNumber(value){if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value))return Infinity;const time=Date.parse(value+'T00:00:00Z');return Number.isFinite(time)?Math.floor(time/86400000):Infinity;}
+ function layoutIndependentTasks(model,options={}){
+  const original=model.groups.find(g=>g.independent);if(!original)return {...model,zones:[],independentInfo:null};
+  const mode=['priority','importance','deadline'].includes(options.independentLayout)?options.independentLayout:'priority',today=dayNumber(options.today||'2026-10-28');
+  const records=original.ids.map(id=>model.nodes.find(n=>n.id===id)),active=records.filter(n=>!n.task.done),completed=records.filter(n=>n.task.done),zones=[],replacements=new Map();
+  const zonePad=16,zoneHeader=58,gap=20,top=original.y+HEADER+60,left=original.x+PAD+30;
+  const order=(a,b)=>(Number(b.task.importance)||0)-(Number(a.task.importance)||0)||dayNumber(a.task.due)-dayNumber(b.task.due)||a.id.localeCompare(b.id);
+  function zone(id,title,description,items,x,y,width,height,columns=1,kind='normal'){
+   const sorted=[...items].sort(order),rows=Math.max(1,Math.ceil(sorted.length/columns)),minHeight=zoneHeader+zonePad+rows*NODE_H+(rows-1)*20;
+   const actualHeight=Math.max(height||0,sorted.length?minHeight:114);
+   zones.push({id,title,description,ids:sorted.map(n=>n.id),x,y,width,height:actualHeight,kind});
+   sorted.forEach((node,i)=>replacements.set(node.id,{...node,x:x+zonePad+(i%columns)*(NODE_W+20),y:y+zoneHeader+Math.floor(i/columns)*(NODE_H+20),rank:0,zoneId:id}));
+   return actualHeight;
+  }
+  let width=0,height=0,info;
+  if(mode==='priority'&&active.length){
+   const buckets=[[],[],[],[]];active.forEach(n=>{const high=Number(n.task.importance)>=7,urgent=dayNumber(n.task.due)<=today+2;buckets[(high?0:2)+(urgent?0:1)].push(n);});
+   const columns=Math.min(2,Math.max(1,Math.ceil(Math.sqrt(Math.max(...buckets.map(b=>b.length))))));
+   const zoneWidth=zonePad*2+columns*NODE_W+(columns-1)*20,rowHeight=row=>Math.max(...buckets.slice(row*2,row*2+2).map(b=>b.length?zoneHeader+zonePad+Math.ceil(b.length/columns)*NODE_H+(Math.ceil(b.length/columns)-1)*20:114));
+   const firstHeight=rowHeight(0),secondHeight=rowHeight(1),matrixWidth=zoneWidth*2+gap,matrixHeight=firstHeight+gap+secondHeight;
+   const labels=[['focus','중요하고 임박함','중요도 7–9 · 마감 2일 이내'],['important-later','중요하지만 여유 있음','중요도 7–9 · 그 이후 또는 기한 없음'],['urgent','마감이 가까움','중요도 1–6 · 마감 2일 이내'],['later','여유 있게 진행','중요도 1–6 · 그 이후 또는 기한 없음']];
+   labels.forEach((label,i)=>zone('priority-'+i,label[1],label[2],buckets[i],left+(i%2)*(zoneWidth+gap),top+(i<2?0:firstHeight+gap),zoneWidth,i<2?firstHeight:secondHeight,columns,['focus','plan','due','later'][i]));
+   if(completed.length)zone('completed','완료한 작업','우선순위 판단에서 분리',completed,left+matrixWidth+gap,top,zonePad*2+NODE_W,0,1,'completed');
+   width=PAD+30+matrixWidth+(completed.length?gap+zonePad*2+NODE_W:0)+PAD;
+   height=HEADER+60+Math.max(matrixHeight,...zones.filter(z=>z.kind==='completed').map(z=>z.height))+PAD;
+   info={mode,title:'우선순위로 보는 독립 작업',description:'연결 없는 작업을 중요도와 마감의 가까움으로 배치합니다. 지난 마감도 임박 구역에 포함합니다.',xLabel:'마감 2일 이내 ← → 그 이후 / 기한 없음',yLabel:'높은 중요도 ↑',axisX:left,axisY:top-24,axisWidth:matrixWidth};
+  }else{
+   let bands=[];
+   if(mode==='importance')bands=[{id:'high',title:'높은 중요도',description:'7–9 · 높은 값부터',items:active.filter(n=>n.task.importance>=7)},{id:'medium',title:'보통 중요도',description:'4–6 · 높은 값부터',items:active.filter(n=>n.task.importance>=4&&n.task.importance<=6)},{id:'low',title:'낮은 중요도',description:'1–3 · 높은 값부터',items:active.filter(n=>n.task.importance<=3)}];
+   else if(mode==='deadline'){
+    const dateGroups=new Map();active.forEach(n=>{const key=Number.isFinite(dayNumber(n.task.due))?n.task.due:'none';if(!dateGroups.has(key))dateGroups.set(key,[]);dateGroups.get(key).push(n);});
+    bands=[...dateGroups].sort(([a],[b])=>dayNumber(a)-dayNumber(b)||(a==='none'?1:b==='none'?-1:0)).map(([date,items])=>({id:'date-'+date,title:date==='none'?'마감 없음':date===options.today?'오늘 마감':date.slice(5).replace('-','/')+' 마감',description:date==='none'?'기한이 지정되지 않은 작업':dayNumber(date)<today?'마감이 지난 작업':'같은 날은 중요도 높은 순',items}));
+   }else bands=[{id:'open',title:'진행할 작업 없음',description:'모든 독립 작업을 완료했어요.',items:[]}];
+   if(completed.length)bands.push({id:'completed',title:'완료한 작업',description:'열린 작업과 분리해 표시',items:completed,kind:'completed'});
+   const zoneWidth=zonePad*2+NODE_W;
+   bands.forEach((band,i)=>zone(band.id,band.title,band.description,band.items,left+i*(zoneWidth+gap),top,zoneWidth,0,1,band.kind||mode));
+   width=PAD+30+Math.max(1,bands.length)*zoneWidth+Math.max(0,bands.length-1)*gap+PAD;height=HEADER+60+Math.max(114,...zones.map(z=>z.height))+PAD;
+   info={mode,title:mode==='importance'?'중요도로 보는 독립 작업':mode==='deadline'?'마감순으로 보는 독립 작업':'완료한 독립 작업',description:mode==='importance'?'왼쪽일수록 중요도가 높습니다. 같은 구역에서는 높은 값부터, 값이 같으면 마감이 빠른 순으로 표시합니다.':mode==='deadline'?'왼쪽부터 마감이 빠른 날짜입니다. 날짜 구역의 간격은 같고, 같은 날짜 안에서는 중요도가 높은 순입니다.':'완료한 작업은 열린 작업과 구분해 보여줍니다.',xLabel:mode==='importance'?'중요도 높음 → 낮음':mode==='deadline'?'마감 빠름 → 늦음':'완료한 작업',axisX:left,axisY:top-24,axisWidth:width-PAD*2-30};
+  }
+  const group={...original,title:info.title,width,height,layout:mode};
+  const nodes=model.nodes.map(n=>replacements.get(n.id)||n),byId=new Map(nodes.map(n=>[n.id,n]));
+  return {...model,groups:model.groups.map(g=>g.id===group.id?group:g),nodes,edges:model.edges.map(e=>({...e,source:byId.get(e.from),target:byId.get(e.to)})),width:Math.max(...model.groups.filter(g=>g.id!==group.id).map(g=>g.x+g.width+28),group.x+group.width+28),height:group.y+group.height+28,zones,independentInfo:info};
  }
  function zoomAt(view,scale,point){const worldX=(point.x-view.x)/view.scale,worldY=(point.y-view.y)/view.scale;return {scale,x:point.x-worldX*scale,y:point.y-worldY*scale};}
  function fitBounds(bounds,viewport,padding=30,maxScale=1){if(!bounds.width||!bounds.height)return {x:padding,y:padding,scale:1};const scale=Math.max(.0001,Math.min(maxScale,Math.max(1,viewport.width-padding*2)/bounds.width,Math.max(1,viewport.height-padding*2)/bounds.height));return {scale,x:(viewport.width-bounds.width*scale)/2-(bounds.x||0)*scale,y:(viewport.height-bounds.height*scale)/2-(bounds.y||0)*scale};}
- const api={buildTaskGraph,zoomAt,fitBounds,NODE_W,NODE_H};root.PinitTaskMap=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
+ const api={buildTaskGraph,layoutIndependentTasks,dayNumber,zoomAt,fitBounds,NODE_W,NODE_H};root.PinitTaskMap=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(globalThis);
 
 /* Zoomable overview of the existing tasks; editing still uses the original detail/form flows. */
@@ -413,6 +462,42 @@ closeModal=function(){closeModalBeforeTaskMapV4();if(currentView==='map')request
 document.querySelector('.sidebar .nav [data-nav="statistics"]').insertAdjacentHTML('beforebegin','<button data-nav="map" onclick="navigate(\'map\')">'+icon('network')+'작업 맵</button>');
 document.querySelector('.mobile-nav [data-nav="statistics"]').insertAdjacentHTML('beforebegin','<button data-nav="map" onclick="navigate(\'map\')">'+icon('network')+'작업 맵</button>');
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&taskMapState.expanded&&!document.querySelector('.dialog')){event.preventDefault();event.stopPropagation();document.getElementById('mapExpandV4')?.click();}},true);
+
+/* Keep dependency flows intact; give independent tasks meaningful spatial positions. */
+taskMapState.independentLayout='priority';
+MAP_EXAMPLE.push(
+ {id:-7,title:'건강검진 예약',primaryCategory:'health',done:false,previous:[],next:[],importance:8,difficulty:2,due:TODAY},
+ {id:-8,title:'개인 프로젝트 회고 작성',primaryCategory:'project',done:false,previous:[],next:[],importance:8,difficulty:5,due:'2026-11-05'},
+ {id:-9,title:'서류 파일 정리',primaryCategory:'life',done:false,previous:[],next:[],importance:3,difficulty:2,due:'2026-11-08'},
+ {id:-10,title:'공과금 납부',primaryCategory:'life',done:true,previous:[],next:[],importance:5,difficulty:1,due:'2026-10-25'}
+);
+const buildBeforeRankingV5=PinitTaskMap.buildTaskGraph;
+PinitTaskMap.buildTaskGraph=function(input,options={}){return buildBeforeRankingV5(input,{...options,independentLayout:taskMapState.independentLayout,today:TODAY});};
+const renderBeforeRankingV5=renderTaskMapV4;
+renderTaskMapV4=function(reset=false){
+ renderBeforeRankingV5(reset);if(currentView!=='map')return;
+ const state=taskMapState,model=state.model,bar=document.querySelector('.map-frame-bar'),flowPicker=document.getElementById('mapGroupV4');
+ bar.insertAdjacentHTML('afterbegin','<label class="map-rank-selector"><span class="map-rank-caption">독립 작업</span><select id="mapRankV5" aria-label="연결 없는 작업 배치 기준">'+selectedOptionsV2([['priority','우선순위'],['importance','중요도'],['deadline','마감순']],state.independentLayout)+'</select></label>');
+ document.getElementById('mapRankV5').onchange=event=>{state.independentLayout=event.target.value;renderTaskMapV4(true);requestAnimationFrame(focusIndependentMapV5);};
+ const independent=model.groups.find(g=>g.independent);
+ if(!independent){document.getElementById('mapRankV5').disabled=true;document.getElementById('mapRankV5').title='모든 작업이 시퀀스에 연결되어 있어요.';document.querySelector('.map-summary').insertAdjacentHTML('beforeend','<span class="map-no-independent">모든 작업이 시퀀스에 연결되어 있어요.</span>');}
+ else{
+  document.querySelector('.map-flow-group.independent')?.classList.add('has-ranking');
+  const info=model.independentInfo,world=document.getElementById('mapWorldV4');
+  const caption='<div class="map-rank-description" style="left:'+(independent.x+28)+'px;top:'+(independent.y+64)+'px;width:'+(independent.width-56)+'px"><span title="'+esc(info.description)+'">'+esc(info.description)+'</span><button type="button" onclick="openMapRankingHelpV5()">기준 안내</button></div>';
+  const axes='<div class="map-rank-axis-x" style="left:'+info.axisX+'px;top:'+info.axisY+'px;width:'+info.axisWidth+'px">'+esc(info.xLabel)+'</div>'+(info.mode==='priority'&&info.yLabel?'<div class="map-rank-axis-y" style="left:'+(independent.x+9)+'px;top:'+(info.axisY+50)+'px">중요도 높음 ↑<span>낮음 ↓</span></div>':'');
+  const zones=(model.zones||[]).map(zone=>'<section class="map-rank-zone '+zone.kind+'" style="left:'+zone.x+'px;top:'+zone.y+'px;width:'+zone.width+'px;height:'+zone.height+'px" aria-label="'+esc(zone.title)+' · '+zone.ids.length+'개"><div class="map-zone-head"><h3>'+esc(zone.title)+'</h3><span>'+zone.ids.length+'개</span><p>'+esc(zone.description)+'</p></div>'+(!zone.ids.length?'<p class="map-zone-empty">이 구역의 작업이 없어요.</p>':'')+'</section>').join('');
+  world.querySelector('.map-edges').insertAdjacentHTML('beforebegin',caption+axes+zones);
+  world.querySelector('.map-rank-description button').addEventListener('pointerdown',event=>event.stopPropagation());
+ }
+ const sampleButton=document.querySelector('.map-footer .text-btn');if(sampleButton)sampleButton.textContent=state.demo?'내 작업 보기':'배치·연결 예시 보기';
+ const sampleNotice=document.querySelector('.map-demo-note');if(sampleNotice)sampleNotice.firstChild.textContent='연결 흐름과 독립 작업의 배치를 살펴보는 예시입니다. 내 작업에는 저장되지 않아요.';
+ if(flowPicker&&independent)flowPicker.querySelector('[value="independent"]').textContent=independent.title+' ('+independent.ids.length+'개)';
+};
+function focusIndependentMapV5(){if(currentView!=='map')return;const group=taskMapState.model.groups.find(g=>g.independent);if(!group)return;focusMapBoundsV4(group);document.getElementById('mapGroupV4').value='independent';}
+function openMapRankingHelpV5(){const mode=taskMapState.independentLayout,title={priority:'우선순위 지도 기준',importance:'중요도 지도 기준',deadline:'마감순 지도 기준'}[mode],copy={priority:'중요도 7–9는 위쪽, 1–6은 아래쪽에 둡니다. 오늘부터 2일 이내 마감이거나 이미 기한이 지난 작업은 왼쪽, 그 이후이거나 마감이 없는 작업은 오른쪽에 둡니다.',importance:'중요도 7–9, 4–6, 1–3 구역을 왼쪽부터 표시합니다. 같은 구역 안에서는 중요도가 높은 순, 중요도가 같으면 마감이 빠른 순으로 놓습니다.',deadline:'마감 날짜가 빠른 구역부터 왼쪽에 놓습니다. 같은 날짜 안에서는 중요도가 높은 순입니다. 날짜 구역의 간격은 같으며 실제 남은 기간의 비율을 나타내지는 않습니다.'}[mode];modal(modalHead(title)+'<p>'+copy+'</p><div class="notice">이 배치는 연결 없는 작업의 위치를 정하는 기준입니다. 연결된 시퀀스의 순서, 기존 중요도·마감 값과 완료 상태는 바꾸지 않습니다. 완료한 독립 작업은 별도 구역에 둡니다.</div><div class="dialog-actions"><button class="btn primary" onclick="closeModal()">확인</button></div>');}
+const openNodeBeforeRankingV5=openTaskMapNodeV4;
+openTaskMapNodeV4=function(id){openNodeBeforeRankingV5(id);if(taskMapState.demo){const notice=document.querySelector('.dialog .notice');if(notice)notice.textContent='연결된 작업은 순서를 보여주고, 연결 없는 작업은 선택한 기준에 따라 배치하는 예시입니다. 실제 작업에는 저장되지 않습니다.';}};
 
 </script>
 </body>

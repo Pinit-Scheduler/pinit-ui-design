@@ -1,8 +1,8 @@
 const fs=require('fs');
 const vm=require('vm');
 let html=fs.readFileSync('base.html','utf8');
-const styles=['refinement.css','sequence-v3.css','categories-v3.css','task-map.css'];
-const scripts=['refinement.js','sequence-v3.js','categories-v3.js','task-map-core.js','task-map.js'];
+const styles=['refinement.css','sequence-v3.css','categories-v3.css','task-map.css','task-map-ranking.css'];
+const scripts=['refinement.js','sequence-v3.js','categories-v3.js','task-map-core.js','task-map.js','task-map-ranking.js'];
 const css=styles.map(file=>fs.readFileSync(file,'utf8')).join('\n');
 let js=scripts.map(file=>fs.readFileSync(file,'utf8')).join('\n');
 js=js.replace("document.getElementById(\\'dependencyFieldsV2\\')?.classList.toggle(\\'hidden\\',this.checked)",'setSequenceRepeatV3(this.checked)');

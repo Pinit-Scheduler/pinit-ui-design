@@ -42,9 +42,53 @@
   if(alone.length){const cols=Math.min(3,alone.length),rows=Math.ceil(alone.length/cols),group={id:'independent',title:'연결되지 않은 작업',ids:alone,x:28,y:top,width:PAD*2+cols*NODE_W+(cols-1)*32,height:HEADER+PAD*2+rows*NODE_H+(rows-1)*30,done:alone.filter(key=>records.get(key).done).length,independent:true};groups.push(group);alone.forEach((id,i)=>addNode(id,group.x+PAD+(i%cols)*(NODE_W+32),top+HEADER+PAD+Math.floor(i/cols)*(NODE_H+30),group.id,0));top+=group.height+28;}
   const width=groups.length?Math.max(...groups.map(g=>g.x+g.width))+28:0,height=groups.length?top:0;
   const routes=edges.map(e=>({...e,source:positions.get(e.from),target:positions.get(e.to)}));
-  return {orientation,nodes,edges:routes,groups,width,height,missingEdges,cycleCount};
+  const model={orientation,nodes,edges:routes,groups,width,height,missingEdges,cycleCount};
+  return options.independentLayout?layoutIndependentTasks(model,options):model;
+ }
+ function dayNumber(value){if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value))return Infinity;const time=Date.parse(value+'T00:00:00Z');return Number.isFinite(time)?Math.floor(time/86400000):Infinity;}
+ function layoutIndependentTasks(model,options={}){
+  const original=model.groups.find(g=>g.independent);if(!original)return {...model,zones:[],independentInfo:null};
+  const mode=['priority','importance','deadline'].includes(options.independentLayout)?options.independentLayout:'priority',today=dayNumber(options.today||'2026-10-28');
+  const records=original.ids.map(id=>model.nodes.find(n=>n.id===id)),active=records.filter(n=>!n.task.done),completed=records.filter(n=>n.task.done),zones=[],replacements=new Map();
+  const zonePad=16,zoneHeader=58,gap=20,top=original.y+HEADER+60,left=original.x+PAD+30;
+  const order=(a,b)=>(Number(b.task.importance)||0)-(Number(a.task.importance)||0)||dayNumber(a.task.due)-dayNumber(b.task.due)||a.id.localeCompare(b.id);
+  function zone(id,title,description,items,x,y,width,height,columns=1,kind='normal'){
+   const sorted=[...items].sort(order),rows=Math.max(1,Math.ceil(sorted.length/columns)),minHeight=zoneHeader+zonePad+rows*NODE_H+(rows-1)*20;
+   const actualHeight=Math.max(height||0,sorted.length?minHeight:114);
+   zones.push({id,title,description,ids:sorted.map(n=>n.id),x,y,width,height:actualHeight,kind});
+   sorted.forEach((node,i)=>replacements.set(node.id,{...node,x:x+zonePad+(i%columns)*(NODE_W+20),y:y+zoneHeader+Math.floor(i/columns)*(NODE_H+20),rank:0,zoneId:id}));
+   return actualHeight;
+  }
+  let width=0,height=0,info;
+  if(mode==='priority'&&active.length){
+   const buckets=[[],[],[],[]];active.forEach(n=>{const high=Number(n.task.importance)>=7,urgent=dayNumber(n.task.due)<=today+2;buckets[(high?0:2)+(urgent?0:1)].push(n);});
+   const columns=Math.min(2,Math.max(1,Math.ceil(Math.sqrt(Math.max(...buckets.map(b=>b.length))))));
+   const zoneWidth=zonePad*2+columns*NODE_W+(columns-1)*20,rowHeight=row=>Math.max(...buckets.slice(row*2,row*2+2).map(b=>b.length?zoneHeader+zonePad+Math.ceil(b.length/columns)*NODE_H+(Math.ceil(b.length/columns)-1)*20:114));
+   const firstHeight=rowHeight(0),secondHeight=rowHeight(1),matrixWidth=zoneWidth*2+gap,matrixHeight=firstHeight+gap+secondHeight;
+   const labels=[['focus','중요하고 임박함','중요도 7–9 · 마감 2일 이내'],['important-later','중요하지만 여유 있음','중요도 7–9 · 그 이후 또는 기한 없음'],['urgent','마감이 가까움','중요도 1–6 · 마감 2일 이내'],['later','여유 있게 진행','중요도 1–6 · 그 이후 또는 기한 없음']];
+   labels.forEach((label,i)=>zone('priority-'+i,label[1],label[2],buckets[i],left+(i%2)*(zoneWidth+gap),top+(i<2?0:firstHeight+gap),zoneWidth,i<2?firstHeight:secondHeight,columns,['focus','plan','due','later'][i]));
+   if(completed.length)zone('completed','완료한 작업','우선순위 판단에서 분리',completed,left+matrixWidth+gap,top,zonePad*2+NODE_W,0,1,'completed');
+   width=PAD+30+matrixWidth+(completed.length?gap+zonePad*2+NODE_W:0)+PAD;
+   height=HEADER+60+Math.max(matrixHeight,...zones.filter(z=>z.kind==='completed').map(z=>z.height))+PAD;
+   info={mode,title:'우선순위로 보는 독립 작업',description:'연결 없는 작업을 중요도와 마감의 가까움으로 배치합니다. 지난 마감도 임박 구역에 포함합니다.',xLabel:'마감 2일 이내 ← → 그 이후 / 기한 없음',yLabel:'높은 중요도 ↑',axisX:left,axisY:top-24,axisWidth:matrixWidth};
+  }else{
+   let bands=[];
+   if(mode==='importance')bands=[{id:'high',title:'높은 중요도',description:'7–9 · 높은 값부터',items:active.filter(n=>n.task.importance>=7)},{id:'medium',title:'보통 중요도',description:'4–6 · 높은 값부터',items:active.filter(n=>n.task.importance>=4&&n.task.importance<=6)},{id:'low',title:'낮은 중요도',description:'1–3 · 높은 값부터',items:active.filter(n=>n.task.importance<=3)}];
+   else if(mode==='deadline'){
+    const dateGroups=new Map();active.forEach(n=>{const key=Number.isFinite(dayNumber(n.task.due))?n.task.due:'none';if(!dateGroups.has(key))dateGroups.set(key,[]);dateGroups.get(key).push(n);});
+    bands=[...dateGroups].sort(([a],[b])=>dayNumber(a)-dayNumber(b)||(a==='none'?1:b==='none'?-1:0)).map(([date,items])=>({id:'date-'+date,title:date==='none'?'마감 없음':date===options.today?'오늘 마감':date.slice(5).replace('-','/')+' 마감',description:date==='none'?'기한이 지정되지 않은 작업':dayNumber(date)<today?'마감이 지난 작업':'같은 날은 중요도 높은 순',items}));
+   }else bands=[{id:'open',title:'진행할 작업 없음',description:'모든 독립 작업을 완료했어요.',items:[]}];
+   if(completed.length)bands.push({id:'completed',title:'완료한 작업',description:'열린 작업과 분리해 표시',items:completed,kind:'completed'});
+   const zoneWidth=zonePad*2+NODE_W;
+   bands.forEach((band,i)=>zone(band.id,band.title,band.description,band.items,left+i*(zoneWidth+gap),top,zoneWidth,0,1,band.kind||mode));
+   width=PAD+30+Math.max(1,bands.length)*zoneWidth+Math.max(0,bands.length-1)*gap+PAD;height=HEADER+60+Math.max(114,...zones.map(z=>z.height))+PAD;
+   info={mode,title:mode==='importance'?'중요도로 보는 독립 작업':mode==='deadline'?'마감순으로 보는 독립 작업':'완료한 독립 작업',description:mode==='importance'?'왼쪽일수록 중요도가 높습니다. 같은 구역에서는 높은 값부터, 값이 같으면 마감이 빠른 순으로 표시합니다.':mode==='deadline'?'왼쪽부터 마감이 빠른 날짜입니다. 날짜 구역의 간격은 같고, 같은 날짜 안에서는 중요도가 높은 순입니다.':'완료한 작업은 열린 작업과 구분해 보여줍니다.',xLabel:mode==='importance'?'중요도 높음 → 낮음':mode==='deadline'?'마감 빠름 → 늦음':'완료한 작업',axisX:left,axisY:top-24,axisWidth:width-PAD*2-30};
+  }
+  const group={...original,title:info.title,width,height,layout:mode};
+  const nodes=model.nodes.map(n=>replacements.get(n.id)||n),byId=new Map(nodes.map(n=>[n.id,n]));
+  return {...model,groups:model.groups.map(g=>g.id===group.id?group:g),nodes,edges:model.edges.map(e=>({...e,source:byId.get(e.from),target:byId.get(e.to)})),width:Math.max(...model.groups.filter(g=>g.id!==group.id).map(g=>g.x+g.width+28),group.x+group.width+28),height:group.y+group.height+28,zones,independentInfo:info};
  }
  function zoomAt(view,scale,point){const worldX=(point.x-view.x)/view.scale,worldY=(point.y-view.y)/view.scale;return {scale,x:point.x-worldX*scale,y:point.y-worldY*scale};}
  function fitBounds(bounds,viewport,padding=30,maxScale=1){if(!bounds.width||!bounds.height)return {x:padding,y:padding,scale:1};const scale=Math.max(.0001,Math.min(maxScale,Math.max(1,viewport.width-padding*2)/bounds.width,Math.max(1,viewport.height-padding*2)/bounds.height));return {scale,x:(viewport.width-bounds.width*scale)/2-(bounds.x||0)*scale,y:(viewport.height-bounds.height*scale)/2-(bounds.y||0)*scale};}
- const api={buildTaskGraph,zoomAt,fitBounds,NODE_W,NODE_H};root.PinitTaskMap=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
+ const api={buildTaskGraph,layoutIndependentTasks,dayNumber,zoomAt,fitBounds,NODE_W,NODE_H};root.PinitTaskMap=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(globalThis);
