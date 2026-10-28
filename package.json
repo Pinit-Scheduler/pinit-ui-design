@@ -1,12 +1,12 @@
 {
   "name": "pinit-ui-design",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "private": true,
   "description": "Pinit responsive UI review prototype",
   "scripts": {
     "build": "node build.cjs",
     "start": "node serve.cjs",
-    "check": "node --check refinement.js && node --check sequence-v3.js && node --check categories-v3.js && node --check task-map-core.js && node --check task-map.js && node --check task-map-ranking.js && node --check task-map-force.js && node --check task-map-sequence.js && node --check task-matrix-core.js && node --check task-matrix.js && node --check dialog-refinement.js && node --check stats-core.js && node --check feedback-stats.js && node --check category-unification.js && node --check build.cjs && node task-map.test.cjs && node task-matrix.test.cjs && node stats.test.cjs",
-    "test": "node task-map.test.cjs && node task-matrix.test.cjs && node stats.test.cjs"
+    "check": "node --check refinement.js && node --check sequence-v3.js && node --check categories-v3.js && node --check task-map-core.js && node --check task-map.js && node --check task-map-ranking.js && node --check task-map-force.js && node --check task-map-sequence.js && node --check task-matrix-core.js && node --check task-matrix.js && node --check dialog-refinement.js && node --check stats-core.js && node --check feedback-stats.js && node --check category-unification.js && node --check map-overview-core.js && node --check map-overview.js && node --check build.cjs && node task-map.test.cjs && node task-matrix.test.cjs && node stats.test.cjs && node map-overview.test.cjs",
+    "test": "node task-map.test.cjs && node task-matrix.test.cjs && node stats.test.cjs && node map-overview.test.cjs"
   }
 }

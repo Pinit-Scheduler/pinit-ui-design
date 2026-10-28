@@ -1,5 +1,13 @@
 # Change history
 
+## 0.14.0 — 2026-10-29
+- Align all statistics bars, donut segments, legends and category tracks to the application blue palette, including dark-theme variants.
+- Compact sequence cards and group spacing without changing task connections, and combine workspace tabs with the header.
+- Fit the initial desktop overview automatically; use a readable flow focus when a large map would make text too small.
+- Reduce the mobile map viewport to available space above the navigation/Add action; retain filters, task navigation and zoom in compact controls.
+- Bound desktop matrix quadrants with independently scrollable task lists.
+- Test compact desktop/mobile branching, merging, isolated nodes, bounds and source preservation.
+
 ## 0.13.0 — 2026-10-29
 - Move task-sequence connections below the full detail grid.
 - Remove tag controls and displays from task cards, details, forms and filters; use category filters and category management instead. Preserve legacy stored values without exposing a second classification system.
