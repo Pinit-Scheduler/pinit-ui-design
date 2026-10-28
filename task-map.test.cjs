@@ -74,3 +74,12 @@ for(const spacing of [.7,1,1.8]){
 }
 assert.equal(JSON.stringify(forceBase),forceSnapshot);assert.equal(layoutForceTasks(buildTaskGraph([])).nodes.length,0);
 console.log('Force graph: deterministic, non-overlapping, bounded, immutable, and all task links preserved.');
+
+const {layoutExecutionTasks}=require('./task-map-core.js');
+const chainPlan=buildTaskGraph([{...task('a',[],['b']),importance:9},{...task('b',['a'],[]),importance:1},{...task('c'),importance:8},{...task('done'),done:true}],{orientation:'network',independentLayout:'importance'});
+assert.deepEqual(chainPlan.nodes.map(n=>n.id),['a','b','c','done']);
+const directed=layoutExecutionTasks(chainPlan);
+assert.equal(directed.nodes.length,4);assert.equal(directed.edges.length,1);assert.ok(directed.orderEdges.every(e=>!e.source.task.done&&!e.target.task.done));
+assert.ok(directed.nodes.find(n=>n.id==='done').y>Math.max(...directed.nodes.filter(n=>!n.task.done).map(n=>n.y)));
+assert.ok(directed.nodes.find(n=>n.id==='a').x<directed.nodes.find(n=>n.id==='b').x);
+console.log('Execution flow keeps dependency continuations together and excludes completed tasks from recommendations.');

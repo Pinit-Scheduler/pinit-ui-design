@@ -52,14 +52,18 @@
   const weight=n=>mode==='deadline'?dayNumber(n.task.due):mode==='importance'?-(Number(n.task.importance)||0):(Number(n.task.importance)>=7?0:2)+(dayNumber(n.task.due)<=today+2?0:1);
   const compare=(a,b)=>Number(a.task.done)-Number(b.task.done)||weight(a)-weight(b)||(Number(b.task.importance)||0)-(Number(a.task.importance)||0)||dayNumber(a.task.due)-dayNumber(b.task.due)||a.id.localeCompare(b.id);
   const byOriginal=new Map(model.nodes.map(n=>[n.id,n])),ready=model.nodes.filter(n=>!incoming.get(n.id)).sort(compare),ordered=[],seen=new Set();
-  while(ready.length){const n=ready.shift();ordered.push(n);seen.add(n.id);for(const id of children.get(n.id)){incoming.set(id,incoming.get(id)-1);if(!incoming.get(id)){ready.push(byOriginal.get(id));ready.sort(compare);}}}
+  while(ready.length){const n=ready.shift();ordered.push(n);seen.add(n.id);for(const id of children.get(n.id)){incoming.set(id,incoming.get(id)-1);if(!incoming.get(id)){ready.push(byOriginal.get(id));}ready.sort((a,b)=>Number(!children.get(n.id).includes(a.id))-Number(!children.get(n.id).includes(b.id))||compare(a,b));}}
   ordered.push(...model.nodes.filter(n=>!seen.has(n.id)).sort(compare));
   const cols=Math.min(4,ordered.length),nodes=ordered.map((n,i)=>{const row=Math.floor(i/cols),col=i%cols;return {...n,x:70+(row%2?cols-1-col:col)*320,y:120+row*280,width:210,height:220,groupId:'all-tasks',order:i+1};}),byId=new Map(nodes.map(n=>[n.id,n]));
   const width=nodes.length?cols*320+40:0,height=nodes.length?Math.ceil(nodes.length/cols)*280+120:0;
   const groups=nodes.length?[{id:'all-tasks',title:'전체 작업 · '+({priority:'우선순위',importance:'중요도',deadline:'마감순'})[mode]+' 추천 순서',ids:nodes.map(n=>n.id),x:40,y:40,width:width-80,height:height-80,done:nodes.filter(n=>n.task.done).length}]:[];
   const existing=new Set(model.edges.map(e=>JSON.stringify([e.from,e.to]))),orderEdges=[];
-  for(let i=1;i<nodes.length;i++){const source=nodes[i-1],target=nodes[i];if(!existing.has(JSON.stringify([source.id,target.id])))orderEdges.push({from:source.id,to:target.id,source,target});}
+  for(let i=1;i<nodes.length;i++){const source=nodes[i-1],target=nodes[i];if(!source.task.done&&!target.task.done&&!existing.has(JSON.stringify([source.id,target.id])))orderEdges.push({from:source.id,to:target.id,source,target});}
   return {...model,orientation:'network',nodes,groups,edges:model.edges.map(e=>({...e,source:byId.get(e.from),target:byId.get(e.to)})),orderEdges,width,height,zones:[],independentInfo:null};
+ }
+ function layoutExecutionTasks(model){
+  const active=model.nodes.filter(n=>!n.task.done),completed=model.nodes.filter(n=>n.task.done),cols=Math.min(3,Math.max(1,active.length)),rows=Math.ceil(active.length/cols),position=(n,i,done=false)=>{const row=Math.floor(i/cols),col=row%2?cols-1-i%cols:i%cols;return {...n,x:90+col*330,y:170+(done?rows*310+90:0)+row*310,width:240,height:250};},nodes=[...active.map((n,i)=>position(n,i)),...completed.map((n,i)=>position(n,i,true))],byId=new Map(nodes.map(n=>[n.id,n])),route=e=>({...e,source:byId.get(e.from),target:byId.get(e.to)});
+  return {...model,nodes,edges:model.edges.map(route),orderEdges:(model.orderEdges||[]).filter(e=>!e.source.task.done&&!e.target.task.done).map(route),width:nodes.length?Math.max(...nodes.map(n=>n.x+n.width))+90:0,height:nodes.length?Math.max(...nodes.map(n=>n.y+n.height))+80:0};
  }
  function dayNumber(value){if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value))return Infinity;const time=Date.parse(value+'T00:00:00Z');return Number.isFinite(time)?Math.floor(time/86400000):Infinity;}
  function layoutIndependentTasks(model,options={}){
@@ -108,18 +112,18 @@
  function fitBounds(bounds,viewport,padding=30,maxScale=1){if(!bounds.width||!bounds.height)return {x:padding,y:padding,scale:1};const scale=Math.max(.0001,Math.min(maxScale,Math.max(1,viewport.width-padding*2)/bounds.width,Math.max(1,viewport.height-padding*2)/bounds.height));return {scale,x:(viewport.width-bounds.width*scale)/2-(bounds.x||0)*scale,y:(viewport.height-bounds.height*scale)/2-(bounds.y||0)*scale};}
  function layoutForceTasks(model,options={}){
   if(!model.nodes.length)return {...model,force:true};
-  const spacing=Number(options.spacing)||1,n=model.nodes.length,points=model.nodes.map((node,i)=>{const angle=i*2.3999632297,r=180*Math.sqrt(i+1)*spacing;return {...node,x:Math.cos(angle)*r,y:Math.sin(angle)*r,width:210,height:110,vx:0,vy:0};}),byId=new Map(points.map(p=>[p.id,p]));
+  const spacing=Number(options.spacing)||1,n=model.nodes.length,points=model.nodes.map((node,i)=>{const angle=i*2.3999632297,r=180*Math.sqrt(i+1)*spacing;return {...node,x:Math.cos(angle)*r,y:Math.sin(angle)*r,width:210,height:195,vx:0,vy:0};}),byId=new Map(points.map(p=>[p.id,p]));
   for(let step=0;step<220;step++){
    const cooling=1-step/250;
    for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const a=points[i],b=points[j],dx=b.x-a.x||.01,dy=b.y-a.y||.01,d=Math.max(30,Math.hypot(dx,dy)),push=Math.min(14,22000*spacing*spacing/(d*d));a.vx-=dx/d*push;b.vx+=dx/d*push;a.vy-=dy/d*push;b.vy+=dy/d*push;}
    for(const edge of model.edges){const a=byId.get(edge.from),b=byId.get(edge.to);if(a===b)continue;const dx=b.x-a.x,dy=b.y-a.y,d=Math.max(1,Math.hypot(dx,dy)),pull=(d-260*spacing)*.018;a.vx+=dx/d*pull;b.vx-=dx/d*pull;a.vy+=dy/d*pull;b.vy-=dy/d*pull;}
    points.forEach((p,i)=>{p.vx+=((i/Math.max(1,n-1)-.5)*300*spacing-p.x)*.002;p.vy-=p.y*.002;p.vx*=.72;p.vy*=.72;p.x+=p.vx*cooling;p.y+=p.vy*cooling;});
   }
-  for(let pass=0;pass<100;pass++){let overlap=false;for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const a=points[i],b=points[j],dx=b.x-a.x,dy=b.y-a.y,ox=230-Math.abs(dx),oy=135-Math.abs(dy);if(ox>0&&oy>0){overlap=true;if(ox<oy){const shift=(ox+.1)/2*(dx>=0?1:-1);a.x-=shift;b.x+=shift;}else{const shift=(oy+.1)/2*(dy>=0?1:-1);a.y-=shift;b.y+=shift;}}}if(!overlap)break;}
+  for(let pass=0;pass<100;pass++){let overlap=false;for(let i=0;i<n;i++)for(let j=i+1;j<n;j++){const a=points[i],b=points[j],dx=b.x-a.x,dy=b.y-a.y,ox=250-Math.abs(dx),oy=215-Math.abs(dy);if(ox>0&&oy>0){overlap=true;if(ox<oy){const shift=(ox+.1)/2*(dx>=0?1:-1);a.x-=shift;b.x+=shift;}else{const shift=(oy+.1)/2*(dy>=0?1:-1);a.y-=shift;b.y+=shift;}}}if(!overlap)break;}
   const minX=Math.min(...points.map(p=>p.x)),minY=Math.min(...points.map(p=>p.y));points.forEach(p=>{p.x=p.x-minX+90;p.y=p.y-minY+120;delete p.vx;delete p.vy;});
   const width=Math.max(...points.map(p=>p.x+p.width))+140,height=Math.max(...points.map(p=>p.y+p.height))+100;
   const route=e=>({...e,source:byId.get(e.from),target:byId.get(e.to)});
   return {...model,force:true,nodes:points,edges:model.edges.map(route),orderEdges:(model.orderEdges||[]).map(route),width,height,groups:model.groups.map(g=>({...g,x:40,y:40,width:width-80,height:height-80}))};
  }
- const api={buildTaskGraph,layoutIndependentTasks,layoutNetworkTasks,layoutForceTasks,dayNumber,zoomAt,fitBounds,NODE_W,NODE_H};root.PinitTaskMap=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
+ const api={buildTaskGraph,layoutIndependentTasks,layoutNetworkTasks,layoutForceTasks,layoutExecutionTasks,dayNumber,zoomAt,fitBounds,NODE_W,NODE_H};root.PinitTaskMap=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(globalThis);

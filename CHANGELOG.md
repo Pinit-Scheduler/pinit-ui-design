@@ -1,5 +1,15 @@
 # Change history
 
+## 0.8.0 — 2026-10-28
+- Default to a directed execution flow with explicit Start here, Next and Waiting for predecessor labels; retain free spatial placement as an option.
+- Prefer ready continuations of the current sequence before unrelated tasks, and keep completed tasks outside the recommended execution path.
+- Keep all task labels readable during neighborhood focus.
+
+- Increase task label size and weight, dot size and link contrast in the spatial graph.
+- Keep deadlines and labelled importance/difficulty meters visible without hovering.
+- Default to a readable graph scale; offer separate Read larger and Show all controls.
+- Increase collision spacing to fit visible task metadata and keep unrelated nodes readable during focus.
+
 ## 0.7.0 — 2026-10-28
 - Add an Obsidian-inspired spatial graph: small category-colored nodes, task labels, connection-weighted sizes and a deterministic force layout.
 - Add node dragging, neighborhood hover/keyboard focus, spacing control, layout reset and a toggle for recommendation paths.
