@@ -1,5 +1,12 @@
 # Change history
 
+## 0.11.0 — 2026-10-28
+- Raise task context, dependency and explanation typography to the deadline text scale.
+- Remove tag editing from task forms while retaining existing stored tag data; place title, description, deadline, importance, difficulty and duration before category and dependency sections.
+- Add an explicit None category above six tiles, with three columns on desktop and two on mobile; preserve None across saves and reloads.
+- Separate modal headers and action footers from the scrolling body, preserve native form submission with explicit form associations, and add missing Cancel buttons to editing forms.
+- Verify desktop/mobile task forms, None-category persistence and schedule-form footer behavior.
+
 ## 0.10.0 — 2026-10-28
 - Add an all-task Eisenhower matrix with urgency settings, search, category filters, completed-task access and existing task details.
 - Add task-list/matrix switching and a desktop shortcut, keeping six mobile actions.
