@@ -1,1 +1,13 @@
-const fs=require('fs');let html=fs.readFileSync('base.html','utf8');const css=['refinement.css','sequence-v3.css','categories-v3.css'].map(f=>fs.readFileSync(f,'utf8')).join('\n');let js=['refinement.js','sequence-v3.js','categories-v3.js'].map(f=>fs.readFileSync(f,'utf8')).join('\n');js=js.replace("document.getElementById(\\'dependencyFieldsV2\\')?.classList.toggle(\\'hidden\\',this.checked)","setSequenceRepeatV3(this.checked)");html=html.replace('.dialog button,.dialog input,.dialog select','.dialog button,.dialog input,.dialog select,.dialog textarea');html=html.replace('</head>','<style>\n'+css+'\n</style>\n</head>').replace('</body>','<script>\n'+js+'\n</script>\n</body>');fs.writeFileSync('index.html',html);console.log('Built index.html');
+const fs=require('fs');
+const vm=require('vm');
+let html=fs.readFileSync('base.html','utf8');
+const styles=['refinement.css','sequence-v3.css','categories-v3.css','task-map.css'];
+const scripts=['refinement.js','sequence-v3.js','categories-v3.js','task-map-core.js','task-map.js'];
+const css=styles.map(file=>fs.readFileSync(file,'utf8')).join('\n');
+let js=scripts.map(file=>fs.readFileSync(file,'utf8')).join('\n');
+js=js.replace("document.getElementById(\\'dependencyFieldsV2\\')?.classList.toggle(\\'hidden\\',this.checked)",'setSequenceRepeatV3(this.checked)');
+html=html.replace('.dialog button,.dialog input,.dialog select','.dialog button,.dialog input,.dialog select,.dialog textarea');
+html=html.replace('</head>','<style>\n'+css+'\n</style>\n</head>').replace('</body>','<script>\n'+js+'\n</script>\n</body>');
+for(const [index,match] of [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].entries())new vm.Script(match[1],{filename:'index.html:script-'+index});
+fs.writeFileSync('index.html',html);
+console.log('Built index.html and verified inline scripts.');

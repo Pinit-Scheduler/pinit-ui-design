@@ -1,5 +1,13 @@
 # Change history
 
+## 0.4.0 — 2026-10-28
+- Add a Task map tab to desktop and mobile navigation without removing the existing tabs or add action.
+- Group connected tasks and display dependencies in horizontal sequence or vertical tree layouts; render shared children only once.
+- Add zoom, wheel/pinch gestures, pointer panning, fit-all, expanded view, flow navigation, and a desktop minimap.
+- Highlight task-name, category, and state matches while preserving dependency context; open the existing task detail from each node.
+- Add an isolated branch-and-merge example that does not alter stored tasks.
+- Verify branching, merging, disconnected nodes, missing links, cyclic input, long chains, viewport fitting, and zoom-anchor invariance.
+
 ## 0.3.1 — 2026-10-28
 - Apply the same primary-category picker to direct schedule creation and editing.
 - Retain category IDs when assigning tasks or applying plan drafts; show categories on schedule cards and details.
