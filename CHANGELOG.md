@@ -1,5 +1,12 @@
 # Change history
 
+## 0.9.0 — 2026-10-28
+- Keep only the sequence task map; remove graph, tree and free-placement controls from the delivered UI.
+- Use top-to-bottom sequences on mobile, readable 100% card framing, larger deadlines/titles/meters, and previous/next task navigation.
+- Preserve desktop left-to-right connections, filters, independent-task sorting, details and zoom/fit controls.
+- Center the mobile add action geometrically while retaining every navigation destination; make Add create a task on the task map.
+- Remove obsolete graph/ranking bundles from the generated page while retaining their sources in history.
+
 ## 0.8.0 — 2026-10-28
 - Default to a directed execution flow with explicit Start here, Next and Waiting for predecessor labels; retain free spatial placement as an option.
 - Prefer ready continuations of the current sequence before unrelated tasks, and keep completed tasks outside the recommended execution path.

@@ -1,12 +1,12 @@
 {
   "name": "pinit-ui-design",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "private": true,
   "description": "Pinit responsive UI review prototype",
   "scripts": {
     "build": "node build.cjs",
     "start": "node serve.cjs",
-    "check": "node --check refinement.js && node --check sequence-v3.js && node --check categories-v3.js && node --check task-map-core.js && node --check task-map.js && node --check task-map-ranking.js && node --check task-map-force.js && node --check build.cjs && node task-map.test.cjs",
+    "check": "node --check refinement.js && node --check sequence-v3.js && node --check categories-v3.js && node --check task-map-core.js && node --check task-map.js && node --check task-map-ranking.js && node --check task-map-force.js && node --check task-map-sequence.js && node --check build.cjs && node task-map.test.cjs",
     "test": "node task-map.test.cjs"
   }
 }

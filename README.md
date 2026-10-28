@@ -57,3 +57,5 @@ Graph nodes display task names directly inside circles, without numeric sequence
 Version 0.7 adds a spatial force graph with category-colored dots, labels, node dragging and local neighborhood highlighting. Controls adjust spacing and reset the layout; recommendation paths can be hidden without removing stored sequence connections. Graph placement is view-only.
 
 Version 0.8 defaults to a directed execution flow. Start/next/waiting labels guide the user; ready sequence continuations stay together. Completed tasks remain visible outside the recommended path. Free spatial placement is still available from the graph layout selector.
+
+Version 0.9 delivers only the sequence map. Desktop follows left-to-right links; mobile uses top-to-bottom links and previous/next navigation at readable scale. The mobile add button occupies the exact center of the navigation bar. Earlier graph sources are retained for history but are not bundled.
