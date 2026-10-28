@@ -1,5 +1,13 @@
 # Change history
 
+## 0.12.0 — 2026-10-29
+- Shorten regular notifications to 1.5 seconds; replace older feedback and use inline feedback within dialogs to avoid stacked overlays.
+- Position the active timer above the measured mobile navigation/Add-button bounds and retain pause/complete controls.
+- Add period-aware daily bar, status donut and category-time charts using stored schedule records; retain type totals, recurrence management and calibration controls.
+- Keep planned time explicitly distinguished from measured time and undated task-completion totals.
+- Move the Eisenhower matrix under Task map beside Sequence, removing the separate sidebar/task-list entry.
+- Verify period boundaries/empty states, notification expiry and mobile timer/Add separation.
+
 ## 0.11.0 — 2026-10-28
 - Raise task context, dependency and explanation typography to the deadline text scale.
 - Remove tag editing from task forms while retaining existing stored tag data; place title, description, deadline, importance, difficulty and duration before category and dependency sections.

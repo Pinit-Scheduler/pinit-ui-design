@@ -63,3 +63,5 @@ Version 0.9 delivers only the sequence map. Desktop follows left-to-right links;
 Version 0.10 adds an all-task Eisenhower matrix from the task view switch or #matrix. Importance 7–9 counts as important; urgency defaults to two days including overdue tasks. Completed tasks remain accessible separately. Six mobile actions remain: five equal destinations and a centered raised Add button.
 
 Version 0.11 enlarges task context text and streamlines task forms. Category None is explicit and persistent; six standard categories use tiles. Existing tag data remains intact while task tag inputs are removed. Modal headers and action footers stay visible while content scrolls, with native form association preserved for submit buttons.
+
+Version 0.12 moves the matrix under Task map, shortens regular feedback to 1.5 seconds and docks the running timer above the measured mobile navigation area. Statistics now include daily planned/completed-plan bars, schedule-state distribution and category completion time. Time charts aggregate planned minutes by schedule date; task-completion totals remain global because task completion timestamps are not recorded.
