@@ -1,3 +1,3 @@
 # Pinit UI design
 
-Version 0.1.0: initial standalone HTML design proposal. UI demo with example data.
+Version 0.2.0: responsive layouts and restored original feature entry points. UI demo only.
