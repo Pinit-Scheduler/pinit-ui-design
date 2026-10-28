@@ -1,0 +1,1 @@
+const http=require('http'),fs=require('fs');const port=Number(process.env.PORT)||4173;http.createServer((req,res)=>{res.setHeader('Content-Type','text/html; charset=utf-8');res.end(fs.readFileSync('index.html'));}).listen(port,'127.0.0.1',()=>console.log('Preview: http://127.0.0.1:'+port));

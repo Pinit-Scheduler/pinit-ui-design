@@ -1,3 +1,44 @@
 # Pinit UI design
 
-Version 0.2.0: responsive layouts and restored original feature entry points. UI demo only.
+Pinit UI 개선안을 검토하는 비공개 저장소입니다. 원본 [pinit-fe](https://github.com/Pinit-Scheduler/pinit-fe)의 기능을 유지하는 방향으로 화면을 제안합니다. 실제 서비스의 API·인증·상태 처리 코드는 변경하지 않습니다.
+
+## 실행
+
+Node.js만 필요하며 별도 패키지 설치는 없습니다.
+
+```sh
+npm run check
+npm run build
+npm start
+```
+
+브라우저에서 http://127.0.0.1:4173 을 엽니다. index.html을 직접 열어도 UI를 확인할 수 있습니다. 웹 폰트를 불러오지 못하면 시스템 글꼴을 사용합니다.
+
+## 최신 변경
+
+- 작업 순서 연결을 항상 노출: 이전 작업 → 현재 작업 → 다음 작업.
+- 중요도·난이도 원형 지표와 마감 글씨 확대.
+- 대표 카테고리 6개: 업무·커리어, 학습, 개인 프로젝트, 생활·행정, 건강·운동, 여가·관계.
+- 대표 카테고리는 하나, 개인 추가 태그는 여러 개 선택합니다. 사용자 정의 카테고리도 추가할 수 있습니다.
+- 대표 카테고리는 향후 작업 시간 학습을 위한 UI 기준 제안입니다. 실제 학습이나 카테고리별 시간 산정은 구현하지 않았습니다.
+
+## 소스
+
+base.html은 첫 HTML 제안이고, refinement.*는 기능 진입 경로와 반응형 레이아웃, sequence-v3.*는 작업 순서, categories-v3.*는 분류와 가독성 변경을 담습니다. build.cjs가 독립 실행 가능한 index.html을 만듭니다.
+
+## 변경 추적과 원복
+
+각 완성된 수정은 검증 후 커밋·푸시합니다. 기준 버전은 GitHub 커밋 기록에서 비교할 수 있습니다. 0.1.0 → 0.2.0 → 0.3.0 순으로 기록했습니다.
+
+```sh
+git log --oneline
+git show COMMIT:index.html > previous.html
+git revert COMMIT
+git push origin main
+```
+
+git show는 이전 화면을 별도 파일로 확인할 때 사용합니다. git revert는 변경을 취소하는 새 커밋을 만들어 이력을 보존합니다. 원복할 커밋은 실제 기록에서 선택하세요. 강제 푸시는 사용하지 않습니다.
+
+## 데모 범위
+
+작업·일정 조작은 브라우저의 예시 데이터에만 적용됩니다. 인증, 푸시, MCP, 자동 계획 엔진, 반복 회차 생성, 기간 통계는 기존 서비스 연결 대상입니다. 실제 계정 데이터나 비밀 값은 포함하지 않습니다.

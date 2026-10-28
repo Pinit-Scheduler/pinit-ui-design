@@ -1,0 +1,11 @@
+{
+  "name": "pinit-ui-design",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Pinit responsive UI review prototype",
+  "scripts": {
+    "build": "node build.cjs",
+    "start": "node serve.cjs",
+    "check": "node --check refinement.js && node --check sequence-v3.js && node --check categories-v3.js && node --check build.cjs"
+  }
+}
