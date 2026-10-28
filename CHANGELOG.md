@@ -1,5 +1,12 @@
 # Change history
 
+## 0.3.1 — 2026-10-28
+- Apply the same primary-category picker to direct schedule creation and editing.
+- Retain category IDs when assigning tasks or applying plan drafts; show categories on schedule cards and details.
+- Require deliberate category selection for new entries instead of defaulting to work.
+- Improve Korean word wrapping in the visible previous/current/next workflow.
+- Place sequence controls above secondary task metadata so they are visible when details first open.
+
 ## 0.3.0 — 2026-10-28
 - Replace collapsed dependency editing with a visible Previous → Current → Next workflow.
 - Keep selection search, multiple links, unlinking, repeat restrictions, and cycle validation.
