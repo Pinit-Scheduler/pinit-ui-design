@@ -41,3 +41,24 @@ assert.equal(buildTaskGraph([task(1,[],[2]),task(2,[1])],{independentLayout:'pri
 const boundary=buildTaskGraph([{...task(9),importance:7,due:'2027-01-02'}],{independentLayout:'priority',today:'2026-12-31'});assert.deepEqual(boundary.zones.find(z=>z.id==='priority-0').ids,['9']);
 assert.equal(JSON.stringify(rankedInput),sourceBeforeRanking,'Map placement must not mutate source records');
 console.log('Graph structure, ranking zones, dependency preservation, completed/undated tasks, date boundaries, collision, zoom and fit checks passed.');
+
+for(const mode of ['priority','importance','deadline']){
+ const graph=buildTaskGraph(rankedInput,{orientation:'network',independentLayout:mode,today:'2026-10-28'});
+ assert.equal(graph.orientation,'network');assert.equal(graph.nodes.length,rankedInput.length);assert.equal(graph.edges.length,plain.edges.length);
+ assert.deepEqual(graph.edges.map(e=>[e.from,e.to]),plain.edges.map(e=>[e.from,e.to]));
+ for(let i=0;i<graph.nodes.length;i++)for(let j=i+1;j<graph.nodes.length;j++){const a=graph.nodes[i],b=graph.nodes[j];assert.ok(a.x+a.width<=b.x||b.x+b.width<=a.x||a.y+a.height<=b.y||b.y+b.height<=a.y,'network nodes overlap');}
+}
+console.log('Network layouts preserve nodes and dependency edges without overlaps.');
+
+const fullOrder=buildTaskGraph([
+ {...task(1,[],[2]),importance:1,due:'2026-11-01'},
+ {...task(2,[1],[]),importance:9,due:'2026-10-28'},
+ {...task(3),importance:8,due:'2026-10-28'},
+ {...task(4),importance:3,due:'2026-10-29'}
+],{orientation:'network',independentLayout:'importance',today:'2026-10-28'});
+assert.equal(fullOrder.groups.length,1);
+assert.deepEqual(fullOrder.nodes.map(n=>n.id),['3','4','1','2']);
+assert.ok(fullOrder.edges.every(e=>e.source.order<e.target.order));
+for(let i=1;i<fullOrder.nodes.length;i++)assert.ok([...fullOrder.edges,...fullOrder.orderEdges].some(e=>e.from===fullOrder.nodes[i-1].id&&e.to===fullOrder.nodes[i].id));
+assert.equal(new Set(fullOrder.nodes.map(n=>n.order)).size,4);
+console.log('Unified recommendations include every task, respect dependencies and retain continuous order links.');

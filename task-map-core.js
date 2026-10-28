@@ -43,7 +43,23 @@
   const width=groups.length?Math.max(...groups.map(g=>g.x+g.width))+28:0,height=groups.length?top:0;
   const routes=edges.map(e=>({...e,source:positions.get(e.from),target:positions.get(e.to)}));
   const model={orientation,nodes,edges:routes,groups,width,height,missingEdges,cycleCount};
+  if(options.orientation==='network')return layoutNetworkTasks(model,options);
   return options.independentLayout?layoutIndependentTasks(model,options):model;
+ }
+ function layoutNetworkTasks(model,options={}){
+  const mode=options.independentLayout||'priority',today=dayNumber(options.today||'2026-10-28'),incoming=new Map(model.nodes.map(n=>[n.id,0])),children=new Map(model.nodes.map(n=>[n.id,[]]));
+  model.edges.forEach(e=>{incoming.set(e.to,incoming.get(e.to)+1);children.get(e.from).push(e.to);});
+  const weight=n=>mode==='deadline'?dayNumber(n.task.due):mode==='importance'?-(Number(n.task.importance)||0):(Number(n.task.importance)>=7?0:2)+(dayNumber(n.task.due)<=today+2?0:1);
+  const compare=(a,b)=>Number(a.task.done)-Number(b.task.done)||weight(a)-weight(b)||(Number(b.task.importance)||0)-(Number(a.task.importance)||0)||dayNumber(a.task.due)-dayNumber(b.task.due)||a.id.localeCompare(b.id);
+  const byOriginal=new Map(model.nodes.map(n=>[n.id,n])),ready=model.nodes.filter(n=>!incoming.get(n.id)).sort(compare),ordered=[],seen=new Set();
+  while(ready.length){const n=ready.shift();ordered.push(n);seen.add(n.id);for(const id of children.get(n.id)){incoming.set(id,incoming.get(id)-1);if(!incoming.get(id)){ready.push(byOriginal.get(id));ready.sort(compare);}}}
+  ordered.push(...model.nodes.filter(n=>!seen.has(n.id)).sort(compare));
+  const cols=Math.min(4,ordered.length),nodes=ordered.map((n,i)=>{const row=Math.floor(i/cols),col=i%cols;return {...n,x:70+(row%2?cols-1-col:col)*320,y:120+row*280,width:210,height:172,groupId:'all-tasks',order:i+1};}),byId=new Map(nodes.map(n=>[n.id,n]));
+  const width=nodes.length?cols*320+40:0,height=nodes.length?Math.ceil(nodes.length/cols)*280+120:0;
+  const groups=nodes.length?[{id:'all-tasks',title:'전체 작업 · '+({priority:'우선순위',importance:'중요도',deadline:'마감순'})[mode]+' 추천 순서',ids:nodes.map(n=>n.id),x:40,y:40,width:width-80,height:height-80,done:nodes.filter(n=>n.task.done).length}]:[];
+  const existing=new Set(model.edges.map(e=>JSON.stringify([e.from,e.to]))),orderEdges=[];
+  for(let i=1;i<nodes.length;i++){const source=nodes[i-1],target=nodes[i];if(!existing.has(JSON.stringify([source.id,target.id])))orderEdges.push({from:source.id,to:target.id,source,target});}
+  return {...model,orientation:'network',nodes,groups,edges:model.edges.map(e=>({...e,source:byId.get(e.from),target:byId.get(e.to)})),orderEdges,width,height,zones:[],independentInfo:null};
  }
  function dayNumber(value){if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value))return Infinity;const time=Date.parse(value+'T00:00:00Z');return Number.isFinite(time)?Math.floor(time/86400000):Infinity;}
  function layoutIndependentTasks(model,options={}){
@@ -90,5 +106,5 @@
  }
  function zoomAt(view,scale,point){const worldX=(point.x-view.x)/view.scale,worldY=(point.y-view.y)/view.scale;return {scale,x:point.x-worldX*scale,y:point.y-worldY*scale};}
  function fitBounds(bounds,viewport,padding=30,maxScale=1){if(!bounds.width||!bounds.height)return {x:padding,y:padding,scale:1};const scale=Math.max(.0001,Math.min(maxScale,Math.max(1,viewport.width-padding*2)/bounds.width,Math.max(1,viewport.height-padding*2)/bounds.height));return {scale,x:(viewport.width-bounds.width*scale)/2-(bounds.x||0)*scale,y:(viewport.height-bounds.height*scale)/2-(bounds.y||0)*scale};}
- const api={buildTaskGraph,layoutIndependentTasks,dayNumber,zoomAt,fitBounds,NODE_W,NODE_H};root.PinitTaskMap=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
+ const api={buildTaskGraph,layoutIndependentTasks,layoutNetworkTasks,dayNumber,zoomAt,fitBounds,NODE_W,NODE_H};root.PinitTaskMap=api;if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(globalThis);

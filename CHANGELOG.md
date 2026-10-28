@@ -1,5 +1,13 @@
 # Change history
 
+## 0.6.0 — 2026-10-28
+- Make a continuous node-and-arrow graph the default map view, with circular status nodes and straight directed dependency edges.
+- Show branching and merging without enclosing sequence cards; retain sequence and tree views.
+- Unify all recorded tasks into one numbered recommendation path ordered by priority, importance or deadline, respecting existing dependencies.
+- Distinguish real dependency edges (solid) from suggested next-task edges (dashed); never modify stored task connections.
+- Keep task titles, due dates, importance and difficulty visible and open existing details from each node.
+- Verify network node collisions and dependency preservation across all ordering modes.
+
 ## 0.5.0 — 2026-10-28
 - Replace the plain independent-task grid with priority, importance, and deadline maps while preserving connected sequence positions and edges.
 - Priority uses explicit importance (7–9 / 1–6) and deadline proximity (within two days, including overdue / later or undated) quadrants.

@@ -49,3 +49,5 @@ git show는 이전 화면을 별도 파일로 확인할 때 사용합니다. git
 ## 데모 범위
 
 작업·일정 조작은 브라우저의 예시 데이터에만 적용됩니다. 인증, 푸시, MCP, 자동 계획 엔진, 반복 회차 생성, 기간 통계는 기존 서비스 연결 대상입니다. 실제 계정 데이터나 비밀 값은 포함하지 않습니다.
+
+The default graph view uses circular nodes and directed arrows for dependencies. Sequence and tree remain available. All recorded tasks share one numbered recommendation path. Solid arrows represent stored dependencies; dashed arrows suggest the next task without changing stored connections. The selected criterion ranks available tasks while preserving dependency order.
