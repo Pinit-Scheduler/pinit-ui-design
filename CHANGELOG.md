@@ -1,5 +1,12 @@
 # Change history
 
+## 0.15.0 — 2026-11-03
+- Restore the production schedule-control flow: start from the card state icon, then use the persistent bottom bar for Start, Pause, Complete and Cancel. Keep quick completion and completed-state undo on cards.
+- Keep the active schedule visible while paused and after reload; show state-aware disabled controls, and return cancelled schedules to Not started without deleting them.
+- Match production action availability and prevent a second schedule from replacing the current active schedule. Remove duplicate lifecycle actions from cards and details.
+- Preserve the responsive navigation/Add clearance and use accessible labelled controls.
+- Verify desktop/mobile start, pause, reload, resume, complete, cancel, quick completion and undo; confirm the mobile bar clears the raised Add action.
+
 ## 0.14.0 — 2026-10-29
 - Align all statistics bars, donut segments, legends and category tracks to the application blue palette, including dark-theme variants.
 - Compact sequence cards and group spacing without changing task connections, and combine workspace tabs with the header.
