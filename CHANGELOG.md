@@ -1,5 +1,9 @@
 # Change history
 
+## 0.15.1 — 2026-11-03
+- Restyle the schedule control bar as a workspace card: theme-aware surface, subtle border and shadow, muted text and soft blue accents.
+- Replace multicolour circular controls with neutral rounded buttons; align schedule state icons with the same palette. Preserve all schedule actions and responsive navigation clearance.
+
 ## 0.15.0 — 2026-11-03
 - Restore the production schedule-control flow: start from the card state icon, then use the persistent bottom bar for Start, Pause, Complete and Cancel. Keep quick completion and completed-state undo on cards.
 - Keep the active schedule visible while paused and after reload; show state-aware disabled controls, and return cancelled schedules to Not started without deleting them.

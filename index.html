@@ -109,25 +109,25 @@ h2,h3,.panel-head h2,.dialog-head h2,.dialog-fixed-v11 .dialog-head h2,.sequence
 @media(min-width:951px){.matrix-only .page-head{display:flex;align-items:center;gap:16px;margin-bottom:14px}.matrix-only .page-head>div:first-child{flex:0 0 auto}.matrix-only #pageSubtitle{display:none}.matrix-only .page-head .head-actions{margin-left:auto;padding:0;order:3}.matrix-only .page-head .task-view-switch{order:2;margin:0;padding:0;border:0}.matrix-only .task-view-switch button{padding:10px}.matrix-only #alternatePanel{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px}.matrix-only .matrix-intro{display:contents}.matrix-only .matrix-intro>div{grid-column:1/-1;grid-row:2;margin:6px 0}.matrix-only .matrix-intro>label{grid-column:2;grid-row:1}.matrix-only .matrix-tools{grid-column:1;grid-row:1;margin:0}.matrix-only .matrix-tools input,.matrix-only .matrix-tools>select,.matrix-only .matrix-intro select{height:40px}.matrix-only .matrix-tools>select,.matrix-only .matrix-intro select{padding:8px 10px}.matrix-only .matrix-tools>select{max-width:150px}.matrix-only .matrix-criteria,.matrix-only .matrix-axis,.matrix-only .matrix-board,.matrix-only .matrix-completed{grid-column:1/-1}.matrix-only .matrix-criteria{margin:0 0 8px}.matrix-only .matrix-axis{margin-bottom:6px}.matrix-only .matrix-quadrant{height:clamp(196px,calc((100dvh - 310px)/2),280px);padding:12px}.matrix-only .matrix-quadrant header{margin-bottom:9px}.matrix-only .matrix-quadrant header>div{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.matrix-only .matrix-quadrant header p{order:2;margin:0}.matrix-only .matrix-quadrant header h2{order:1}}
 @media(max-width:950px){.matrix-only .page-head{display:flex;flex-wrap:wrap;gap:8px}.matrix-only .page-head>div:first-child{flex:1}.matrix-only .page-head .task-view-switch{order:3;flex-basis:100%;margin:0;padding:0;border:0}.matrix-only .head-actions{order:2}.matrix-only .page-head{margin-bottom:16px}}
 
-/* Persistent bottom controls follow the production MiniPlayerBar interaction. */
-.player.schedule-player-v15{width:580px;min-width:0;gap:14px;background:#1d4ed8;border-color:#1d4ed8;color:#fff;border-radius:16px;padding:14px 16px}
+/* Persistent bottom controls share the workspace card and button palette. */
+.player.schedule-player-v15{width:580px;min-width:0;gap:14px;background:var(--surface);border-color:var(--line);color:var(--ink);border-radius:12px;padding:12px 16px;box-shadow:0 4px 18px color-mix(in srgb,var(--ink),transparent 93%)}
 .schedule-player-v15 .player-title{text-align:left;white-space:normal;line-height:1.5}
-.schedule-player-v15 small{color:#dbeafe;margin-bottom:3px}
+.schedule-player-v15 small{color:var(--muted);margin-bottom:3px}
 .schedule-player-name{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
-.schedule-player-state{flex-shrink:0;padding:4px 8px;border-radius:20px;background:#ffffff24;font-size:12px;white-space:nowrap}
+.schedule-player-state{flex-shrink:0;padding:4px 8px;border-radius:5px;background:var(--blue-soft);color:var(--blue);font-size:12px;white-space:nowrap}
 .schedule-player-controls{display:flex;gap:8px;flex-shrink:0}
-.schedule-player-control{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-size:18px;font-weight:700;flex-shrink:0}
-.schedule-player-control--start{background:#dbeafe;color:#0b3b7e}
-.schedule-player-control--pause{background:#ffedd5;color:#7c2d12}
-.schedule-player-control--complete{background:#bbf7d0;color:#065f46}
-.schedule-player-control--cancel{background:#e2e8f0;color:#475569}
-.schedule-player-control:disabled{opacity:.4;cursor:default}
-.schedule-player-control:focus-visible,.schedule-player-v15 .player-title:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.schedule-player-control{width:40px;height:40px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);display:grid;place-items:center;font-size:17px;font-weight:500;flex-shrink:0}
+.schedule-player-control--start:not(:disabled),.schedule-player-control--complete:not(:disabled){background:var(--blue-soft);color:var(--blue)}
+.schedule-player-control:hover:not(:disabled){background:var(--blue-soft);color:var(--blue);border-color:color-mix(in srgb,var(--blue),var(--line) 75%)}
+
+
+.schedule-player-control:disabled{color:var(--muted);opacity:.4;cursor:default}
+.schedule-player-control:focus-visible,.schedule-player-v15 .player-title:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
 .schedule-title-line>.schedule-state-icon{font-size:18px}
 .schedule-title-line>.schedule-state-icon:disabled{opacity:1;cursor:default}
-.schedule-main[data-state=IN_PROGRESS] .schedule-state-icon{background:#dbeafe;color:#1d4ed8}
-.schedule-main[data-state=SUSPENDED] .schedule-state-icon{background:#ffedd5;color:#7c2d12}
-.schedule-main[data-state=COMPLETED] .schedule-state-icon{background:#dcfce7;color:#065f46}
+.schedule-main[data-state=IN_PROGRESS] .schedule-state-icon{background:var(--blue-soft);color:var(--blue)}
+.schedule-main[data-state=SUSPENDED] .schedule-state-icon,.schedule-main[data-state=COMPLETED] .schedule-state-icon{background:var(--bg);color:var(--muted)}
+
 .has-active-player .content{padding-bottom:calc(var(--player-height,85px) + 45px)}
 @media(max-width:760px){
   .player.schedule-player-v15{width:auto;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 12px;padding:12px 14px}
