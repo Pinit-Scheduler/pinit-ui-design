@@ -2,6 +2,10 @@
 
 Pinit UI 개선안을 검토하는 비공개 저장소입니다. 원본 [pinit-fe](https://github.com/Pinit-Scheduler/pinit-fe)의 기능을 유지하는 방향으로 화면을 제안합니다. 실제 서비스의 API·인증·상태 처리 코드는 변경하지 않습니다.
 
+## 최신 정책 명세
+
+새로 확정한 팀 스페이스 정책은 [확정 정책·UX 상태](docs/design-evidence/team-space-policy.md)와 [백엔드 도메인 계약](docs/design-evidence/backend-domain-boundary.md)에 명세로만 남깁니다. 실제 구현은 백엔드 도메인이 담당하며, 애플리케이션/UI에 업무 규칙을 구현하지 않습니다. 아래 실행 시안은 기존 UX 참고이며 신규 정책의 구현 완료를 뜻하지 않습니다.
+
 ## 실행
 
 Node.js만 필요하며 별도 패키지 설치는 없습니다.

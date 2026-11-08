@@ -1,5 +1,11 @@
 # Change history
 
+## Policy specifications — 2026-11-08
+- Record confirmed assignee/default, shared editing/moving, administrator deletion/restoration, real-time and optimistic-lock UX, team-space domain, project classification, signup nickname and one-hour Redis invitation requirements.
+- Specify invitation exceptions, UX messages, backend acceptance criteria and strict backend-domain ownership. Keep unresolved details explicit.
+- Honor the user’s specification-only scope: withdraw uncommitted mock domain, synchronization, authorization, expiry and join execution code/tests; restore runtime sources to 97f5a9d. No backend, infrastructure or production changes.
+- Validation: compare runtime source hashes with the approved baseline and review document consistency/links. No new runtime behavior is delivered.
+
 ## 0.17.1 — 2026-11-08
 - Keep the three management tabs on one row at 320px with equal-width columns and 44px touch targets; retain the desktop layout.
 - Recheck 320px/400px layouts, fixed action visibility and screenshots; npm run check and npm run build pass.
