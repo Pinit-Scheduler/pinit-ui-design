@@ -1,0 +1,58 @@
+.purpose-management-dialog{max-width:660px}
+.purpose-manager-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 22px}
+.purpose-manager-tabs .active{color:var(--blue);background:var(--blue-soft);border-color:var(--blue)}
+.purpose-info-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:14px 0 18px}
+.purpose-info-heading h3{font-size:18px;color:var(--ink)}
+.purpose-info-heading p{font-size:12px}
+.purpose-inline-actions{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:14px}
+.purpose-manager-row{display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line);padding:15px 0;min-width:0}
+.purpose-manager-main{flex:1;min-width:0;text-align:left}
+.purpose-manager-main strong{display:block;color:var(--ink);font-size:13px;overflow-wrap:anywhere}
+.purpose-manager-main small{display:block;color:var(--muted);font-size:12px;line-height:1.8;margin-top:4px;overflow-wrap:anywhere}
+.purpose-manager-row .text-btn{flex-shrink:0}
+.purpose-section-title{font-size:14px;margin-top:24px}
+.purpose-danger-zone{border-top:1px solid var(--line);padding-top:20px;margin-top:24px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.purpose-invitation{text-align:center;padding:18px 0 12px;display:grid;justify-items:center;gap:12px}
+.purpose-invitation .space-switcher-avatar{width:52px;height:52px;font-size:20px;border-radius:16px}
+.purpose-invitation h3{font-size:20px;line-height:1.6}
+.purpose-invitation small{color:var(--muted);font-size:12px}
+.purpose-picker-actions{display:grid;gap:3px;border-top:1px solid var(--line);padding:9px 12px}
+.purpose-picker-actions button{display:flex;gap:9px;align-items:center;padding:10px 8px;border-radius:8px;text-align:left;font-size:12px;min-height:40px}
+.purpose-picker-actions button:hover{background:var(--bg)}
+.purpose-picker-actions button svg{width:16px;height:16px;color:var(--muted)}
+.space-project-nav .purpose-create-link{color:var(--muted);font-size:12px}
+.purpose-create-link svg{width:14px;height:14px}
+.purpose-affiliation{margin:0 0 22px;padding:16px;background:var(--bg);border:1px solid var(--line);border-radius:10px}
+.purpose-affiliation h3{font-size:14px;margin-bottom:4px}
+.purpose-affiliation .field{margin:12px 0}
+.purpose-affiliation textarea,.purpose-affiliation select{background:var(--surface)}
+.purpose-affiliation .notice{margin-bottom:10px}
+.purpose-affiliation .notice strong{display:block;color:var(--ink)}
+.purpose-affiliation .notice p{margin:6px 0}
+.purpose-history{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:16px}
+.purpose-history li{border-left:2px solid var(--line);padding-left:12px}
+.purpose-history strong{display:block;font-size:12px;color:var(--ink);font-weight:500}
+.purpose-history small{display:block;font-size:11px;color:var(--muted);margin-top:4px}
+.purpose-assignee{color:var(--ink);font-size:12px}
+.purpose-schedule-affiliation{color:var(--blue)}
+@media(max-width:760px){
+  .purpose-management-dialog{width:100%;max-width:none}
+  .purpose-info-heading{align-items:flex-start;flex-wrap:wrap;gap:12px}
+  .purpose-info-heading .btn{min-height:44px}
+  .purpose-manager-tabs .btn,.purpose-inline-actions .btn{min-height:44px}
+  .purpose-manager-row{flex-wrap:wrap;gap:10px}
+  .purpose-manager-main{flex-basis:calc(100% - 54px)}
+  .purpose-manager-row>.text-btn{min-height:44px;padding:10px 12px}
+  .purpose-affiliation{padding:13px}
+  .purpose-affiliation .form-row{grid-template-columns:1fr;gap:0}
+  .purpose-picker-actions button{min-height:48px;font-size:13px}
+  .purpose-danger-zone .text-btn{min-height:44px}
+}
+
+.purpose-management-dialog .purpose-danger-zone{border-top:0;padding-top:10px;margin-top:10px}
+.purpose-management-dialog .notice{overflow-wrap:anywhere}
+
+.purpose-empty{padding:30px 18px;text-align:center}
+.purpose-empty strong{color:var(--ink);font-size:14px}
+.purpose-empty p{margin:10px 0 18px;font-size:12px;line-height:1.8}
+@media(max-width:760px){.purpose-manager-row:has(.space-switcher-avatar){flex-wrap:nowrap}.purpose-manager-row:has(.space-switcher-avatar) .purpose-manager-main{flex-basis:auto}.purpose-empty .btn{min-height:44px}}

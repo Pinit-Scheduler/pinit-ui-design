@@ -1,5 +1,14 @@
 # Change history
 
+## 0.17.0 — 2026-11-08
+- Connect space/purpose/project create, read, edit, delete and restore flows within the existing prototype, with contextual defaults and first-task empty states.
+- Add example invitations, acceptance/decline/cancellation, member removal with task reassignment, leaving and last-member guidance. No emails or real account permissions are changed.
+- Extend existing task/schedule forms with space/project affiliation, one assignee, explicit history-sharing confirmation and an optional linked-schedule move. Preserve Today due/ready predicates and their intersection.
+- Show deletion impact, explicit child handling, parent-aware restoration and a running-schedule guard. Mark unresolved lifecycle and schedule-sharing policies as review proposals.
+- Isolate modal background focus/scroll and restore focus to a visible control after desktop/mobile transitions.
+- Record R-01–R-14, Q-01–Q-15, observed CRUD/cancel/error/empty states, limitations and desktop/mobile screenshots in docs/design-evidence/purpose-spaces-crud.md.
+- Validation: npm run check and npm run build; browser flows at 1365px, 400px and 320px, persistence/reload, original Today counts and final empty browser error logs. Real multi-account collaboration, server conflicts and physical mobile devices remain unverified.
+
 ## 0.16.0 — 2026-11-08
 - Extend the existing prototype with personal and purpose-space navigation, project entry, and task affiliation links; retain task cards, calendar, categories and existing feature entry points.
 - Replace the native space select with an anchored desktop panel and a mobile bottom sheet, with selection feedback, keyboard dismissal, focus restoration, touch targets and safe-area spacing.
