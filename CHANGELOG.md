@@ -1,5 +1,12 @@
 # Change history
 
+## Workflow — 2026-11-08
+- Record the user's requirement to make requested design changes in this repository and retain evidence, rather than leaving completed work only in chat previews.
+- Require coherent commits and pushes, CHANGELOG entries, topic-specific UI validation evidence, and remote verification with reviewable links.
+- Keep confirmed decisions, proposals and unresolved policies distinct; use isolated working copies and branches.
+- Align the remote-write account rule with the user-designated main account, GoGradually.
+- Validation: documentation-only change; reviewed the workflow and account rules. No UI source or generated preview changed, so desktop/mobile UI checks and application builds were not run for this change.
+
 ## 0.15.1 — 2026-11-03
 - Restyle the schedule control bar as a workspace card: theme-aware surface, subtle border and shadow, muted text and soft blue accents.
 - Replace multicolour circular controls with neutral rounded buttons; align schedule state icons with the same palette. Preserve all schedule actions and responsive navigation clearance.
