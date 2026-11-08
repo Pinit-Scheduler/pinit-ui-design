@@ -1,5 +1,13 @@
 # Change history
 
+## 0.16.0 — 2026-11-08
+- Extend the existing prototype with personal and purpose-space navigation, project entry, and task affiliation links; retain task cards, calendar, categories and existing feature entry points.
+- Replace the native space select with an anchored desktop panel and a mobile bottom sheet, with selection feedback, keyboard dismissal, focus restoration, touch targets and safe-area spacing.
+- Keep Today global across spaces and preserve its existing due-today and ready-task sections. Do not treat their intersection as a defect or change the existing task conditions.
+- Add project completion/reopening as example view metadata without automatically completing its tasks.
+- Record user decisions, design rationale, knowledge-base verification, actual checks and desktop/mobile screenshots in docs/design-evidence/purpose-spaces.md.
+- Validation: npm run check and npm run build passed; checked space selection, project entry and completion, the existing task form, 320px mobile sheet bounds, focus/scroll restoration, task-map/statistics/calendar entry points and empty browser error logs.
+
 ## Workflow — 2026-11-08
 - Record the user's requirement to make requested design changes in this repository and retain evidence, rather than leaving completed work only in chat previews.
 - Require coherent commits and pushes, CHANGELOG entries, topic-specific UI validation evidence, and remote verification with reviewable links.
