@@ -277,6 +277,11 @@ h2,h3,.panel-head h2,.dialog-head h2,.dialog-fixed-v11 .dialog-head h2,.sequence
 .purpose-empty p{margin:10px 0 18px;font-size:12px;line-height:1.8}
 @media(max-width:760px){.purpose-manager-row:has(.space-switcher-avatar){flex-wrap:nowrap}.purpose-manager-row:has(.space-switcher-avatar) .purpose-manager-main{flex-basis:auto}.purpose-empty .btn{min-height:44px}}
 
+@media(max-width:760px){
+  .purpose-manager-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  .purpose-manager-tabs .btn{padding:9px 5px;font-size:12px;white-space:nowrap;min-height:44px}
+}
+
 </style>
 </head>
 <body>

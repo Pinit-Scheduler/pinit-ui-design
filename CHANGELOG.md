@@ -1,5 +1,9 @@
 # Change history
 
+## 0.17.1 — 2026-11-08
+- Keep the three management tabs on one row at 320px with equal-width columns and 44px touch targets; retain the desktop layout.
+- Recheck 320px/400px layouts, fixed action visibility and screenshots; npm run check and npm run build pass.
+
 ## 0.17.0 — 2026-11-08
 - Connect space/purpose/project create, read, edit, delete and restore flows within the existing prototype, with contextual defaults and first-task empty states.
 - Add example invitations, acceptance/decline/cancellation, member removal with task reassignment, leaving and last-member guidance. No emails or real account permissions are changed.
