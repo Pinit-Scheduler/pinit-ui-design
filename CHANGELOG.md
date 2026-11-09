@@ -1,5 +1,8 @@
 # Change history
 
+## Follow-up decisions — 2026-11-09
+- Record eight user decisions from the per-page review in docs/design-evidence/spaces-hub.md: a fixed mobile space button up to 899px, projects inside the space sheet, unavailable reasons outside the hub, a single conflict notice that keeps my input, a form affiliation summary with immediate move impact, no active invite list, categories replaced by projects, and automatic space marks in the FE. Documentation only; not drawn yet.
+
 ## 0.20.0 — 2026-11-09
 - Make the 통계 menu "my statistics": the same numbers whichever space is selected, counting schedules I actually ran (or that are mine and not yet run) and tasks I am assigned, with a "스페이스별 내 완료 시간" breakdown by space and project. The breadcrumb reads 모든 스페이스.
 - Add "이번 주 팀 기록" to the hub for spaces with two or more members: completed schedule count and time, per-day bars, time by project and time by the person who actually ran each schedule. Bars stay neutral grey; blue remains for actions.
