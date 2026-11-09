@@ -1,5 +1,9 @@
 # Change history
 
+## Summary API decisions — 2026-11-09
+- Record the user's answers in spaces-summary-api.md: future recurrence occurrences are excluded like the task list default, missed occurrences count as open, suspended schedules count as running, and the space list summary gets its own route.
+- Record from backend code that leaving or removal unassigns the member's tasks, schedules and series, so the summary counts them as unassigned and the client must also refetch on membership changes. Note that the prototype's hand-off-before-leaving flow differs from the backend. Documentation only.
+
 ## Summary API specification — 2026-11-09
 - Add docs/design-evidence/spaces-summary-api.md: a proposed backend contract for the hub's numbers (two read-only routes, disjoint per-state counts, nearest due dates, membership checks, refetch on existing `changed` events), grounded in pinit-monolith a806512d. Paths, fields and definitions are proposals for backend review, not confirmed policy.
 - Link it from backend-domain-boundary.md and spaces-hub.md. Documentation only; no runtime code.
