@@ -1,5 +1,12 @@
 # Change history
 
+## 0.19.0 — 2026-11-09
+- Scope the schedule and statistics screens to the selected space (and project), and show that scope in the breadcrumb.
+- In a team space, add a "내 일정 | 팀 전체" switch to the schedule panel. It defaults to my schedules, resets on space change, tells how many teammate schedules are hidden that day, and names each schedule's assignee in the team view. A linked schedule follows its task's assignee. Today keeps showing only my schedules across spaces.
+- Recompute statistics from the selected space's tasks and schedules and state the scope above them ("핀잇 개선 참여자 3명 전체의 기록이에요."). The summarizing rules are unchanged.
+- Why: the user decided team schedules default to "mine" with a team toggle and team statistics keep the all-member total with the scope stated.
+- Scoping swaps the global arrays only while a screen renders and guards save so the full lists are always stored. Example schedules 9101–9104 were added. Validation: npm run check and npm run build; browser checks at 1365×900 and 390×844 with an empty error log (docs/design-evidence/spaces-hub.md).
+
 ## Summary API decisions — 2026-11-09
 - Record the user's answers in spaces-summary-api.md: future recurrence occurrences are excluded like the task list default, missed occurrences count as open, suspended schedules count as running, and the space list summary gets its own route.
 - Record from backend code that leaving or removal unassigns the member's tasks, schedules and series, so the summary counts them as unassigned and the client must also refetch on membership changes. Note that the prototype's hand-off-before-leaving flow differs from the backend. Documentation only.

@@ -273,7 +273,11 @@ renderPurposeChromeV16 = function () {
   const state = purposeSpaceStateV16, space = purposeSpacesV16[state.space], project = space.projects[state.project];
   const crumb = document.querySelector('.breadcrumb .home-crumb');
   [workspaceV16, mobileSpacePickerV16].forEach(trigger => trigger.querySelector('.space-switcher-avatar')?.style.setProperty('--mark', space.mark || 'transparent'));
-  crumb.innerHTML = currentView === 'tasks' ? hubMarkV18(state.space) + esc(space.name) + (project ? ' › ' + esc(project.name) : '') : '모든 스페이스';
+  crumb.innerHTML = ['tasks', 'schedules', 'statistics'].includes(currentView) ? hubMarkV18(state.space) + esc(space.name) + (project ? ' › ' + esc(project.name) : '') : '모든 스페이스';
+  if (hubLastSpaceV18 !== state.space) { hubLastSpaceV18 = state.space; hubScheduleScopeV18 = 'mine'; }
+  if (currentView === 'schedules') { renderWeek(); renderTimeline(); }
+  if (currentView === 'statistics' && !hubStatsRenderingV18) { hubStatsRenderingV18 = true; try { renderStats(); } finally { hubStatsRenderingV18 = false; } }
+  hubStatsScopeV18();
   projectsNavV16.querySelectorAll('.purpose-create-link').forEach(button => { if (!button.querySelector('svg')) button.remove(); });
   document.querySelectorAll('.purpose-manage-action').forEach(element => element.remove());
   if (currentView === 'spaces') document.getElementById('pageTitle').textContent = '스페이스';
@@ -312,7 +316,100 @@ updateAffiliationPurposeV17 = function (rebuildProjects = true) {
   if (!assignee.querySelector('[value="none"]')) assignee.insertAdjacentHTML('beforeend', '<option value="none">담당자 미정</option>');
   if (wanted === 'none') assignee.value = 'none';
 };
+// 0.19: 일정과 통계가 선택한 스페이스 범위를 따른다. 팀 스페이스의 일정은 내 일정이 기본이고 팀 전체를 켤 수 있다.
+let hubScheduleScopeV18 = 'mine', hubLastSpaceV18 = purposeSpaceStateV16.space, hubAllSchedulesV18 = null;
+function hubScheduleSeedV18() {
+  [
+    [9101, '빈 목록 문구 검토', '11:00', 30, 103, 'QUICK_TASK'],
+    [9102, '원형 크기 조정', '14:00', 60, 102, 'DEEP_WORK'],
+    [9103, '작업 카드 위계 정리', '15:00', 60, 2, 'DEEP_WORK'],
+    [9104, '첫 작업 안내 초안 작성', '16:30', 45, 104, 'DEEP_WORK']
+  ].forEach(([id, title, time, duration, taskId, type]) => {
+    if (!scheduled.some(item => item.id === id)) scheduled.push({ id, title, date: '2026-10-28', time, duration, type, state: 'NOT_STARTED', taskId, description: '스페이스 범위 시안의 예시 일정이에요.' });
+  });
+  purposeCrudV17.hubScheduleSeedV18 = true;
+  save(); persistPurposeCrudV17();
+}
+function hubScheduleAssigneeV18(item) { return item.taskId ? hubAssigneeV18(item.taskId) : 'me'; }
+function hubScheduleInScopeV18(item) {
+  const at = scheduleSpacePurposeV17(item), state = purposeSpaceStateV16;
+  return at.space === state.space && (!state.project || at.project === state.project);
+}
+function hubScheduleVisibleV18(item) {
+  if ((purposeCrudV17.leftSpaces || []).includes(scheduleSpacePurposeV17(item).space)) return false;
+  if (currentView === 'today') return hubScheduleAssigneeV18(item) === 'me';
+  if (currentView === 'statistics') return hubScheduleInScopeV18(item);
+  if (currentView !== 'schedules') return true;
+  if (!hubScheduleInScopeV18(item)) return false;
+  return !sharedPurposeV17(purposeSpaceStateV16.space) || hubScheduleScopeV18 === 'team' || hubScheduleAssigneeV18(item) === 'me';
+}
+let hubAllTasksV18 = null, hubStatsRenderingV18 = false;
+function hubWithScopedSchedulesV18(render) {
+  hubAllSchedulesV18 = scheduled;
+  scheduled = scheduled.filter(hubScheduleVisibleV18);
+  if (currentView === 'statistics') { hubAllTasksV18 = tasks; tasks = tasks.filter(task => taskInPurposeScopeV16(task)); }
+  try { render(); } finally {
+    scheduled = hubAllSchedulesV18; hubAllSchedulesV18 = null;
+    if (hubAllTasksV18) { tasks = hubAllTasksV18; hubAllTasksV18 = null; }
+  }
+}
+const saveBeforeHubV18 = save;
+save = function () {
+  if (!hubAllSchedulesV18 && !hubAllTasksV18) return saveBeforeHubV18();
+  const viewSchedules = scheduled, viewTasks = tasks;
+  if (hubAllSchedulesV18) scheduled = hubAllSchedulesV18;
+  if (hubAllTasksV18) tasks = hubAllTasksV18;
+  try { return saveBeforeHubV18(); } finally { scheduled = viewSchedules; tasks = viewTasks; }
+};
+function hubScheduleToggleV18() {
+  const head = document.getElementById('week')?.closest('.panel')?.querySelector('.panel-head');
+  if (!head) return;
+  let group = document.getElementById('hubScheduleScopeV18');
+  if (currentView !== 'schedules' || !sharedPurposeV17(purposeSpaceStateV16.space)) { group?.remove(); return; }
+  if (!group) {
+    head.insertAdjacentHTML('beforeend', '<div id="hubScheduleScopeV18" class="hub-scope-toggle" role="group" aria-label="일정 보기 범위"></div>');
+    group = document.getElementById('hubScheduleScopeV18');
+  }
+  group.innerHTML = [['mine', '내 일정'], ['team', '팀 전체']].map(([value, label]) => '<button type="button" aria-pressed="' + (hubScheduleScopeV18 === value) + '" onclick="hubSetScheduleScopeV18(\'' + value + '\')">' + label + '</button>').join('');
+}
+function hubSetScheduleScopeV18(value) {
+  hubScheduleScopeV18 = value;
+  renderWeek(); renderTimeline();
+  document.querySelector('#hubScheduleScopeV18 [aria-pressed="true"]')?.focus();
+}
+function hubHiddenTeamNoteV18() {
+  document.getElementById('hubHiddenNoteV18')?.remove();
+  if (currentView !== 'schedules' || hubScheduleScopeV18 !== 'mine' || !sharedPurposeV17(purposeSpaceStateV16.space)) return;
+  const hidden = scheduled.filter(item => item.date === selectedDateV2() && hubScheduleInScopeV18(item) && hubScheduleAssigneeV18(item) !== 'me').length;
+  if (hidden) document.getElementById('timeline').insertAdjacentHTML('beforebegin', '<div id="hubHiddenNoteV18" class="hub-hidden-note"><span>이 날 팀원 일정 ' + hidden + '개는 숨겨져 있어요.</span><button type="button" class="text-btn" onclick="hubSetScheduleScopeV18(\'team\')">팀 전체 보기</button></div>');
+}
+const timelineBeforeHubV18 = renderTimeline;
+renderTimeline = function () { hubWithScopedSchedulesV18(timelineBeforeHubV18); hubHiddenTeamNoteV18(); hubScheduleToggleV18(); };
+const weekBeforeHubV18 = renderWeek;
+renderWeek = function () { hubWithScopedSchedulesV18(weekBeforeHubV18); };
+const scheduleCardBeforeHubV18 = scheduleHTMLV2;
+scheduleHTMLV2 = function (item) {
+  const html = scheduleCardBeforeHubV18(item);
+  if (currentView !== 'schedules' || hubScheduleScopeV18 !== 'team' || !sharedPurposeV17(purposeSpaceStateV16.space)) return html;
+  const id = hubScheduleAssigneeV18(item), member = membersPurposeV17(purposeSpaceStateV16.space).find(person => person.id === id);
+  const label = id === 'none' ? '담당자 미정' : id === 'me' ? '나' : member ? member.name : '참여자 아님';
+  return html.replace('<div class="schedule-caption">', '<div class="schedule-caption"><span class="hub-schedule-who' + (id === 'none' ? ' is-unassigned' : id === 'me' ? ' is-me' : '') + '">' + esc(label) + '</span>');
+};
+function hubStatsScopeV18() {
+  const panel = document.getElementById('alternatePanel');
+  panel?.querySelector('.hub-stats-scope')?.remove();
+  if (currentView !== 'statistics' || !panel) return;
+  const id = purposeSpaceStateV16.space, space = purposeSpacesV16[id], project = space.projects[purposeSpaceStateV16.project];
+  const members = membersPurposeV17(id).length, name = space.name + (project ? ' › ' + project.name : '');
+  const who = id !== 'personal' && members > 1 ? ' 참여자 ' + members + '명 전체의 기록이에요.' : '의 기록이에요.';
+  panel.insertAdjacentHTML('afterbegin', '<p class="hub-stats-scope">' + hubMarkV18(id) + '<span><strong>' + esc(name) + '</strong>' + who + '</span></p>');
+  document.getElementById('pageSubtitle').textContent = '선택한 스페이스의 기록을 기존 집계 기준으로 돌아보세요.';
+}
+const statsBeforeHubV18 = renderStats;
+renderStats = function () { hubWithScopedSchedulesV18(statsBeforeHubV18); hubStatsScopeV18(); };
+
+if (!purposeCrudV17.hubScheduleSeedV18) hubScheduleSeedV18();
 const resetBeforeHubV18 = resetDemo;
-resetDemo = function () { hubMobileDetailV18 = false; resetBeforeHubV18(); hubSeedV18(); hubNormalizeV18(); renderPurposeChromeV16(); renderTasks(); };
+resetDemo = function () { hubMobileDetailV18 = false; hubScheduleScopeV18 = 'mine'; resetBeforeHubV18(); hubSeedV18(); hubScheduleSeedV18(); hubNormalizeV18(); renderPurposeChromeV16(); renderTasks(); renderWeek(); renderTimeline(); };
 
 renderPurposeChromeV16();

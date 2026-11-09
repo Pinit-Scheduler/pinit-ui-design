@@ -102,6 +102,19 @@
 
 .hub-rail-item:focus-visible,.hub-project-main:focus-visible,.hub-menu summary:focus-visible,.hub-loose:focus-visible,.hub-back:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 
+/* 0.19 schedules and statistics scope */
+.hub-scope-toggle{display:inline-flex;gap:2px;padding:3px;border-radius:9px;background:#eef1f6;margin-left:auto}
+.hub-scope-toggle button{font-size:12px;padding:6px 12px;border-radius:7px;color:var(--muted);white-space:nowrap}
+.hub-scope-toggle button[aria-pressed="true"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 3px #203b6514}
+.hub-scope-toggle button:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+.hub-schedule-who{font-weight:600;color:var(--ink)}
+.hub-schedule-who.is-me{color:var(--blue)}
+.hub-schedule-who.is-unassigned{color:#8a4f2c;font-weight:500}
+.hub-hidden-note{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 23px 0;padding:9px 12px;border-radius:9px;background:#f4f6fa;font-size:12px;color:var(--muted)}
+.hub-hidden-note .text-btn{font-size:12px;color:var(--blue);padding:0}
+.hub-stats-scope{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin:0 0 14px;font-size:13px;color:var(--muted)}
+.hub-stats-scope strong{color:var(--ink);font-weight:600;margin-right:2px}
+
 @media(min-width:1600px){
   .hub-overview{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(320px,1fr);column-gap:40px}
   .hub-back,.hub-identity,.hub-purpose,.hub-settings{grid-column:1/-1}
@@ -139,5 +152,9 @@
   .hub-settings-row .text-btn{min-height:44px}
   .hub-assign li{grid-template-columns:1fr auto}
   .hub-assign li div{grid-column:1/-1}
+  .panel-head:has(#hubScheduleScopeV18){flex-wrap:wrap;row-gap:10px}
+  .hub-scope-toggle{order:10;flex:1 0 100%;margin-left:0}
+  .hub-scope-toggle button{flex:1;min-height:40px;font-size:14px}
+  .hub-hidden-note{margin:12px 16px 0;font-size:13px}
 }
 @media(prefers-reduced-motion:reduce){.hub-rail-item,.hub-menu summary{transition:none}}
