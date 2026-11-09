@@ -1,5 +1,9 @@
 # Change history
 
+## Summary API specification — 2026-11-09
+- Add docs/design-evidence/spaces-summary-api.md: a proposed backend contract for the hub's numbers (two read-only routes, disjoint per-state counts, nearest due dates, membership checks, refetch on existing `changed` events), grounded in pinit-monolith a806512d. Paths, fields and definitions are proposals for backend review, not confirmed policy.
+- Link it from backend-domain-boundary.md and spaces-hub.md. Documentation only; no runtime code.
+
 ## Decisions — 2026-11-09
 - Record four user decisions in docs/design-evidence/spaces-hub.md: hub counts come from a backend summary (the domain owns open/running definitions), team-space schedules default to my own with a team toggle, team-space statistics keep the all-member total with the scope stated on screen, and tasks created from 오늘 default to the personal space.
 - Documentation only. The schedule toggle and statistics scope label are not drawn yet because this prototype's schedule and statistics screens do not use space scope.
