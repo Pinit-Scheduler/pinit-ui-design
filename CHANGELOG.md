@@ -1,5 +1,9 @@
 # Change history
 
+## Decisions — 2026-11-09
+- Record four user decisions in docs/design-evidence/spaces-hub.md: hub counts come from a backend summary (the domain owns open/running definitions), team-space schedules default to my own with a team toggle, team-space statistics keep the all-member total with the scope stated on screen, and tasks created from 오늘 default to the personal space.
+- Documentation only. The schedule toggle and statistics scope label are not drawn yet because this prototype's schedule and statistics screens do not use space scope.
+
 ## 0.18.0 — 2026-11-09
 - Add a "스페이스" hub after 오늘 in the sidebar. It replaces the space management modal: a list of every space with member count and open-task count, and for the selected space its purpose as the one large type element, project rows with one dot per task (done, running, open, unassigned), counts and nearest deadline, per-member open work, an unassigned block with an assign dialog, and space settings.
 - Why: a per-page review found no place to read team and project status, management limited to one space at a time, scattered entry points and invisible roles. The user approved turning management into an overview and lifting the earlier "no new dashboard" constraint.
