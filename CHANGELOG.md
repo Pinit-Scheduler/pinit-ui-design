@@ -1,5 +1,15 @@
 # Change history
 
+## 0.22.0 — 2026-11-10
+- Add a motion layer as motion.css and motion.js, appended last in the build. Tokens: --motion-ease cubic-bezier(0.2,0,0,1), --motion-ease-exit cubic-bezier(0.4,0,1,1), --motion-fast 120ms, --motion-base 180ms, --motion-enter 240ms, --motion-exit 160ms, --motion-distance 8px. Only translate/scale, opacity, colour and stroke move; no bounce or loops.
+- Screen changes: nav clicks run in a View Transition that fades the old content and raises the new one while the sidebar, top bar and bottom nav stay still; programmatic navigation gets the same rise without delaying the call; scroll resets on a real screen change.
+- No replay on re-render: innerHTML renders are diffed by key (task/schedule id, then action, then title). Kept rows stay put (FLIP if they moved, colours carried from the old node), only new keys enter, removed keys leave as 160ms inert ghosts.
+- Completion: the box fills with the accent, the check draws as a pen stroke, a strike line draws left to right and the row settles into the muted completed colour; reopening reverses in 120ms. Schedule state changes tween their colours, completion settles the state icon, and the player slides in on start and out on complete or cancel.
+- Dialogs fade their backdrop and raise the panel, and play an exit before removal; swapping dialogs does not re-flash the backdrop. The space sheet slides up on mobile and down on close, including Esc. Toasts enter and leave. Counts tick and count to their new value.
+- Reduced motion: opacity only at 120ms; no movement, stroke, strike draw, counting or FLIP. Features, data, copy and order are unchanged.
+- Why: the user reported flicker in the production FE on screen changes and after create/complete, and asked for generous, usability-safe motion everywhere, especially on completion. docs/design-evidence/motion.md is the spec the FE follows with the same tokens.
+- Validation: npm run check and npm run build; browser checks at 1365×900 and 390×844 (screen changes, complete/reopen, dialogs, dialog swap, schedule start/suspend/cancel, space sheet) with an empty console error log. The browser ran with reduced motion and a hidden pane, so the full-motion path was checked through document.getAnimations() on a copy with the media queries switched; frame-by-frame appearance was not seen.
+
 ## 0.21.1 — 2026-11-09
 - Align the example permissions with the backend (pinit-monolith 5bae2b24 SpaceAccess.actions): members of 주말 러닝 모임 may move and reassign tasks; only delete and restore stay disabled with the administrator reason. 0.21.0 had also disabled moving in the form, which the backend never does for an active participant.
 - Validation: npm run check and npm run build; browser check of task 108 (delete off with reason, affiliation selects on) with an empty error log.

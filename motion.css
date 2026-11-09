@@ -1,0 +1,108 @@
+/* Motion layer (0.22.0). Steady, precise, quietly satisfying.
+   Only transform (translate/scale), opacity, colour and stroke are animated. No bounce, no loops.
+   Classes are added by motion.js to the element that changed; nothing here animates on a base selector,
+   so a list re-rendered through innerHTML never replays an entrance. Spec: docs/design-evidence/motion.md */
+:root{
+  --motion-ease:cubic-bezier(0.2,0,0,1);
+  --motion-ease-exit:cubic-bezier(0.4,0,1,1);
+  --motion-fast:120ms;
+  --motion-base:180ms;
+  --motion-enter:240ms;
+  --motion-exit:160ms;
+  --motion-distance:8px;
+}
+
+/* Shared keyframes. `translate` composes with existing `transform` (the toast and player centre themselves with it). */
+@keyframes m-rise{from{opacity:0;translate:0 var(--motion-distance)}to{opacity:1;translate:0 0}}
+@keyframes m-fall{from{opacity:0;translate:0 calc(var(--motion-distance) * -.5)}to{opacity:1;translate:0 0}}
+@keyframes m-leave{from{opacity:1;translate:0 0}to{opacity:0;translate:0 calc(var(--motion-distance) * -.5)}}
+@keyframes m-sink{from{opacity:1;translate:0 0}to{opacity:0;translate:0 var(--motion-distance)}}
+@keyframes m-fade-in{from{opacity:0}to{opacity:1}}
+@keyframes m-fade-out{from{opacity:1}to{opacity:0}}
+@keyframes m-soften{from{opacity:.6}to{opacity:1}}
+@keyframes m-sheet-in{from{translate:0 100%}to{translate:0 0}}
+@keyframes m-sheet-out{from{translate:0 0}to{translate:0 100%}}
+@keyframes m-player-in{from{opacity:0;translate:0 calc(var(--motion-distance) * 2)}to{opacity:1;translate:0 0}}
+@keyframes m-player-out{from{opacity:1;translate:0 0}to{opacity:0;translate:0 calc(var(--motion-distance) * 2)}}
+@keyframes m-tick{from{opacity:.35;translate:0 calc(var(--motion-distance) * -.375)}to{opacity:1;translate:0 0}}
+
+/* Ghost layer: rows, dialogs, toasts and the player that already left the data stay one exit long. */
+#motionGhostsV22{position:absolute;top:0;left:0;width:0;height:0;overflow:visible;pointer-events:none}
+.m-ghost{pointer-events:none!important;user-select:none}
+.m-ghost.m-exit{animation:m-leave var(--motion-exit) var(--motion-ease-exit) both}
+
+/* 1. Screen change. View Transitions animate only the content area; sidebar, top bar and nav stay still. */
+.content{view-transition-name:m-content}
+::view-transition-old(root),::view-transition-new(root){animation:none}
+::view-transition-group(m-content){animation-duration:0s}
+::view-transition-old(m-content){animation:m-fade-out var(--motion-exit) var(--motion-ease-exit) both}
+::view-transition-new(m-content){animation:m-rise var(--motion-enter) var(--motion-ease) both}
+.m-screen-in{animation:m-rise var(--motion-enter) var(--motion-ease) both}
+
+/* 2. Keyed presence. Only rows whose key is new enter; kept rows move with a FLIP translate. */
+.m-enter{animation:m-rise var(--motion-enter) var(--motion-ease) both;animation-delay:var(--m-delay,0ms)}
+.m-replace{animation:m-soften var(--motion-fast) var(--motion-ease) both}
+.m-flip{transition:translate var(--motion-base) var(--motion-ease)}
+
+/* 3. Signature completion: the box fills with the accent, the check draws like a pen stroke,
+      the strike line draws left to right, then the row settles into the muted completed colour. */
+.task .check{transition:background-color var(--motion-fast) var(--motion-ease),border-color var(--motion-fast) var(--motion-ease)}
+.task-title.m-strike{position:relative}
+.task.completed .task-title.m-strike{text-decoration:none}
+.task-title.m-strike::after{content:'';position:absolute;left:0;right:0;top:calc(50% - .5px);height:max(1px,.07em);background:currentColor;transform-origin:left center;scale:1 1;pointer-events:none}
+.task:not(.completed) .task-title.m-strike::after{display:none}
+@keyframes m-check-fill{0%{background-color:transparent;border-color:#cfd8e5}30%,62%{background-color:var(--blue);border-color:var(--blue)}}
+@keyframes m-check-empty{from{background-color:#8c9bb5;border-color:#8c9bb5}to{background-color:transparent}}
+@keyframes m-draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes m-strike-draw{from{scale:0 1}to{scale:1 1}}
+@keyframes m-strike-undraw{from{scale:1 1}to{scale:0 1}}
+@keyframes m-settle{from{color:var(--ink)}}
+@keyframes m-unsettle{from{color:#9aa4b3}}
+@keyframes m-decoration-in{from{text-decoration-color:transparent}}
+.m-done-in .check{animation:m-check-fill calc(var(--motion-enter) * 2) var(--motion-ease) both}
+.m-done-in .check svg path{stroke-dasharray:1;stroke-dashoffset:1;animation:m-draw var(--motion-base) var(--motion-ease) 60ms both}
+.m-done-in .task-title.m-strike::after{animation:m-strike-draw var(--motion-enter) var(--motion-ease) 120ms both}
+.m-done-in .task-title:not(.m-strike){animation:m-decoration-in var(--motion-enter) var(--motion-ease) 120ms both,m-settle var(--motion-enter) var(--motion-ease) 220ms both}
+.m-done-in .task-title.m-strike{animation:m-settle var(--motion-enter) var(--motion-ease) 220ms both}
+.m-reopen .check{animation:m-check-empty var(--motion-fast) var(--motion-ease) both}
+.m-reopen .task-title{animation:m-unsettle var(--motion-fast) var(--motion-ease) both}
+.task.m-reopen:not(.completed) .task-title.m-strike::after{display:block;animation:m-strike-undraw var(--motion-fast) var(--motion-ease-exit) both;transform-origin:right center}
+
+/* Same family for schedules: the state icon and row colour tween (motion.js carries the old colours),
+   and a completed state symbol settles in. */
+.m-state-in .schedule-state-icon,.m-state-in [data-state]{animation:m-soften var(--motion-base) var(--motion-ease) both}
+.m-state-done .schedule-state-icon{animation:m-tick var(--motion-base) var(--motion-ease) both}
+#playerV2 .player.m-enter{animation-name:m-player-in}
+.player.m-ghost.m-exit{animation:m-player-out var(--motion-exit) var(--motion-ease-exit) both}
+.schedule-player-state.m-tick{animation:m-tick var(--motion-base) var(--motion-ease) both}
+
+/* 4. Dialogs, sheets and toasts. Backdrop fades, the panel rises; exit plays before the node leaves. */
+.overlay.m-open{animation:m-fade-in var(--motion-base) var(--motion-ease) both}
+.overlay.m-open>.dialog{animation:m-rise var(--motion-enter) var(--motion-ease) both}
+.overlay.m-ghost{animation:m-fade-out var(--motion-exit) var(--motion-ease-exit) both}
+.overlay.m-ghost>.dialog{animation:m-sink var(--motion-exit) var(--motion-ease-exit) both}
+.space-switcher-dialog[open]{animation:m-fall var(--motion-base) var(--motion-ease) both}
+.space-switcher-dialog[open]::backdrop{animation:m-fade-in var(--motion-base) var(--motion-ease) both}
+.space-switcher-dialog.m-closing{animation:m-fade-out var(--motion-exit) var(--motion-ease-exit) both}
+.space-switcher-dialog.m-closing::backdrop{animation:m-fade-out var(--motion-exit) var(--motion-ease-exit) both}
+@media(max-width:760px){
+  .space-switcher-dialog[open]{animation:m-sheet-in var(--motion-enter) var(--motion-ease) both}
+  .space-switcher-dialog.m-closing{animation:m-sheet-out var(--motion-exit) var(--motion-ease-exit) both}
+}
+.toast.m-enter{animation:m-fall var(--motion-base) var(--motion-ease) both}
+.toast.m-ghost{animation:m-leave var(--motion-exit) var(--motion-ease-exit) both}
+
+/* 5. Count and progress numbers tick to their new value. */
+.m-tick{animation:m-tick var(--motion-base) var(--motion-ease) both}
+#taskCount,#sideCount,.today-section-title span,#progressPercent{font-variant-numeric:tabular-nums}
+
+/* Reduced motion: opacity only, shorter. Overrides the global `animation:none!important` from base.html
+   because these selectors are more specific. Movement, stroke and strike draws are skipped. */
+@media(prefers-reduced-motion:reduce){
+  .m-enter,.m-screen-in,.toast.m-enter,#playerV2 .player.m-enter,.overlay.m-open,.space-switcher-dialog[open]{animation:m-fade-in var(--motion-fast) linear both!important}
+  .m-ghost.m-exit,.m-ghost,.overlay.m-ghost,.toast.m-ghost,.player.m-ghost.m-exit,.space-switcher-dialog.m-closing{animation:m-fade-out var(--motion-fast) linear both!important}
+  .overlay.m-open>.dialog,.overlay.m-ghost>.dialog,.m-tick,.m-flip{animation:none!important;transition:none!important;translate:none!important}
+  ::view-transition-old(m-content){animation:m-fade-out var(--motion-fast) linear both!important}
+  ::view-transition-new(m-content){animation:m-fade-in var(--motion-fast) linear both!important}
+  .m-done-in .check svg path{stroke-dashoffset:0!important}
+}
