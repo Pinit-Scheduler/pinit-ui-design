@@ -2340,7 +2340,8 @@ renderPurposeChromeV16();
 const followupNarrowV21 = () => matchMedia('(max-width:899px)').matches;
 
 // Example per-item actions (stand-in for allowedActions on each task in 주말 러닝 모임, where 나 is not an administrator).
-const followupItemActionsV21 = { 107: { move: false, delete: false }, 108: { move: false, delete: false }, 109: { move: false, delete: false }, 110: { restore: false } };
+// They mirror pinit-monolith 5bae2b24 SpaceAccess.actions: participants may edit, assign and move; delete and restore are for administrators.
+const followupItemActionsV21 = { 107: { delete: false }, 108: { delete: false }, 109: { delete: false }, 110: { restore: false } };
 function followupItemActionsForV21(id) { return followupItemActionsV21[id] || {}; }
 function followupReasonV21(spaceId) { return hubActionsV18(spaceId).reason || '이 스페이스에서는 할 수 없어요.'; }
 function followupReasonHTMLV21(spaceId) { return '<p class="hub-reason unavailable-reason">' + esc(followupReasonV21(spaceId)) + '</p>'; }

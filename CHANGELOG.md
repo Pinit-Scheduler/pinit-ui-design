@@ -1,5 +1,9 @@
 # Change history
 
+## 0.21.1 — 2026-11-09
+- Align the example permissions with the backend (pinit-monolith 5bae2b24 SpaceAccess.actions): members of 주말 러닝 모임 may move and reassign tasks; only delete and restore stay disabled with the administrator reason. 0.21.0 had also disabled moving in the form, which the backend never does for an active participant.
+- Validation: npm run check and npm run build; browser check of task 108 (delete off with reason, affiliation selects on) with an empty error log.
+
 ## 0.21.0 — 2026-11-09
 - Draw the seven follow-up decisions. Up to 899px the sidebar hides (as in pinit-fe) and the space button stays pinned in the top bar. The narrow space sheet opens the selected space's projects right below it.
 - Outside the hub, unavailable actions turn grey with a one-line reason (task detail delete, form space/project, trash restore), using static example records for 주말 러닝 모임.
