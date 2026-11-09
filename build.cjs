@@ -1,8 +1,8 @@
 const fs=require('fs');
 const vm=require('vm');
 let html=fs.readFileSync('base.html','utf8');
-const styles=['refinement.css','sequence-v3.css','categories-v3.css','task-map.css','task-map-sequence.css','task-matrix.css','dialog-refinement.css','feedback-stats.css','ui-consistency.css','workspace-polish.css','purpose-spaces.css','purpose-spaces-crud.css'];
-const scripts=['refinement.js','sequence-v3.js','categories-v3.js','task-map-core.js','task-map.js','task-map-sequence.js','task-matrix-core.js','task-matrix.js','dialog-refinement.js','stats-core.js','feedback-stats.js','category-unification.js','map-overview-core.js','map-overview.js','purpose-spaces.js','purpose-spaces-crud.js'];
+const styles=['refinement.css','sequence-v3.css','categories-v3.css','task-map.css','task-map-sequence.css','task-matrix.css','dialog-refinement.css','feedback-stats.css','ui-consistency.css','workspace-polish.css','purpose-spaces.css','purpose-spaces-crud.css','purpose-spaces-hub.css'];
+const scripts=['refinement.js','sequence-v3.js','categories-v3.js','task-map-core.js','task-map.js','task-map-sequence.js','task-matrix-core.js','task-matrix.js','dialog-refinement.js','stats-core.js','feedback-stats.js','category-unification.js','map-overview-core.js','map-overview.js','purpose-spaces.js','purpose-spaces-crud.js','purpose-spaces-hub.js'];
 const css=styles.map(file=>fs.readFileSync(file,'utf8')).join('\n');
 let js=scripts.map(file=>fs.readFileSync(file,'utf8')).join('\n');
 js=js.replace("document.getElementById(\\'dependencyFieldsV2\\')?.classList.toggle(\\'hidden\\',this.checked)",'setSequenceRepeatV3(this.checked)');

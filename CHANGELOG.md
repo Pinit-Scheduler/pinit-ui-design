@@ -1,5 +1,13 @@
 # Change history
 
+## 0.18.0 — 2026-11-09
+- Add a "스페이스" hub after 오늘 in the sidebar. It replaces the space management modal: a list of every space with member count and open-task count, and for the selected space its purpose as the one large type element, project rows with one dot per task (done, running, open, unassigned), counts and nearest deadline, per-member open work, an unassigned block with an assign dialog, and space settings.
+- Why: a per-page review found no place to read team and project status, management limited to one space at a time, scattered entry points and invisible roles. The user approved turning management into an overview and lifting the earlier "no new dashboard" constraint.
+- Rename the user-facing term 공간 to 스페이스 across the space modules, keeping "저장 공간" (storage) unchanged.
+- Show the actual scope in the breadcrumb (space › project on 작업, 모든 스페이스 elsewhere). Space switching keeps the current screen. Remove the duplicate "공간 관리"/"프로젝트 관리" shortcuts in favour of the hub.
+- Align example data with confirmed policy: administrator roles, an explicit unassigned choice, link invitations with a one-hour notice, and a space where 나 is not an administrator. Capabilities and reasons are static example records, not permission logic.
+- Validation: npm run check and npm run build; browser checks at 1365×900 and 390×844 (list, detail, assign, non-administrator reasons, switcher, today scope, task breadcrumb) with an empty error log. Evidence and screenshots in docs/design-evidence/spaces-hub.md.
+
 ## Policy specifications — 2026-11-08
 - Record confirmed assignee/default, shared editing/moving, administrator deletion/restoration, real-time and optimistic-lock UX, team-space domain, project classification, signup nickname and one-hour Redis invitation requirements.
 - Specify invitation exceptions, UX messages, backend acceptance criteria and strict backend-domain ownership. Keep unresolved details explicit.

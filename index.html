@@ -282,6 +282,150 @@ h2,h3,.panel-head h2,.dialog-head h2,.dialog-fixed-v11 .dialog-head h2,.sequence
   .purpose-manager-tabs .btn{padding:9px 5px;font-size:12px;white-space:nowrap;min-height:44px}
 }
 
+/* Spaces hub 0.18.0. Blue is reserved for actions and selection; a space's own mark color carries identity. */
+.content.spaces-only #alternatePanel{display:block;padding:0;border:0;background:none;box-shadow:none;overflow:visible}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.hub-mark{display:inline-block;flex:none;width:10px;height:10px;border-radius:3px;background:var(--mark)}
+.hub-mark.is-personal{background:none;box-shadow:inset 0 0 0 1.5px #9aa3b2}
+.breadcrumb .home-crumb .hub-mark{margin-right:6px;vertical-align:1px}
+.space-switcher-avatar{box-shadow:inset 0 -3px 0 var(--mark,transparent)}
+
+.spaces-hub{display:grid;grid-template-columns:232px minmax(0,1fr);gap:28px;align-items:start}
+.hub-rail{position:sticky;top:20px}
+.hub-rail ul{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.hub-rail-item{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:11px;padding:11px 12px;border-radius:9px;text-align:left;color:var(--ink)}
+.hub-rail-item:hover{background:#eef1f6}
+.hub-rail-item[aria-current="true"]{background:var(--blue-soft)}
+.hub-rail-item[aria-current="true"] strong{color:var(--blue)}
+.hub-rail-copy{display:grid;gap:2px;min-width:0}
+.hub-rail-copy strong{font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hub-rail-copy small{font-size:12px;color:var(--muted)}
+.hub-rail-count{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink)}
+.hub-rail-note{font-size:11px;color:var(--muted);margin:12px 12px 0;line-height:1.6}
+
+.hub-overview{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:30px 34px 26px;min-width:0}
+.hub-back{display:none}
+.hub-identity{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px}
+.hub-identity h2{font-size:15px;font-weight:600;letter-spacing:-.2px}
+.hub-members{font-size:13px;color:var(--muted);margin:0}
+.hub-members small,.hub-person-name small{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:1px 5px;margin-left:5px;vertical-align:1px}
+.hub-sep{margin-right:2px}
+
+.hub-purpose{margin:18px 0 30px;display:grid;gap:10px;justify-items:start}
+.hub-purpose-text{font-size:32px;font-weight:400;line-height:1.35;letter-spacing:-.03em;color:var(--ink);max-width:22em;margin:0;word-break:keep-all}
+.hub-purpose .text-btn{font-size:12px;padding:0}
+.hub-purpose.is-empty p{font-size:16px;color:var(--muted);max-width:32em;margin:0;line-height:1.7}
+
+.hub-section{border-top:1px solid var(--line);padding:20px 0 6px}
+.hub-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+.content.spaces-only #alternatePanel .hub-section h3{font-size:15px;font-weight:600;letter-spacing:-.2px;margin:0}
+.hub-section-head .text-btn{font-size:12px;color:var(--blue)}
+.hub-section-head .text-btn svg{width:14px;height:14px}
+
+.hub-projects,.hub-people{list-style:none;margin:0;padding:0}
+.hub-project,.hub-person,.hub-unassigned{display:grid;grid-template-columns:minmax(0,1fr) minmax(90px,auto) 46px 74px 32px;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid #f0f2f6}
+.hub-project:last-child,.hub-person:last-child{border-bottom:0}
+.hub-project-main{display:grid;gap:3px;text-align:left;min-width:0;padding:2px 0}
+.hub-project-main strong{font-size:14px;font-weight:500;color:var(--ink)}
+.hub-project-main:hover strong{color:var(--blue)}
+.hub-project-main small{font-size:12px;color:var(--muted);line-height:1.5}
+.hub-project.is-completed .hub-project-main strong{color:var(--muted)}
+.hub-count{font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink);text-align:right;white-space:nowrap}
+.hub-due{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.hub-empty-inline{font-size:12px;color:#a3abb8}
+
+.hub-dots{display:flex;flex-wrap:wrap;gap:4px;max-width:150px;justify-content:flex-end}
+.hub-dots i{width:9px;height:9px;border-radius:50%;background:#d5dbe5}
+.hub-dots i.is-done{background:var(--ink)}
+.hub-dots i.is-running{background:linear-gradient(90deg,var(--ink) 50%,#d5dbe5 50%)}
+.hub-dots i.is-todo{background:#d5dbe5}
+.hub-dots i.is-unassigned{background:none;box-shadow:inset 0 0 0 1.5px #b56a3d}
+.hub-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;width:150px;background:#eef1f5}
+.hub-bar i.is-done{background:var(--ink)}.hub-bar i.is-running{background:#7c8597}.hub-bar i.is-todo{background:#d5dbe5}.hub-bar i.is-unassigned{background:#e7c3ad}
+
+.hub-menu{position:relative;justify-self:end}
+.hub-menu summary{list-style:none;width:30px;height:30px;display:grid;place-items:center;border-radius:7px;cursor:pointer;color:var(--muted)}
+.hub-menu summary::-webkit-details-marker{display:none}
+.hub-menu summary:hover,.hub-menu[open] summary{background:#eef1f6;color:var(--ink)}
+.hub-menu summary svg{width:16px;height:16px;fill:currentColor;stroke:none}
+.hub-menu-list{position:absolute;right:0;top:34px;z-index:20;min-width:168px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:6px;display:grid}
+.hub-menu-list button{text-align:left;font-size:13px;padding:9px 10px;border-radius:7px;color:var(--ink)}
+.hub-menu-list button:hover:not(:disabled){background:#f2f4f8}
+.hub-menu-list button.danger{color:#c4475f}
+.hub-menu-list button:disabled{color:#b3bac6;cursor:not-allowed}
+.hub-menu-list .hub-reason{padding:2px 10px 6px;margin:0}
+.hub-menu-placeholder{width:30px}
+
+.hub-closed{margin-top:6px}
+.hub-closed summary{font-size:12px;color:var(--muted);cursor:pointer;padding:8px 0}
+.hub-loose{font-size:12px;color:var(--muted);padding:10px 0 4px;text-decoration:underline;text-underline-offset:3px}
+.hub-loose:hover{color:var(--ink)}
+
+.hub-person-name{font-size:14px;font-weight:500;color:var(--ink)}
+.hub-unassigned{grid-template-columns:minmax(0,1fr) minmax(90px,auto) 46px auto;border-bottom:0;margin-top:4px;padding:14px 16px;border-radius:10px;background:#fbf6f2}
+.hub-unassigned .hub-person-name{color:#8a4f2c}
+.hub-unassigned .btn{height:34px;font-size:12px}
+.hub-unassigned p{grid-column:1/-1;margin:-4px 0 0;font-size:12px;color:#8a6a55}
+.hub-quiet,.hub-empty{font-size:13px;color:var(--muted);margin:8px 0 10px;line-height:1.7}
+.hub-reason{font-size:12px;color:#8a6a55;margin:2px 0 10px}
+
+.hub-settings h3{margin-bottom:8px}
+.hub-settings-row{display:flex;flex-wrap:wrap;gap:4px 18px}
+.hub-settings-row .text-btn{font-size:13px;padding:6px 0;color:var(--ink)}
+.hub-settings-row .text-btn.danger{color:#c4475f}
+.hub-settings-row .text-btn:disabled{color:#b3bac6;cursor:not-allowed}
+
+.hub-assign{list-style:none;margin:14px 0 0;padding:0;display:grid}
+.hub-assign li{display:grid;grid-template-columns:minmax(0,1fr) 120px auto;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.hub-assign li div{display:grid;gap:3px}
+.hub-assign strong{font-size:14px;font-weight:500}
+.hub-assign small{font-size:12px;color:var(--muted)}
+.hub-assign select{width:100%;height:36px}
+.hub-invite-link{display:flex;gap:10px;align-items:center;margin:14px 0;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:#f8f9fc}
+.hub-invite-link code{flex:1;font-size:13px;overflow-wrap:anywhere}
+
+.hub-rail-item:focus-visible,.hub-project-main:focus-visible,.hub-menu summary:focus-visible,.hub-loose:focus-visible,.hub-back:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+@media(min-width:1600px){
+  .hub-overview{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(320px,1fr);column-gap:40px}
+  .hub-back,.hub-identity,.hub-purpose,.hub-settings{grid-column:1/-1}
+  #hubPeopleV18{grid-column:2}
+}
+@media(max-width:1180px){
+  .spaces-hub{grid-template-columns:200px minmax(0,1fr);gap:20px}
+  .hub-overview{padding:26px 24px 20px}
+  .hub-project,.hub-person{grid-template-columns:minmax(0,1fr) auto 42px 32px}
+  .hub-project .hub-due,.hub-person .hub-due{grid-column:1;grid-row:2;margin-top:-6px}
+}
+@media(max-width:760px){
+  .spaces-hub{grid-template-columns:1fr;gap:0}
+  .spaces-hub.is-detail .hub-rail{display:none}
+  .spaces-hub:not(.is-detail) .hub-overview{display:none}
+  .hub-rail{position:static}
+  .hub-rail-item{min-height:60px;padding:12px 14px;background:var(--surface);border:1px solid var(--line);margin-bottom:6px}
+  .hub-rail-item[aria-current="true"]{background:var(--surface)}
+  .hub-rail-item[aria-current="true"] strong{color:var(--ink)}
+  .hub-overview{padding:18px 16px 14px;border-radius:12px}
+  .hub-back{display:flex;align-items:center;gap:4px;font-size:13px;color:var(--muted);min-height:44px;margin:-8px 0 6px -4px;padding:0 4px}
+  .hub-back svg{width:16px;height:16px}
+  .hub-purpose-text{font-size:24px}
+  .hub-project,.hub-person{grid-template-columns:minmax(0,1fr) auto 44px;gap:8px 10px}
+  .hub-project .hub-dots,.hub-project .hub-bar,.hub-project .hub-empty-inline{grid-column:1;grid-row:2;justify-content:flex-start}
+  .hub-project .hub-due,.hub-person .hub-due{grid-column:2;grid-row:1;margin:0}
+  .hub-project .hub-count{grid-column:2;grid-row:2}
+  .hub-project .hub-menu,.hub-person .hub-menu,.hub-person .hub-menu-placeholder{grid-column:3;grid-row:1/3}
+  .hub-person .hub-count{grid-column:2;grid-row:2}
+  .hub-menu summary{width:44px;height:44px}
+  .hub-unassigned{grid-template-columns:minmax(0,1fr) auto;padding:12px}
+  .hub-unassigned .hub-dots{grid-column:1;grid-row:2;justify-content:flex-start}
+  .hub-unassigned .hub-count{grid-column:2;grid-row:1}
+  .hub-unassigned .btn{grid-column:2;grid-row:2;min-height:44px}
+  .hub-settings-row .text-btn{min-height:44px}
+  .hub-assign li{grid-template-columns:1fr auto}
+  .hub-assign li div{grid-column:1/-1}
+}
+@media(prefers-reduced-motion:reduce){.hub-rail-item,.hub-menu summary{transition:none}}
+
 </style>
 </head>
 <body>
@@ -297,7 +441,7 @@ h2,h3,.panel-head h2,.dialog-head h2,.dialog-fixed-v11 .dialog-head h2,.sequence
  </nav>
  <div class="navlabel">나의 흐름</div>
  <nav class="nav" aria-label="추가 메뉴"><button data-nav="routines"><i data-icon="repeat"></i>루틴</button><button onclick="openGuide()"><i data-icon="help"></i>디자인 가이드</button></nav>
- <div class="bottom"><div class="side-note"><strong>할 일에서, 할 시간으로.</strong>작업을 하루의 빈 시간에 꽂고<br>눈앞의 한 가지에 집중하세요.</div><div class="profile"><div class="avatar">나</div><span>나의 공간<small>개인 워크스페이스</small></span><i data-icon="chevrondown"></i></div></div>
+ <div class="bottom"><div class="side-note"><strong>할 일에서, 할 시간으로.</strong>작업을 하루의 빈 시간에 꽂고<br>눈앞의 한 가지에 집중하세요.</div><div class="profile"><div class="avatar">나</div><span>나의 스페이스<small>개인 워크스페이스</small></span><i data-icon="chevrondown"></i></div></div>
 </aside>
 <main class="main">
  <header class="topbar"><div class="breadcrumb"><span class="home-crumb">나의 워크스페이스</span><span class="home-crumb" style="color:#c4cbd7">/</span><strong id="crumb">오늘</strong></div><div class="tools"><span class="demo">디자인 프리뷰</span><button class="search-trigger" onclick="openSearch()" aria-label="작업 검색 Ctrl K"><i data-icon="search"></i><span class="search-label">작업 검색</span><span class="key">Ctrl K</span></button><button class="icon-btn" aria-label="도움말" onclick="openGuide()"><i data-icon="help"></i></button></div></header>
@@ -467,7 +611,7 @@ resetDemo=function(){tasks=initial.map(t=>({...t,tags:[t.category],previous:t.id
 navigate=function(view){currentView=view;document.querySelectorAll('[data-nav]').forEach(b=>b.classList.toggle('active',b.dataset.nav===view));const names={today:'오늘',tasks:'작업',schedules:'일정',statistics:'통계',settings:'설정',routines:'생활 시간',recurrences:'반복 관리',trash:'휴지통'};document.getElementById('crumb').textContent=names[view]||'오늘';document.getElementById('pageTitle').textContent={today:'오늘 할당된 일',tasks:'작업 목록',schedules:'일정',statistics:'통계',settings:'설정',routines:'생활 시간',recurrences:'반복 관리',trash:'휴지통'}[view];document.getElementById('pageSubtitle').textContent={today:'오늘 일정과 마감 작업, 바로 시작할 수 있는 작업을 확인하세요.',tasks:'필요한 작업을 찾고, 중요한 일부터 차근차근.',schedules:'주간·월간 달력에서 일정을 확인하고 진행 상태를 관리하세요.',statistics:'기존 기록과 집계 기준으로 나의 흐름을 돌아보세요.',settings:'알림·기준 정보·계정과 연결 설정을 관리하세요.',routines:'자동 계획에서 비워 둘 수면·식사·생활 시간을 정하세요.',recurrences:'반복 작업과 일정의 규칙을 관리하세요.',trash:'삭제한 작업과 일정을 다시 복원하세요.'}[view];const normal=['today','tasks','schedules'].includes(view),content=document.getElementById('content');content.className='content '+(view==='tasks'?'task-only':view==='schedules'?'schedule-only':['settings'].includes(view)?'settings-only':'');document.getElementById('primaryLayout').classList.toggle('hidden',!normal);document.getElementById('alternatePanel').classList.toggle('hidden',normal);document.querySelector('#taskPanel .filters').classList.add('hidden');document.querySelector('#taskPanel .panel-head .text-btn').classList.add('hidden');document.getElementById('taskToolbarV2').classList.toggle('hidden',view!=='tasks');document.querySelector('.head-actions').innerHTML=(['today','schedules','tasks'].includes(view)?'<button class="btn secondary" onclick="openPlanner()">'+icon('sparkles')+'하루 계획</button>':'<button class="btn secondary" onclick="navigate(\'settings\')">'+icon('left')+'설정</button>')+'<button class="btn primary" onclick="openAdd(\''+(view==='schedules'?'schedule':'task')+'\')">'+icon('plus')+(view==='schedules'?'일정 추가':'작업 추가')+'</button>';document.getElementById('taskHeading').innerHTML=(view==='today'?'오늘의 작업':'작업 목록')+' <span class="number" id="taskCount"></span>';if(view==='tasks')refreshToolbarV2();if(view==='settings')renderSettingsV2();if(view==='statistics')renderStats();if(view==='routines')renderRoutines();if(view==='recurrences')renderRecurrencesV2();if(view==='trash')renderTrashV2();renderTasks();renderTimeline();window.scrollTo(0,0);};
 /* Replace only the prototype navigation and presentation; product source is untouched. */
 document.querySelector('.navlabel').textContent='관리';document.querySelectorAll('.sidebar nav')[1].innerHTML='<button data-nav="routines" onclick="navigate(\'routines\')">'+icon('clock')+'생활 시간</button><button data-nav="recurrences" onclick="navigate(\'recurrences\')">'+icon('repeat')+'반복 관리</button><button data-nav="trash" onclick="navigate(\'trash\')">'+icon('checksquare')+'휴지통</button><button data-nav="settings" onclick="navigate(\'settings\')">'+icon('help')+'설정</button>';
-document.querySelector('.profile').innerHTML='<div class="avatar">나</div><span>나의 공간<small>개인 워크스페이스</small></span><button class="icon-btn" aria-label="디자인 안내" onclick="openGuide()">'+icon('help')+'</button>';
+document.querySelector('.profile').innerHTML='<div class="avatar">나</div><span>나의 스페이스<small>개인 워크스페이스</small></span><button class="icon-btn" aria-label="디자인 안내" onclick="openGuide()">'+icon('help')+'</button>';
 document.querySelector('.topbar .tools>.icon-btn').outerHTML='<button class="icon-btn" aria-label="설정" onclick="navigate(\'settings\')">'+'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 3-1 3-3 1-2 3 2 2-1 3 3 2 2 3h4l1-3 3-1 2-3-2-2 1-3-3-2-2-3Z"/><circle cx="11" cy="12" r="3"/></svg></button>';
 let toolbarV2=document.createElement('div');toolbarV2.id='taskToolbarV2';toolbarV2.className='feature-toolbar';document.querySelector('#taskPanel .panel-head').after(toolbarV2);
 document.querySelector('#timelinePanel .panel-head').innerHTML='<h2>오늘의 일정</h2><div class="calendar-tools"><div class="calendar-switch" role="group" aria-label="달력 보기"><button class="active" data-calendar-mode="week" onclick="calendarModeV2(\'week\')">주</button><button data-calendar-mode="month" onclick="calendarModeV2(\'month\')">월</button></div><button class="text-btn" onclick="renderTimeline();toast(\'데모 일정을 새로고침했어요.\')">새로고침</button></div>';
@@ -893,12 +1037,12 @@ addEventListener('resize',sizeMapViewportV14);
 
 /* Extends the existing UI and example data; no production API or membership is added. */
 const purposeSpacesV16 = {
-  personal: { name: '나의 공간', note: '본인 전용', purpose: '', projects: {} },
-  career: { name: '커리어 성장', note: '혼자 사용하는 목적 공간', purpose: '내 경험과 강점을 설득력 있게 전달하기', projects: {
+  personal: { name: '나의 스페이스', note: '본인 전용', purpose: '', projects: {} },
+  career: { name: '커리어 성장', note: '혼자 사용하는 목적 스페이스', purpose: '내 경험과 강점을 설득력 있게 전달하기', projects: {
     interview: { name: '면접 준비', outcome: '경험과 강점이 분명한 발표 자료와 답변 완성' },
     portfolio: { name: '포트폴리오 정리', outcome: '문제 해결 과정과 결과가 드러나는 포트폴리오 완성' }
   } },
-  pinit: { name: '핀잇 개선', note: '혼자 사용하는 목적 공간', purpose: '해야 할 일을 더 편하게 계획하고 실행하기', projects: {
+  pinit: { name: '핀잇 개선', note: '혼자 사용하는 목적 스페이스', purpose: '해야 할 일을 더 편하게 계획하고 실행하기', projects: {
     cards: { name: '작업 카드 개선', outcome: '작업을 읽고 다음 행동을 고르기 쉬운 화면 만들기' }
   } }
 };
@@ -961,10 +1105,10 @@ function togglePurposeProjectV16() {
 }
 const workspaceV16 = document.querySelector('.workspace');
 workspaceV16.classList.add('space-workspace');
-workspaceV16.innerHTML = '<button type="button" id="purposeSpacePickerV16" class="space-switcher-trigger" aria-haspopup="dialog" aria-expanded="false" aria-controls="purposeSpaceDialogV16"><span class="space-switcher-avatar" aria-hidden="true">나</span><span class="space-switcher-copy"><strong class="space-trigger-title">나의 공간</strong><small class="space-trigger-note">본인 전용</small></span><span class="space-switcher-chevron" aria-hidden="true">⌄</span></button>';
+workspaceV16.innerHTML = '<button type="button" id="purposeSpacePickerV16" class="space-switcher-trigger" aria-haspopup="dialog" aria-expanded="false" aria-controls="purposeSpaceDialogV16"><span class="space-switcher-avatar" aria-hidden="true">나</span><span class="space-switcher-copy"><strong class="space-trigger-title">나의 스페이스</strong><small class="space-trigger-note">본인 전용</small></span><span class="space-switcher-chevron" aria-hidden="true">⌄</span></button>';
 const projectsNavV16 = document.createElement('nav');
 projectsNavV16.className = 'space-project-nav';
-projectsNavV16.setAttribute('aria-label', '선택한 공간의 프로젝트');
+projectsNavV16.setAttribute('aria-label', '선택한 스페이스의 프로젝트');
 document.querySelector('.sidebar nav').after(projectsNavV16);
 const mobileSpacePickerV16 = document.createElement('button');
 mobileSpacePickerV16.type = 'button';
@@ -972,7 +1116,7 @@ mobileSpacePickerV16.className = 'space-mobile-picker';
 mobileSpacePickerV16.setAttribute('aria-haspopup', 'dialog');
 mobileSpacePickerV16.setAttribute('aria-expanded', 'false');
 mobileSpacePickerV16.setAttribute('aria-controls', 'purposeSpaceDialogV16');
-mobileSpacePickerV16.innerHTML = '<span class="space-switcher-avatar" aria-hidden="true">나</span><span class="space-trigger-title">나의 공간</span><span aria-hidden="true">⌄</span>';
+mobileSpacePickerV16.innerHTML = '<span class="space-switcher-avatar" aria-hidden="true">나</span><span class="space-trigger-title">나의 스페이스</span><span aria-hidden="true">⌄</span>';
 document.querySelector('.breadcrumb').prepend(mobileSpacePickerV16);
 const spaceDialogV16 = document.createElement('dialog');
 spaceDialogV16.id = 'purposeSpaceDialogV16';
@@ -989,7 +1133,7 @@ function positionSpaceDialogV16() {
 }
 function renderSpaceDialogV16() {
   const row = (id, space) => '<button type="button" class="space-switcher-option" data-space="' + id + '" aria-pressed="' + (id === purposeSpaceStateV16.space) + '"><span class="space-switcher-avatar" aria-hidden="true">' + esc(space.name.slice(0, 1)) + '</span><span class="space-switcher-copy"><strong>' + esc(space.name) + '</strong><small>' + esc(space.note) + '</small></span><span class="space-switcher-check" aria-hidden="true">' + (id === purposeSpaceStateV16.space ? icon('check') : '') + '</span></button>';
-  spaceDialogV16.innerHTML = '<div class="space-sheet-handle" aria-hidden="true"></div><div class="space-switcher-heading"><h2 id="spaceDialogTitleV16">공간 전환</h2><button type="button" class="icon-btn" aria-label="공간 선택 닫기" data-close-space>' + icon('close') + '</button></div><div class="space-switcher-options"><p class="space-switcher-group-label">내 공간</p>' + row('personal', purposeSpacesV16.personal) + '<p class="space-switcher-group-label">목적 공간</p>' + Object.entries(purposeSpacesV16).filter(([id]) => id !== 'personal').map(([id, space]) => row(id, space)).join('') + '</div><p class="space-switcher-footer">오늘에는 모든 공간의 내 할 일이 모입니다.</p>';
+  spaceDialogV16.innerHTML = '<div class="space-sheet-handle" aria-hidden="true"></div><div class="space-switcher-heading"><h2 id="spaceDialogTitleV16">스페이스 전환</h2><button type="button" class="icon-btn" aria-label="스페이스 선택 닫기" data-close-space>' + icon('close') + '</button></div><div class="space-switcher-options"><p class="space-switcher-group-label">내 스페이스</p>' + row('personal', purposeSpacesV16.personal) + '<p class="space-switcher-group-label">목적 스페이스</p>' + Object.entries(purposeSpacesV16).filter(([id]) => id !== 'personal').map(([id, space]) => row(id, space)).join('') + '</div><p class="space-switcher-footer">오늘에는 모든 스페이스의 내 할 일이 모입니다.</p>';
 }
 function openSpaceDialogV16(trigger) {
   spaceDialogTriggerV16 = trigger;
@@ -1036,18 +1180,18 @@ function renderPurposeChromeV16() {
   });
   workspaceV16.querySelector('.space-trigger-note').textContent = space.note;
   projectsNavV16.classList.toggle('hidden', !Object.keys(space.projects).length);
-  projectsNavV16.innerHTML = '<p>프로젝트</p><button type="button" class="' + (!state.project && currentView === 'tasks' ? 'active' : '') + '" onclick="openPurposeProjectV16(\'' + state.space + '\',\'\')">공간의 모든 작업</button>' + Object.entries(space.projects).map(([id, item]) => '<button type="button" class="' + (state.project === id && currentView === 'tasks' ? 'active' : '') + '" onclick="openPurposeProjectV16(\'' + state.space + '\',\'' + id + '\')"><span>' + esc(item.name) + '</span>' + (state.completed[state.space + '/' + id] ? '<small>완료</small>' : '') + '</button>').join('');
+  projectsNavV16.innerHTML = '<p>프로젝트</p><button type="button" class="' + (!state.project && currentView === 'tasks' ? 'active' : '') + '" onclick="openPurposeProjectV16(\'' + state.space + '\',\'\')">스페이스의 모든 작업</button>' + Object.entries(space.projects).map(([id, item]) => '<button type="button" class="' + (state.project === id && currentView === 'tasks' ? 'active' : '') + '" onclick="openPurposeProjectV16(\'' + state.space + '\',\'' + id + '\')"><span>' + esc(item.name) + '</span>' + (state.completed[state.space + '/' + id] ? '<small>완료</small>' : '') + '</button>').join('');
   mobileProjectsV16.classList.toggle('hidden', currentView !== 'tasks' || !Object.keys(space.projects).length);
   mobileProjectsV16.innerHTML = [['', { name: '전체 작업' }], ...Object.entries(space.projects)].map(([id, item]) => '<button type="button" aria-pressed="' + (state.project === id) + '" onclick="openPurposeProjectV16(\'' + state.space + '\',\'' + id + '\')">' + esc(item.name) + '</button>').join('');
-  document.querySelector('.breadcrumb .home-crumb').textContent = currentView === 'tasks' ? space.name : '모든 공간';
+  document.querySelector('.breadcrumb .home-crumb').textContent = currentView === 'tasks' ? space.name : '모든 스페이스';
   purposeContextV16.classList.toggle('hidden', currentView !== 'tasks' || !space.purpose);
   if (currentView === 'today') {
     document.getElementById('pageTitle').textContent = '오늘 할당된 일';
-    document.getElementById('pageSubtitle').textContent = '모든 공간에서 오늘 마감인 작업과 바로 시작할 수 있는 작업을 확인하세요.';
-    document.getElementById('taskHeading').innerHTML = '오늘의 작업 <span class="number" id="taskCount"></span><span class="space-scope-note">모든 공간</span>';
+    document.getElementById('pageSubtitle').textContent = '모든 스페이스에서 오늘 마감인 작업과 바로 시작할 수 있는 작업을 확인하세요.';
+    document.getElementById('taskHeading').innerHTML = '오늘의 작업 <span class="number" id="taskCount"></span><span class="space-scope-note">모든 스페이스</span>';
   } else if (currentView === 'tasks') {
     document.getElementById('pageTitle').textContent = project ? project.name : space.name + '의 작업';
-    document.getElementById('pageSubtitle').textContent = project ? project.outcome : '선택한 공간의 작업을 확인하세요. 오늘에서는 모든 공간의 내 작업을 볼 수 있어요.';
+    document.getElementById('pageSubtitle').textContent = project ? project.outcome : '선택한 스페이스의 작업을 확인하세요. 오늘에서는 모든 스페이스의 내 작업을 볼 수 있어요.';
     purposeContextV16.innerHTML = '<details><summary>목적 · ' + esc(space.purpose) + '</summary>' + (project ? '<p>목적에 기여할 성과 · ' + esc(project.outcome) + '</p>' : '<p>하나의 목적 아래 프로젝트를 나누어 관리해요.</p>') + '</details>' + (project ? '<button type="button" class="btn" onclick="togglePurposeProjectV16()">' + (state.completed[state.space + '/' + state.project] ? '프로젝트 재개' : '프로젝트 완료') + '</button>' : '');
   }
   document.title = '핀잇 · ' + document.getElementById('pageTitle').textContent;
@@ -1081,7 +1225,7 @@ openDetail = function (id) {
   const task = tasks.find(item => item.id === id);
   if (!task) return;
   const assignment = taskSpaceV16(task), space = purposeSpacesV16[assignment.space], project = space.projects[assignment.project];
-  document.querySelector('.dialog .detail-grid')?.insertAdjacentHTML('beforeend', '<div><small>공간</small><strong>' + esc(space.name) + '</strong></div><div><small>프로젝트</small><strong>' + esc(project?.name || '없음') + '</strong></div>');
+  document.querySelector('.dialog .detail-grid')?.insertAdjacentHTML('beforeend', '<div><small>스페이스</small><strong>' + esc(space.name) + '</strong></div><div><small>프로젝트</small><strong>' + esc(project?.name || '없음') + '</strong></div>');
 };
 const taskFormBeforePurposeV16 = openTaskFormV2;
 openTaskFormV2 = function (id) {
@@ -1167,26 +1311,26 @@ function historyPurposeV17(kind, id) {
   return '<section class="detail-section"><h3>활동 기록</h3><ol class="purpose-history">' + records.map(r => '<li><strong>' + esc(r.action) + '</strong><small>' + esc(r.actor + ' · ' + r.at) + '</small></li>').join('') + '</ol></section>';
 }
 function openNewPurposeSpaceV17() {
-  formPurposeV17('목적 공간 만들기', '<p>혼자 시작하고, 필요할 때 함께할 사람을 초대할 수 있어요.</p>' + fieldPurposeV17('공간 이름', 'spaceNameV17', '', false, '예: 함께 만드는 서비스') + fieldPurposeV17('이 공간의 목적', 'spacePurposeV17', '', true, '이 공간에서 이루고 싶은 방향과 결과를 적어보세요.'), 'savePurposeSpaceV17()', '공간 만들기');
+  formPurposeV17('목적 스페이스 만들기', '<p>혼자 시작하고, 필요할 때 함께할 사람을 초대할 수 있어요.</p>' + fieldPurposeV17('스페이스 이름', 'spaceNameV17', '', false, '예: 함께 만드는 서비스') + fieldPurposeV17('이 스페이스의 목적', 'spacePurposeV17', '', true, '이 스페이스에서 이루고 싶은 방향과 결과를 적어보세요.'), 'savePurposeSpaceV17()', '스페이스 만들기');
 }
 function savePurposeSpaceV17(id) {
   const name = valuePurposeV17('spaceNameV17'), purpose = valuePurposeV17('spacePurposeV17');
-  if (!name) return errorPurposeV17('공간 이름을 입력하세요.');
-  if (Object.entries(purposeSpacesV16).some(([key, space]) => key !== id && space.name === name)) return errorPurposeV17('다른 공간과 구분할 수 있는 이름을 입력하세요.');
+  if (!name) return errorPurposeV17('스페이스 이름을 입력하세요.');
+  if (Object.entries(purposeSpacesV16).some(([key, space]) => key !== id && space.name === name)) return errorPurposeV17('다른 스페이스와 구분할 수 있는 이름을 입력하세요.');
   const before = snapshotPurposeV17(), spaceId = id || keyPurposeV17('space');
-  purposeSpacesV16[spaceId] = { ...purposeSpacesV16[spaceId], name, purpose, note: id === 'personal' ? '본인 전용' : '혼자 사용하는 목적 공간', projects: purposeSpacesV16[spaceId]?.projects || {}, members: membersPurposeV17(spaceId) };
+  purposeSpacesV16[spaceId] = { ...purposeSpacesV16[spaceId], name, purpose, note: id === 'personal' ? '본인 전용' : '혼자 사용하는 목적 스페이스', projects: purposeSpacesV16[spaceId]?.projects || {}, members: membersPurposeV17(spaceId) };
   purposeSpaceStateV16.space = spaceId; purposeSpaceStateV16.project = '';
   if (!commitPurposeV17(before)) return;
-  closeModal(); navigate('tasks'); refreshPurposeCrudV17(id ? '공간 정보를 수정했어요.' : '공간을 만들었어요.');
+  closeModal(); navigate('tasks'); refreshPurposeCrudV17(id ? '스페이스 정보를 수정했어요.' : '스페이스를 만들었어요.');
   openManagePurposeV17('purpose');
 }
 function openPurposeEditorV17(mode = 'edit') {
   const id = purposeSpaceStateV16.space, space = purposeSpacesV16[id];
   if (mode === 'clear') {
-    modal(modalHead('목적 내용 삭제') + '<p>목적 내용만 지웁니다. 공간과 프로젝트, 작업·일정은 남아 있어요.</p><div class="notice">함께 사용하는 공간에서는 참여자 모두가 바뀐 목적을 보게 돼요.</div><div class="dialog-actions"><button class="btn" onclick="openManagePurposeV17(\'purpose\')">취소</button><button class="btn danger" onclick="clearPurposeTextV17()">목적 내용 삭제</button></div>');
+    modal(modalHead('목적 내용 삭제') + '<p>목적 내용만 지웁니다. 스페이스와 프로젝트, 작업·일정은 남아 있어요.</p><div class="notice">함께 사용하는 스페이스에서는 참여자 모두가 바뀐 목적을 보게 돼요.</div><div class="dialog-actions"><button class="btn" onclick="openManagePurposeV17(\'purpose\')">취소</button><button class="btn danger" onclick="clearPurposeTextV17()">목적 내용 삭제</button></div>');
     return;
   }
-  formPurposeV17(space.purpose ? '목적 수정' : '목적 작성', fieldPurposeV17('이 공간의 목적', 'purposeTextV17', space.purpose, true, '이 공간에서 이루고 싶은 방향과 결과'), 'savePurposeTextV17()');
+  formPurposeV17(space.purpose ? '목적 수정' : '목적 작성', fieldPurposeV17('이 스페이스의 목적', 'purposeTextV17', space.purpose, true, '이 스페이스에서 이루고 싶은 방향과 결과'), 'savePurposeTextV17()');
 }
 function clearPurposeTextV17() {
   const before = snapshotPurposeV17(); purposeSpacesV16[purposeSpaceStateV16.space].purpose = '';
@@ -1206,7 +1350,7 @@ function openProjectEditorV17(projectId = '') {
 function saveProjectPurposeV17(projectId) {
   const space = purposeSpacesV16[purposeSpaceStateV16.space], name = valuePurposeV17('projectNameV17');
   if (!name) return errorPurposeV17('프로젝트 이름을 입력하세요.');
-  if (Object.entries(space.projects).some(([id, item]) => id !== projectId && item.name === name)) return errorPurposeV17('이 공간에 같은 이름의 프로젝트가 있어요.');
+  if (Object.entries(space.projects).some(([id, item]) => id !== projectId && item.name === name)) return errorPurposeV17('이 스페이스에 같은 이름의 프로젝트가 있어요.');
   const before = snapshotPurposeV17(), id = projectId || keyPurposeV17('project');
   space.projects[id] = { ...space.projects[id], name, outcome: valuePurposeV17('projectOutcomeV17') };
   purposeSpaceStateV16.project = id;
@@ -1217,29 +1361,29 @@ function openManagePurposeV17(tab = 'purpose') {
   const state = purposeSpaceStateV16, space = purposeSpacesV16[state.space], members = membersPurposeV17(state.space);
   const tabs = [['purpose', '목적·정보'], ['projects', '프로젝트'], ['people', '참여자']];
   let body = '<div class="purpose-manager-tabs">' + tabs.map(([id, name]) => '<button type="button" class="btn ' + (id === tab ? 'active' : '') + '" onclick="openManagePurposeV17(\'' + id + '\')">' + name + '</button>').join('') + '</div>';
-  if (tab === 'purpose') body += '<div class="purpose-info-heading"><div><h3>' + esc(space.name) + '</h3><p>' + (state.space === 'personal' ? '본인 전용 기본 공간' : sharedPurposeV17(state.space) ? members.length + '명이 함께 사용하는 공간' : '혼자 사용하는 목적 공간') + '</p></div><button class="text-btn" onclick="openSpaceInfoEditorV17()">이름 수정</button></div><section class="detail-section"><h3>목적</h3><p>' + esc(space.purpose || '아직 목적을 작성하지 않았어요. 목적 없이 바로 작업을 기록해도 괜찮아요.') + '</p><div class="purpose-inline-actions"><button class="btn" onclick="openPurposeEditorV17()">' + (space.purpose ? '목적 수정' : '목적 작성') + '</button>' + (space.purpose ? '<button class="text-btn danger" onclick="openPurposeEditorV17(\'clear\')">목적 내용 삭제</button>' : '') + '</div></section>' + (state.space !== 'personal' ? '<div class="purpose-danger-zone"><button class="text-btn" onclick="openLeavePurposeV17()">공간 나가기</button><button class="text-btn danger" onclick="openDeletePurposeV17(\'space\')">공간 삭제</button></div>' : '<p class="notice">나의 공간은 본인 전용이며 사람을 초대할 수 없어요.</p>');
+  if (tab === 'purpose') body += '<div class="purpose-info-heading"><div><h3>' + esc(space.name) + '</h3><p>' + (state.space === 'personal' ? '본인 전용 기본 스페이스' : sharedPurposeV17(state.space) ? members.length + '명이 함께 사용하는 스페이스' : '혼자 사용하는 목적 스페이스') + '</p></div><button class="text-btn" onclick="openSpaceInfoEditorV17()">이름 수정</button></div><section class="detail-section"><h3>목적</h3><p>' + esc(space.purpose || '아직 목적을 작성하지 않았어요. 목적 없이 바로 작업을 기록해도 괜찮아요.') + '</p><div class="purpose-inline-actions"><button class="btn" onclick="openPurposeEditorV17()">' + (space.purpose ? '목적 수정' : '목적 작성') + '</button>' + (space.purpose ? '<button class="text-btn danger" onclick="openPurposeEditorV17(\'clear\')">목적 내용 삭제</button>' : '') + '</div></section>' + (state.space !== 'personal' ? '<div class="purpose-danger-zone"><button class="text-btn" onclick="openLeavePurposeV17()">스페이스 나가기</button><button class="text-btn danger" onclick="openDeletePurposeV17(\'space\')">스페이스 삭제</button></div>' : '<p class="notice">나의 스페이스는 본인 전용이며 사람을 초대할 수 없어요.</p>');
   if (tab === 'projects') body += '<div class="purpose-info-heading"><p>목적에 기여할 프로젝트를 관리하세요.</p><button class="btn primary" onclick="openProjectEditorV17()">프로젝트 만들기</button></div>' + (Object.entries(space.projects).map(([id, item]) => '<article class="purpose-manager-row"><button class="purpose-manager-main" onclick="closeModal();openPurposeProjectV16(\'' + state.space + '\',\'' + id + '\')"><strong>' + esc(item.name) + '</strong><small>' + esc(item.outcome || '기여할 성과를 적어보세요.') + '</small></button><button class="text-btn" onclick="openProjectEditorV17(\'' + id + '\')">수정</button><button class="text-btn danger" onclick="openDeletePurposeV17(\'project\',\'' + id + '\')">삭제</button></article>').join('') || '<p class="empty">아직 프로젝트가 없어요. 첫 프로젝트를 만들어보세요.</p>');
   if (tab === 'people') body += peopleMarkupPurposeV17();
-  modal(modalHead('공간 관리') + body + '<div class="dialog-actions"><button class="btn" onclick="closeModal()">닫기</button></div>');
+  modal(modalHead('스페이스 관리') + body + '<div class="dialog-actions"><button class="btn" onclick="closeModal()">닫기</button></div>');
   document.querySelector('.dialog').classList.add('purpose-management-dialog');
 }
 function openSpaceInfoEditorV17() {
   const space = purposeSpacesV16[purposeSpaceStateV16.space];
-  formPurposeV17('공간 정보 수정', fieldPurposeV17('공간 이름', 'spaceNameV17', space.name) + fieldPurposeV17('목적', 'spacePurposeV17', space.purpose, true), 'savePurposeSpaceV17(\'' + purposeSpaceStateV16.space + '\')');
+  formPurposeV17('스페이스 정보 수정', fieldPurposeV17('스페이스 이름', 'spaceNameV17', space.name) + fieldPurposeV17('목적', 'spacePurposeV17', space.purpose, true), 'savePurposeSpaceV17(\'' + purposeSpaceStateV16.space + '\')');
 }
 function peopleMarkupPurposeV17() {
   const id = purposeSpaceStateV16.space;
-  if (id === 'personal') return '<p class="notice">나의 공간은 본인 전용입니다. 함께할 공간을 새로 만들면 사람을 초대할 수 있어요.</p><button class="btn primary" onclick="openNewPurposeSpaceV17()">목적 공간 만들기</button>';
+  if (id === 'personal') return '<p class="notice">나의 스페이스는 본인 전용입니다. 함께할 스페이스를 새로 만들면 사람을 초대할 수 있어요.</p><button class="btn primary" onclick="openNewPurposeSpaceV17()">목적 스페이스 만들기</button>';
   const members = membersPurposeV17(id), pending = purposeCrudV17.invitations.filter(invite => invite.space === id && invite.status === 'pending');
-  return '<div class="purpose-info-heading"><h3>참여자 ' + members.length + '명</h3><button class="btn primary" onclick="openInvitePurposeV17()">사람 초대</button></div>' + members.map(member => '<article class="purpose-manager-row"><span class="space-switcher-avatar" aria-hidden="true">' + esc(member.name.slice(0, 1)) + '</span><div class="purpose-manager-main"><strong>' + esc(member.name) + (member.id === 'me' ? ' · 나' : '') + '</strong><small>' + esc(member.email || '공간을 함께 관리할 수 있어요.') + '</small></div>' + (member.id !== 'me' ? '<button class="text-btn danger" onclick="openRemoveMemberPurposeV17(\'' + member.id + '\')">제외</button>' : '') + '</article>').join('') + (pending.length ? '<h3 class="purpose-section-title">초대 대기</h3>' + pending.map(invite => '<article class="purpose-manager-row"><div class="purpose-manager-main"><strong>' + esc(invite.email) + '</strong><small>아직 참여하지 않았어요.</small></div><button class="text-btn" onclick="openInvitationPurposeV17(\'' + invite.id + '\')">초대 화면 보기</button><button class="text-btn danger" onclick="cancelInvitationPurposeV17(\'' + invite.id + '\')">초대 취소</button></article>').join('') : '') + '<p class="notice">이 디자인 시안의 초대는 예시 상태로만 저장됩니다. 실제 메일을 보내지 않습니다.</p>';
+  return '<div class="purpose-info-heading"><h3>참여자 ' + members.length + '명</h3><button class="btn primary" onclick="openInvitePurposeV17()">사람 초대</button></div>' + members.map(member => '<article class="purpose-manager-row"><span class="space-switcher-avatar" aria-hidden="true">' + esc(member.name.slice(0, 1)) + '</span><div class="purpose-manager-main"><strong>' + esc(member.name) + (member.id === 'me' ? ' · 나' : '') + '</strong><small>' + esc(member.email || '스페이스를 함께 관리할 수 있어요.') + '</small></div>' + (member.id !== 'me' ? '<button class="text-btn danger" onclick="openRemoveMemberPurposeV17(\'' + member.id + '\')">제외</button>' : '') + '</article>').join('') + (pending.length ? '<h3 class="purpose-section-title">초대 대기</h3>' + pending.map(invite => '<article class="purpose-manager-row"><div class="purpose-manager-main"><strong>' + esc(invite.email) + '</strong><small>아직 참여하지 않았어요.</small></div><button class="text-btn" onclick="openInvitationPurposeV17(\'' + invite.id + '\')">초대 화면 보기</button><button class="text-btn danger" onclick="cancelInvitationPurposeV17(\'' + invite.id + '\')">초대 취소</button></article>').join('') : '') + '<p class="notice">이 디자인 시안의 초대는 예시 상태로만 저장됩니다. 실제 메일을 보내지 않습니다.</p>';
 }
 function openInvitePurposeV17() {
   if (purposeSpaceStateV16.space === 'personal') return openManagePurposeV17('people');
-  formPurposeV17('함께할 사람 초대', '<p>' + esc(purposeSpacesV16[purposeSpaceStateV16.space].name) + '의 목적과 프로젝트, 공유 작업을 함께 보고 수정할 수 있어요.</p>' + formFieldV2('이메일', '<input id="inviteEmailV17" type="email" required placeholder="name@example.com">') + fieldPurposeV17('표시 이름 · 선택', 'inviteNameV17', '', false, '예시 참여자의 이름') + '<p class="notice">공간에 있는 공유 항목의 과거 기록도 참여자에게 표시됩니다.</p>', 'saveInvitePurposeV17()', '초대 만들기');
+  formPurposeV17('함께할 사람 초대', '<p>' + esc(purposeSpacesV16[purposeSpaceStateV16.space].name) + '의 목적과 프로젝트, 공유 작업을 함께 보고 수정할 수 있어요.</p>' + formFieldV2('이메일', '<input id="inviteEmailV17" type="email" required placeholder="name@example.com">') + fieldPurposeV17('표시 이름 · 선택', 'inviteNameV17', '', false, '예시 참여자의 이름') + '<p class="notice">스페이스에 있는 공유 항목의 과거 기록도 참여자에게 표시됩니다.</p>', 'saveInvitePurposeV17()', '초대 만들기');
 }
 function saveInvitePurposeV17() {
   const space = purposeSpaceStateV16.space, email = valuePurposeV17('inviteEmailV17');
-  if (space === 'personal') return errorPurposeV17('기본 개인 공간에는 초대할 수 없어요.');
+  if (space === 'personal') return errorPurposeV17('기본 개인 스페이스에는 초대할 수 없어요.');
   if (!email || !email.includes('@')) return errorPurposeV17('초대할 이메일을 입력하세요.');
   if (membersPurposeV17(space).some(m => m.email?.toLowerCase() === email.toLowerCase()) || purposeCrudV17.invitations.some(i => i.space === space && i.email.toLowerCase() === email.toLowerCase() && i.status === 'pending')) return errorPurposeV17('이미 참여 중이거나 초대를 기다리는 이메일이에요.');
   const before = snapshotPurposeV17(), invitation = { id: keyPurposeV17('invite'), space, email, name: valuePurposeV17('inviteNameV17') || email.split('@')[0], status: 'pending' };
@@ -1250,7 +1394,7 @@ function saveInvitePurposeV17() {
 function openInvitationPurposeV17(id) {
   const invitation = purposeCrudV17.invitations.find(i => i.id === id), space = purposeSpacesV16[invitation?.space];
   if (!invitation || !space) return;
-  modal(modalHead('공간 초대') + '<div class="purpose-invitation"><span class="space-switcher-avatar" aria-hidden="true">' + esc(space.name.slice(0, 1)) + '</span><h3>' + esc(space.name) + '에 초대받았어요</h3><p>' + esc(space.purpose || '함께할 프로젝트와 작업을 확인하세요.') + '</p><small>' + esc(invitation.email) + '</small></div><p class="notice">참여하면 이 공간의 공유 내용과 이동 전 기록을 함께 보고 수정할 수 있어요. 지금은 초대받은 사용자의 예시 화면입니다.</p>' + (invitation.status === 'pending' ? '<div class="dialog-actions"><button class="btn" onclick="respondInvitationPurposeV17(\'' + id + '\',false)">참여하지 않기</button><button class="btn primary" onclick="respondInvitationPurposeV17(\'' + id + '\',true)">공간 참여</button></div>' : '<p class="notice">' + (invitation.status === 'accepted' ? '참여한 초대입니다.' : '종료된 초대입니다.') + '</p><div class="dialog-actions"><button class="btn" onclick="openManagePurposeV17(\'people\')">참여자 보기</button></div>'));
+  modal(modalHead('스페이스 초대') + '<div class="purpose-invitation"><span class="space-switcher-avatar" aria-hidden="true">' + esc(space.name.slice(0, 1)) + '</span><h3>' + esc(space.name) + '에 초대받았어요</h3><p>' + esc(space.purpose || '함께할 프로젝트와 작업을 확인하세요.') + '</p><small>' + esc(invitation.email) + '</small></div><p class="notice">참여하면 이 스페이스의 공유 내용과 이동 전 기록을 함께 보고 수정할 수 있어요. 지금은 초대받은 사용자의 예시 화면입니다.</p>' + (invitation.status === 'pending' ? '<div class="dialog-actions"><button class="btn" onclick="respondInvitationPurposeV17(\'' + id + '\',false)">참여하지 않기</button><button class="btn primary" onclick="respondInvitationPurposeV17(\'' + id + '\',true)">스페이스 참여</button></div>' : '<p class="notice">' + (invitation.status === 'accepted' ? '참여한 초대입니다.' : '종료된 초대입니다.') + '</p><div class="dialog-actions"><button class="btn" onclick="openManagePurposeV17(\'people\')">참여자 보기</button></div>'));
 }
 function respondInvitationPurposeV17(id, accepted) {
   const invitation = purposeCrudV17.invitations.find(i => i.id === id);
@@ -1260,11 +1404,11 @@ function respondInvitationPurposeV17(id, accepted) {
   if (accepted) {
     const space = purposeSpacesV16[invitation.space];
     space.members = [...membersPurposeV17(invitation.space), { id: keyPurposeV17('member'), name: invitation.name, email: invitation.email, role: 'member' }];
-    space.note = space.members.length + '명이 함께 사용하는 공간';
+    space.note = space.members.length + '명이 함께 사용하는 스페이스';
   }
   purposeSpaceStateV16.space = invitation.space;
   if (!commitPurposeV17(before)) return;
-  refreshPurposeCrudV17(accepted ? '공간에 참여했어요. 같은 공유 항목을 함께 관리합니다.' : '초대 참여를 거절했어요.');
+  refreshPurposeCrudV17(accepted ? '스페이스에 참여했어요. 같은 공유 항목을 함께 관리합니다.' : '초대 참여를 거절했어요.');
   openManagePurposeV17('people');
 }
 function cancelInvitationPurposeV17(id) {
@@ -1278,13 +1422,13 @@ function openRemoveMemberPurposeV17(memberId) {
   if (!member || memberId === 'me') return;
   const assigned = tasks.filter(t => taskSpaceV16(t).space === state.space && purposeCrudV17.assignees[t.id] === memberId);
   const others = membersPurposeV17(state.space).filter(m => m.id !== memberId);
-  formPurposeV17('참여자 제외', '<p class="notice">검토안 · 제외 권한과 담당 작업 처리 방식을 확인할 수 있습니다.</p><p><strong>' + esc(member.name) + '</strong>님은 이 공간의 공유 내용을 더 이상 볼 수 없어요.</p><p class="notice">담당 작업 ' + assigned.length + '개와 기존 활동 기록을 확인하세요. 과거 기록의 작성자 표시는 남깁니다.</p>' + (assigned.length ? formFieldV2('담당 작업을 넘길 사람', '<select id="reassignMemberV17">' + selectedOptionsV2(others.map(m => [m.id, m.name]), 'me') + '</select>') : ''), 'removeMemberPurposeV17(\'' + memberId + '\')', '참여자 제외');
+  formPurposeV17('참여자 제외', '<p class="notice">검토안 · 제외 권한과 담당 작업 처리 방식을 확인할 수 있습니다.</p><p><strong>' + esc(member.name) + '</strong>님은 이 스페이스의 공유 내용을 더 이상 볼 수 없어요.</p><p class="notice">담당 작업 ' + assigned.length + '개와 기존 활동 기록을 확인하세요. 과거 기록의 작성자 표시는 남깁니다.</p>' + (assigned.length ? formFieldV2('담당 작업을 넘길 사람', '<select id="reassignMemberV17">' + selectedOptionsV2(others.map(m => [m.id, m.name]), 'me') + '</select>') : ''), 'removeMemberPurposeV17(\'' + memberId + '\')', '참여자 제외');
 }
 function removeMemberPurposeV17(memberId) {
   const before = snapshotPurposeV17(), spaceId = purposeSpaceStateV16.space, space = purposeSpacesV16[spaceId];
   tasks.filter(t => taskSpaceV16(t).space === spaceId && purposeCrudV17.assignees[t.id] === memberId).forEach(t => { purposeCrudV17.assignees[t.id] = valuePurposeV17('reassignMemberV17') || 'me'; recordPurposeV17('task', t.id, '참여자 제외로 담당자 변경'); });
   space.members = membersPurposeV17(spaceId).filter(m => m.id !== memberId);
-  space.note = space.members.length > 1 ? space.members.length + '명이 함께 사용하는 공간' : '혼자 사용하는 목적 공간';
+  space.note = space.members.length > 1 ? space.members.length + '명이 함께 사용하는 스페이스' : '혼자 사용하는 목적 스페이스';
   if (!commitPurposeV17(before)) return;
   refreshPurposeCrudV17('참여자를 제외했어요.'); openManagePurposeV17('people');
 }
@@ -1292,9 +1436,9 @@ function openLeavePurposeV17() {
   const spaceId = purposeSpaceStateV16.space;
   if (spaceId === 'personal') return;
   if (membersPurposeV17(spaceId).length === 1) {
-    modal(modalHead('마지막 참여자입니다') + '<p class="notice">검토안 · 마지막 참여자는 먼저 공간을 정리하도록 안내합니다.</p><p>혼자 남은 공간입니다. 공간을 남기려면 다른 사람을 초대하고, 더 이상 쓰지 않으면 삭제할 수 있어요.</p><div class="dialog-actions"><button class="btn" onclick="openInvitePurposeV17()">사람 초대</button><button class="btn danger" onclick="openDeletePurposeV17(\'space\')">공간 삭제</button></div>'); return;
+    modal(modalHead('마지막 참여자입니다') + '<p class="notice">검토안 · 마지막 참여자는 먼저 스페이스를 정리하도록 안내합니다.</p><p>혼자 남은 스페이스입니다. 스페이스를 남기려면 다른 사람을 초대하고, 더 이상 쓰지 않으면 삭제할 수 있어요.</p><div class="dialog-actions"><button class="btn" onclick="openInvitePurposeV17()">사람 초대</button><button class="btn danger" onclick="openDeletePurposeV17(\'space\')">스페이스 삭제</button></div>'); return;
   }
-  formPurposeV17('공간 나가기', '<p class="notice">검토안 · 내 담당 작업을 넘긴 뒤 나가는 흐름입니다.</p><p>나간 뒤에는 초대를 받아 다시 참여할 수 있어요. 이 공간에 남아 있는 내 담당 작업은 다른 참여자에게 넘깁니다.</p>' + formFieldV2('담당 작업을 넘길 사람', '<select id="leaveAssigneeV17">' + selectedOptionsV2(membersPurposeV17(spaceId).filter(m => m.id !== 'me').map(m => [m.id, m.name]), '') + '</select>'), 'leavePurposeV17()', '공간 나가기');
+  formPurposeV17('스페이스 나가기', '<p class="notice">검토안 · 내 담당 작업을 넘긴 뒤 나가는 흐름입니다.</p><p>나간 뒤에는 초대를 받아 다시 참여할 수 있어요. 이 스페이스에 남아 있는 내 담당 작업은 다른 참여자에게 넘깁니다.</p>' + formFieldV2('담당 작업을 넘길 사람', '<select id="leaveAssigneeV17">' + selectedOptionsV2(membersPurposeV17(spaceId).filter(m => m.id !== 'me').map(m => [m.id, m.name]), '') + '</select>'), 'leavePurposeV17()', '스페이스 나가기');
 }
 function leavePurposeV17() {
   const before = snapshotPurposeV17(), spaceId = purposeSpaceStateV16.space, next = valuePurposeV17('leaveAssigneeV17');
@@ -1304,7 +1448,7 @@ function leavePurposeV17() {
   purposeCrudV17.leftSpaces = [...(purposeCrudV17.leftSpaces || []), spaceId];
   purposeSpaceStateV16.space = 'personal'; purposeSpaceStateV16.project = '';
   if (!commitPurposeV17(before)) return;
-  closeModal(); navigate('today'); refreshPurposeCrudV17('공간에서 나왔어요.');
+  closeModal(); navigate('today'); refreshPurposeCrudV17('스페이스에서 나왔어요.');
 }
 function scheduleSpacePurposeV17(schedule) {
   const own = purposeCrudV17.schedules[schedule.id];
@@ -1335,7 +1479,7 @@ function openDeletePurposeV17(kind, projectId = '') {
   const affected = affectedPurposeV17(kind, projectId), running = affected.schedules.filter(s => ['IN_PROGRESS', 'SUSPENDED'].includes(s.state));
   if (running.length) { modal(modalHead('진행 중인 일정이 있어요') + '<p>이 항목에는 진행 중이거나 일시정지한 일정 ' + running.length + '개가 연결돼 있어요. 해당 일정을 완료하거나 실행을 취소한 뒤 삭제하세요.</p><div class="dialog-actions"><button class="btn" onclick="closeModal()">닫기</button><button class="btn primary" onclick="closeModal();navigate(\'schedules\')">일정 보기</button></div>'); return; }
   const count = affected.tasks.length + affected.schedules.length;
-  formPurposeV17(kind === 'space' ? '공간 삭제' : '프로젝트 삭제', '<p class="notice">검토안 · 연결된 항목의 처리와 복원 방식을 확인하세요.</p><h3>' + esc(item.name) + '</h3><p class="notice">' + (kind === 'space' ? '프로젝트 ' + Object.keys(space.projects).length + '개, ' : '') + '작업 ' + affected.tasks.length + '개, 일정 ' + affected.schedules.length + '개에 영향을 줍니다.</p>' + (count ? formFieldV2('연결된 내용 처리', '<select id="deleteHandlingV17" onchange="document.getElementById(\'deleteDestinationFieldV17\').classList.toggle(\'hidden\',this.value!==\'move\')"><option value="">처리 방법 선택</option><option value="move">다른 소속으로 옮겨 보관</option><option value="trash">함께 휴지통으로 이동</option></select>') + '<div id="deleteDestinationFieldV17" class="hidden">' + formFieldV2('옮길 위치', '<select id="deleteDestinationV17">' + selectedOptionsV2(destinationOptionsPurposeV17(kind === 'space' ? state.space : '', projectId), 'personal|') + '</select>') + '<p>옮기는 작업의 담당자는 나로, 일정은 내 일정으로 설정됩니다.</p><label class="check-field"><input type="checkbox" id="deleteImpactConfirmedV17">처리 범위와 공유 공간 이동 시 과거 기록 공개를 확인했어요.</label></div>' : '<p>연결된 작업과 일정이 없습니다. 삭제한 구조는 휴지통에서 복원할 수 있어요.</p>'), 'deletePurposeEntityV17(\'' + kind + '\',\'' + projectId + '\')', '휴지통으로 이동');
+  formPurposeV17(kind === 'space' ? '스페이스 삭제' : '프로젝트 삭제', '<p class="notice">검토안 · 연결된 항목의 처리와 복원 방식을 확인하세요.</p><h3>' + esc(item.name) + '</h3><p class="notice">' + (kind === 'space' ? '프로젝트 ' + Object.keys(space.projects).length + '개, ' : '') + '작업 ' + affected.tasks.length + '개, 일정 ' + affected.schedules.length + '개에 영향을 줍니다.</p>' + (count ? formFieldV2('연결된 내용 처리', '<select id="deleteHandlingV17" onchange="document.getElementById(\'deleteDestinationFieldV17\').classList.toggle(\'hidden\',this.value!==\'move\')"><option value="">처리 방법 선택</option><option value="move">다른 소속으로 옮겨 보관</option><option value="trash">함께 휴지통으로 이동</option></select>') + '<div id="deleteDestinationFieldV17" class="hidden">' + formFieldV2('옮길 위치', '<select id="deleteDestinationV17">' + selectedOptionsV2(destinationOptionsPurposeV17(kind === 'space' ? state.space : '', projectId), 'personal|') + '</select>') + '<p>옮기는 작업의 담당자는 나로, 일정은 내 일정으로 설정됩니다.</p><label class="check-field"><input type="checkbox" id="deleteImpactConfirmedV17">처리 범위와 공유 스페이스 이동 시 과거 기록 공개를 확인했어요.</label></div>' : '<p>연결된 작업과 일정이 없습니다. 삭제한 구조는 휴지통에서 복원할 수 있어요.</p>'), 'deletePurposeEntityV17(\'' + kind + '\',\'' + projectId + '\')', '휴지통으로 이동');
 }
 function deletePurposeEntityV17(kind, projectId) {
   const state = purposeSpaceStateV16, spaceId = state.space, space = purposeSpacesV16[spaceId], affected = affectedPurposeV17(kind, projectId);
@@ -1364,8 +1508,8 @@ function deletePurposeEntityV17(kind, projectId) {
 function openRestorePurposeV17(id) {
   const entry = purposeCrudV17.trash.find(item => item.id === id);
   if (!entry) return;
-  if (entry.kind === 'project' && !purposeSpacesV16[entry.space]) { modal(modalHead('상위 공간을 먼저 복원하세요') + '<p>이 프로젝트가 속했던 공간이 휴지통에 있습니다. 공간을 복원한 뒤 프로젝트를 복원할 수 있어요.</p><div class="dialog-actions"><button class="btn" onclick="closeModal()">닫기</button></div>'); return; }
-  formPurposeV17('복원', '<h3>' + esc(entry.name) + '</h3><p>' + (entry.kind === 'space' ? '이 공간과 프로젝트 구조를 복원합니다.' : '원래 공간에 프로젝트를 복원합니다.') + '</p>' + (entry.mode === 'move' ? '<p class="notice">다른 소속으로 옮겨 둔 작업과 일정은 현재 위치에 남습니다.</p>' : entry.mode === 'trash' ? '<label class="check-field"><input type="checkbox" id="restoreChildrenV17" checked>함께 휴지통으로 보낸 작업·일정도 복원</label>' : ''), 'restorePurposeEntityV17(\'' + id + '\')', '복원');
+  if (entry.kind === 'project' && !purposeSpacesV16[entry.space]) { modal(modalHead('상위 스페이스를 먼저 복원하세요') + '<p>이 프로젝트가 속했던 스페이스가 휴지통에 있습니다. 스페이스를 복원한 뒤 프로젝트를 복원할 수 있어요.</p><div class="dialog-actions"><button class="btn" onclick="closeModal()">닫기</button></div>'); return; }
+  formPurposeV17('복원', '<h3>' + esc(entry.name) + '</h3><p>' + (entry.kind === 'space' ? '이 스페이스와 프로젝트 구조를 복원합니다.' : '원래 스페이스에 프로젝트를 복원합니다.') + '</p>' + (entry.mode === 'move' ? '<p class="notice">다른 소속으로 옮겨 둔 작업과 일정은 현재 위치에 남습니다.</p>' : entry.mode === 'trash' ? '<label class="check-field"><input type="checkbox" id="restoreChildrenV17" checked>함께 휴지통으로 보낸 작업·일정도 복원</label>' : ''), 'restorePurposeEntityV17(\'' + id + '\')', '복원');
 }
 function restorePurposeEntityV17(id) {
   const entry = purposeCrudV17.trash.find(item => item.id === id);
@@ -1373,7 +1517,7 @@ function restorePurposeEntityV17(id) {
   const before = snapshotPurposeV17();
   if (entry.kind === 'space') purposeSpacesV16[entry.space] = entry.snapshot;
   else if (purposeSpacesV16[entry.space]) purposeSpacesV16[entry.space].projects[entry.project] = entry.snapshot;
-  else return errorPurposeV17('상위 공간을 먼저 복원하세요.');
+  else return errorPurposeV17('상위 스페이스를 먼저 복원하세요.');
   if (document.getElementById('restoreChildrenV17')?.checked) {
     entry.tasks.forEach(taskId => { if (trashV2.some(t => t.kind === 'task' && t.item.id === taskId)) restoreTrashV2('task', taskId); });
     entry.schedules.forEach(scheduleId => { if (trashV2.some(s => s.kind === 'schedule' && s.item.id === scheduleId)) restoreTrashV2('schedule', scheduleId); });
@@ -1387,7 +1531,7 @@ restoreTrashV2 = function (kind, id) {
   const location = kind === 'task' ? purposeSpaceStateV16.assignments[id] || seedSpaceAssignmentsV16[id] : purposeCrudV17.schedules[id];
   if (location && (!purposeSpacesV16[location.space] || (location.project && !purposeSpacesV16[location.space].projects[location.project]))) {
     const parent = purposeCrudV17.trash.find(entry => entry.kind === 'space' && entry.space === location.space || entry.kind === 'project' && entry.space === location.space && entry.project === location.project);
-    modal(modalHead('소속을 먼저 복원하세요') + '<p>이 항목이 속했던 공간 또는 프로젝트가 휴지통에 있어요. 먼저 소속을 복원하면 항목도 원래 위치로 복원할 수 있습니다.</p><div class="dialog-actions"><button class="btn" onclick="closeModal()">닫기</button>' + (parent ? '<button class="btn primary" onclick="openRestorePurposeV17(\'' + parent.id + '\')">소속 복원</button>' : '') + '</div>');
+    modal(modalHead('소속을 먼저 복원하세요') + '<p>이 항목이 속했던 스페이스 또는 프로젝트가 휴지통에 있어요. 먼저 소속을 복원하면 항목도 원래 위치로 복원할 수 있습니다.</p><div class="dialog-actions"><button class="btn" onclick="closeModal()">닫기</button>' + (parent ? '<button class="btn primary" onclick="openRestorePurposeV17(\'' + parent.id + '\')">소속 복원</button>' : '') + '</div>');
     return;
   }
   itemRestoreBeforeCrudV17(kind, id);
@@ -1395,12 +1539,12 @@ restoreTrashV2 = function (kind, id) {
 const trashBeforeCrudV17 = renderTrashV2;
 renderTrashV2 = function () {
   trashBeforeCrudV17();
-  document.getElementById('alternatePanel').insertAdjacentHTML('beforeend', '<section class="detail-section"><h3>공간·프로젝트</h3>' + (purposeCrudV17.trash.map(entry => '<article class="purpose-manager-row"><div class="purpose-manager-main"><strong>' + esc(entry.name) + '</strong><small>' + (entry.kind === 'space' ? '공간' : '프로젝트') + '</small></div><button class="btn" onclick="openRestorePurposeV17(\'' + entry.id + '\')">복원</button></article>').join('') || '<p class="subtitle">삭제한 공간과 프로젝트가 없습니다.</p>') + '</section>');
+  document.getElementById('alternatePanel').insertAdjacentHTML('beforeend', '<section class="detail-section"><h3>스페이스·프로젝트</h3>' + (purposeCrudV17.trash.map(entry => '<article class="purpose-manager-row"><div class="purpose-manager-main"><strong>' + esc(entry.name) + '</strong><small>' + (entry.kind === 'space' ? '스페이스' : '프로젝트') + '</small></div><button class="btn" onclick="openRestorePurposeV17(\'' + entry.id + '\')">복원</button></article>').join('') || '<p class="subtitle">삭제한 스페이스와 프로젝트가 없습니다.</p>') + '</section>');
 };
 function affiliationMarkupPurposeV17(assignment, kind, itemId) {
   const memberId = kind === 'task' ? purposeCrudV17.assignees[itemId] || 'me' : 'me';
   const left = purposeCrudV17.leftSpaces || [];
-  return '<section class="purpose-affiliation" data-affiliation-kind="' + kind + '" data-item-id="' + (itemId || '') + '" data-original-space="' + assignment.space + '" data-original-visibility="' + (assignment.visibility || 'personal') + '"><h3>소속</h3><div class="form-row">' + formFieldV2('공간', '<select id="affiliationSpaceV17" onchange="updateAffiliationPurposeV17()">' + selectedOptionsV2(Object.entries(purposeSpacesV16).filter(([id]) => !left.includes(id)).map(([id, space]) => [id, space.name]), assignment.space) + '</select>') + formFieldV2('프로젝트', '<select id="affiliationProjectV17" onchange="updateAffiliationPurposeV17(false)">' + selectedOptionsV2([['', '프로젝트 없음'], ...Object.entries(purposeSpacesV16[assignment.space].projects).map(([id, project]) => [id, project.name])], assignment.project) + '</select>') + '</div>' + '<label class="field" id="assigneeFieldV17"><span>담당자 한 명</span><select id="assigneeV17">' + selectedOptionsV2(membersPurposeV17(assignment.space).map(m => [m.id, m.name]), memberId) + '</select></label>' + (kind === 'schedule' ? '<p class="subtitle">검토안 · 일정의 소유·공유 정책은 확인이 필요해요.</p>' + formFieldV2('일정 보기 범위', '<select id="scheduleVisibilityV17" onchange="updateAffiliationPurposeV17(false)">' + selectedOptionsV2([['personal', '내 일정으로 보기'], ['shared', '공간 참여자와 함께 보기']], assignment.visibility || 'personal') + '</select>') : '') + '<div class="notice hidden" id="sharingWarningV17"><strong>이동 전 기록도 공유됩니다.</strong><p>이 항목의 이전 활동과 실행 기록도 이 공간의 참여자에게 보입니다. 다른 개인 항목은 옮겨지지 않습니다.</p><label class="check-field"><input type="checkbox" id="shareHistoryConfirmedV17">공개될 기록의 범위를 확인했어요.</label></div>' + (kind === 'task' && itemId && scheduled.some(s => s.taskId === itemId) ? '<label class="check-field"><input type="checkbox" id="moveLinkedSchedulesV17">연결된 일정도 같은 소속으로 옮기기</label><p class="subtitle">선택하지 않으면 일정의 소속은 현재 위치에 남습니다.</p>' : '') + '</section>';
+  return '<section class="purpose-affiliation" data-affiliation-kind="' + kind + '" data-item-id="' + (itemId || '') + '" data-original-space="' + assignment.space + '" data-original-visibility="' + (assignment.visibility || 'personal') + '"><h3>소속</h3><div class="form-row">' + formFieldV2('스페이스', '<select id="affiliationSpaceV17" onchange="updateAffiliationPurposeV17()">' + selectedOptionsV2(Object.entries(purposeSpacesV16).filter(([id]) => !left.includes(id)).map(([id, space]) => [id, space.name]), assignment.space) + '</select>') + formFieldV2('프로젝트', '<select id="affiliationProjectV17" onchange="updateAffiliationPurposeV17(false)">' + selectedOptionsV2([['', '프로젝트 없음'], ...Object.entries(purposeSpacesV16[assignment.space].projects).map(([id, project]) => [id, project.name])], assignment.project) + '</select>') + '</div>' + '<label class="field" id="assigneeFieldV17"><span>담당자 한 명</span><select id="assigneeV17">' + selectedOptionsV2(membersPurposeV17(assignment.space).map(m => [m.id, m.name]), memberId) + '</select></label>' + (kind === 'schedule' ? '<p class="subtitle">검토안 · 일정의 소유·공유 정책은 확인이 필요해요.</p>' + formFieldV2('일정 보기 범위', '<select id="scheduleVisibilityV17" onchange="updateAffiliationPurposeV17(false)">' + selectedOptionsV2([['personal', '내 일정으로 보기'], ['shared', '스페이스 참여자와 함께 보기']], assignment.visibility || 'personal') + '</select>') : '') + '<div class="notice hidden" id="sharingWarningV17"><strong>이동 전 기록도 공유됩니다.</strong><p>이 항목의 이전 활동과 실행 기록도 이 스페이스의 참여자에게 보입니다. 다른 개인 항목은 옮겨지지 않습니다.</p><label class="check-field"><input type="checkbox" id="shareHistoryConfirmedV17">공개될 기록의 범위를 확인했어요.</label></div>' + (kind === 'task' && itemId && scheduled.some(s => s.taskId === itemId) ? '<label class="check-field"><input type="checkbox" id="moveLinkedSchedulesV17">연결된 일정도 같은 소속으로 옮기기</label><p class="subtitle">선택하지 않으면 일정의 소속은 현재 위치에 남습니다.</p>' : '') + '</section>';
 }
 function updateAffiliationPurposeV17(rebuildProjects = true) {
   const panel = document.querySelector('.purpose-affiliation'); if (!panel) return;
@@ -1422,7 +1566,7 @@ function readAffiliationPurposeV17() {
 function validateAffiliationPurposeV17() {
   const target = readAffiliationPurposeV17(), fieldError = document.getElementById('taskErrorV2') || document.getElementById('scheduleErrorV2');
   const fail = message => { if (fieldError) fieldError.textContent = message; return false; };
-  if (!purposeSpacesV16[target.space] || (target.project && !purposeSpacesV16[target.space].projects[target.project])) return fail('올바른 공간과 프로젝트를 선택하세요.');
+  if (!purposeSpacesV16[target.space] || (target.project && !purposeSpacesV16[target.space].projects[target.project])) return fail('올바른 스페이스와 프로젝트를 선택하세요.');
   if (!document.getElementById('sharingWarningV17').classList.contains('hidden') && !document.getElementById('shareHistoryConfirmedV17').checked) return fail('이동 전 기록의 공개 범위를 확인하세요.');
   return true;
 }
@@ -1500,14 +1644,14 @@ const scheduleDetailBeforeCrudV17 = openScheduleDetailV2;
 openScheduleDetailV2 = function (id) {
   scheduleDetailBeforeCrudV17(id); const schedule = scheduled.find(s => s.id === id); if (!schedule) return;
   const target = scheduleSpacePurposeV17(schedule), space = purposeSpacesV16[target.space];
-  document.querySelector('.dialog .detail-grid')?.insertAdjacentHTML('beforeend', '<div><small>공간·프로젝트</small><strong>' + esc(space.name + (target.project ? ' › ' + (space.projects[target.project]?.name || '') : '')) + '</strong></div><div><small>보기 범위</small><strong>' + (target.visibility === 'shared' ? '공간 참여자' : '내 일정') + '</strong></div>');
+  document.querySelector('.dialog .detail-grid')?.insertAdjacentHTML('beforeend', '<div><small>스페이스·프로젝트</small><strong>' + esc(space.name + (target.project ? ' › ' + (space.projects[target.project]?.name || '') : '')) + '</strong></div><div><small>보기 범위</small><strong>' + (target.visibility === 'shared' ? '스페이스 참여자' : '내 일정') + '</strong></div>');
   document.querySelector('.dialog .detail-actions')?.insertAdjacentHTML('beforebegin', historyPurposeV17('schedule', id));
 };
 const spaceDialogBeforeCrudV17 = renderSpaceDialogV16;
 renderSpaceDialogV16 = function () {
   spaceDialogBeforeCrudV17();
   (purposeCrudV17.leftSpaces || []).forEach(id => spaceDialogV16.querySelector('[data-space="' + id + '"]')?.remove());
-  spaceDialogV16.querySelector('.space-switcher-footer').insertAdjacentHTML('beforebegin', '<div class="purpose-picker-actions"><button type="button" data-create-purpose>' + icon('plus') + '목적 공간 만들기</button><button type="button" data-manage-purpose>' + icon('help') + '선택한 공간 관리</button></div>');
+  spaceDialogV16.querySelector('.space-switcher-footer').insertAdjacentHTML('beforebegin', '<div class="purpose-picker-actions"><button type="button" data-create-purpose>' + icon('plus') + '목적 스페이스 만들기</button><button type="button" data-manage-purpose>' + icon('help') + '선택한 스페이스 관리</button></div>');
   const openFromPicker = callback => { spaceDialogV16.close(); requestAnimationFrame(callback); };
   spaceDialogV16.querySelector('[data-create-purpose]').addEventListener('click', () => openFromPicker(openNewPurposeSpaceV17));
   spaceDialogV16.querySelector('[data-manage-purpose]').addEventListener('click', () => openFromPicker(() => openManagePurposeV17()));
@@ -1519,15 +1663,15 @@ renderPurposeChromeV16 = function () {
   if (purposeSpaceStateV16.project && !space.projects[purposeSpaceStateV16.project]) purposeSpaceStateV16.project = '';
   spaceChromeBeforeCrudV17();
   projectsNavV16.classList.remove('hidden');
-  projectsNavV16.insertAdjacentHTML('beforeend', '<button type="button" class="purpose-create-link" onclick="openProjectEditorV17()">' + icon('plus') + '<span>프로젝트 만들기</span></button><button type="button" class="purpose-create-link" onclick="openManagePurposeV17()">공간 관리</button>');
+  projectsNavV16.insertAdjacentHTML('beforeend', '<button type="button" class="purpose-create-link" onclick="openProjectEditorV17()">' + icon('plus') + '<span>프로젝트 만들기</span></button><button type="button" class="purpose-create-link" onclick="openManagePurposeV17()">스페이스 관리</button>');
   mobileProjectsV16.classList.toggle('hidden', currentView !== 'tasks');
   mobileProjectsV16.insertAdjacentHTML('beforeend', '<button type="button" onclick="openProjectEditorV17()">+ 프로젝트</button>');
   document.querySelectorAll('.purpose-manage-action').forEach(element => element.remove());
   if (currentView === 'tasks') {
-    document.querySelector('.head-actions').insertAdjacentHTML('afterbegin', '<button type="button" class="btn purpose-manage-action" onclick="openManagePurposeV17(\'' + (purposeSpaceStateV16.project ? 'projects' : 'purpose') + '\')">' + (purposeSpaceStateV16.project ? '프로젝트 관리' : '공간 관리') + '</button>');
+    document.querySelector('.head-actions').insertAdjacentHTML('afterbegin', '<button type="button" class="btn purpose-manage-action" onclick="openManagePurposeV17(\'' + (purposeSpaceStateV16.project ? 'projects' : 'purpose') + '\')">' + (purposeSpaceStateV16.project ? '프로젝트 관리' : '스페이스 관리') + '</button>');
     if (!space.purpose) {
       purposeContextV16.classList.remove('hidden');
-      purposeContextV16.innerHTML = '<p>목적을 작성하면 이 공간에서 하려는 일을 함께 확인할 수 있어요.</p><button class="btn" onclick="openPurposeEditorV17()">목적 작성</button>' + (selectedPurposeProjectV16() ? '<button class="btn" onclick="togglePurposeProjectV16()">' + (purposeSpaceStateV16.completed[purposeSpaceStateV16.space + '/' + purposeSpaceStateV16.project] ? '프로젝트 재개' : '프로젝트 완료') + '</button>' : '');
+      purposeContextV16.innerHTML = '<p>목적을 작성하면 이 스페이스에서 하려는 일을 함께 확인할 수 있어요.</p><button class="btn" onclick="openPurposeEditorV17()">목적 작성</button>' + (selectedPurposeProjectV16() ? '<button class="btn" onclick="togglePurposeProjectV16()">' + (purposeSpaceStateV16.completed[purposeSpaceStateV16.space + '/' + purposeSpaceStateV16.project] ? '프로젝트 재개' : '프로젝트 완료') + '</button>' : '');
     }
   }
 };
@@ -1542,7 +1686,7 @@ renderTasks = function () {
   taskListBeforeCrudV17();
   if (currentView === 'tasks' && !tasks.some(taskInPurposeScopeV16)) {
     const project = selectedPurposeProjectV16();
-    document.getElementById('taskList').innerHTML = '<div class="purpose-empty"><strong>' + (project ? '프로젝트의 첫 작업을 적어보세요.' : '이 공간의 첫 작업을 적어보세요.') + '</strong><p>목적이나 프로젝트를 먼저 정하지 않아도 바로 기록할 수 있어요.</p><button class="btn primary" onclick="openTaskFormV2()">작업 추가</button></div>';
+    document.getElementById('taskList').innerHTML = '<div class="purpose-empty"><strong>' + (project ? '프로젝트의 첫 작업을 적어보세요.' : '이 스페이스의 첫 작업을 적어보세요.') + '</strong><p>목적이나 프로젝트를 먼저 정하지 않아도 바로 기록할 수 있어요.</p><button class="btn primary" onclick="openTaskFormV2()">작업 추가</button></div>';
   }
 };
 // Keep the management flow modal on touch and keyboard, including nested editor transitions.
@@ -1569,6 +1713,325 @@ closeModal = function () {
 scheduled.forEach(s => { if (!purposeCrudV17.schedules[s.id]) purposeCrudV17.schedules[s.id] = { ...scheduleSpacePurposeV17(s) }; });
 purposeCrudReadyV17 = true;
 renderPurposeChromeV16(); renderTasks(); renderTimeline();
+
+/* Spaces hub (0.18.0): one place to read every space's purpose, project progress and who is working on what.
+   Example data only. Capabilities shown here are static example records standing in for the server's allowedActions;
+   this file does not decide permissions, invitation expiry or membership. */
+paths.spaces = '<rect x="3.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.6"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.6"/><path d="M17 13.5v7M13.5 17h7"/>';
+paths.more = '<circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/>';
+const hubMarksV18 = ['#3e8391', '#9165b0', '#a77d35', '#43886b', '#ad6280'];
+const hubAdminActionsV18 = { invite: true, leave: true, delete: true, manageMembers: true, deleteProject: true, reason: '' };
+let hubMobileDetailV18 = false;
+
+function hubSeedV18() {
+  const spaces = purposeSpacesV16;
+  if (spaces.career) Object.assign(spaces.career, { mark: '#9165b0', note: '혼자', members: [{ id: 'me', name: '나', role: 'admin' }], exampleActions: { ...hubAdminActionsV18 } });
+  if (spaces.pinit) {
+    Object.assign(spaces.pinit, {
+      mark: '#3e8391', note: '3명',
+      members: [{ id: 'me', name: '나', role: 'admin' }, { id: 'minji', name: '민지', role: 'member' }, { id: 'junho', name: '준호', role: 'member' }],
+      exampleActions: { ...hubAdminActionsV18 }
+    });
+    spaces.pinit.projects.onboarding = { name: '온보딩 안내 정리', outcome: '처음 온 사람이 안내 없이 첫 작업을 기록하기' };
+  }
+  spaces.running = {
+    name: '주말 러닝 모임', note: '3명', mark: '#a77d35',
+    purpose: '올해 안에 모두 함께 10km를 완주하기',
+    projects: { race: { name: '11월 대회 준비', outcome: '대회 당일 모두 같은 시간에 출발선에 서기' } },
+    members: [{ id: 'seoyeon', name: '서연', role: 'admin' }, { id: 'me', name: '나', role: 'member' }, { id: 'dohyun', name: '도현', role: 'member' }],
+    exampleActions: { invite: false, leave: true, delete: false, manageMembers: false, deleteProject: false, reason: '관리자 서연님만 할 수 있어요.' }
+  };
+  const examples = [
+    [101, '카드 마감 표시 색 정리', 'pinit', '2026-10-27', true, 'pinit', 'cards', 'minji'],
+    [102, '중요도·난이도 원형 크기 조정', 'pinit', '2026-10-30', false, 'pinit', 'cards', 'junho'],
+    [103, '빈 목록 안내 문구 다듬기', 'pinit', '2026-10-31', false, 'pinit', 'cards', 'none'],
+    [104, '첫 작업 기록 안내 초안', 'pinit', '2026-11-03', false, 'pinit', 'onboarding', 'minji'],
+    [105, '온보딩 화면 캡처 정리', 'pinit', '2026-11-04', false, 'pinit', 'onboarding', 'none'],
+    [106, '가이드 링크 점검', 'pinit', '2026-10-27', true, 'pinit', 'onboarding', 'me'],
+    [107, '대회 참가 접수 확인', '개인', '2026-10-25', true, 'running', 'race', 'seoyeon'],
+    [108, '주말 장거리 코스 정하기', '개인', '2026-10-31', false, 'running', 'race', 'me'],
+    [109, '단체 티셔츠 수량 조사', '개인', '2026-11-02', false, 'running', 'race', 'none']
+  ];
+  examples.forEach(([id, title, category, due, done, space, project, assignee]) => {
+    if (!tasks.some(task => task.id === id)) tasks.push({ id, title, category, due, importance: 5, difficulty: 3, duration: 30, done, description: '스페이스 허브 시안의 예시 작업이에요.', ready: !done });
+    purposeSpaceStateV16.assignments[id] = { space, project };
+    purposeCrudV17.assignees[id] = assignee;
+  });
+  purposeCrudV17.hubSeedV18 = true;
+  save(); savePurposeSpacesV16();
+}
+function hubNormalizeV18() {
+  let index = 0;
+  Object.entries(purposeSpacesV16).forEach(([id, space]) => {
+    if (id === 'personal') { space.mark = ''; return; }
+    if (!space.mark) {
+      const used = Object.values(purposeSpacesV16).map(item => item.mark);
+      space.mark = hubMarksV18.find(color => !used.includes(color)) || hubMarksV18[index++ % hubMarksV18.length];
+    }
+    if (!space.exampleActions) {
+      // A space created in the prototype: its creator is recorded as administrator in the example data.
+      space.members = (space.members || [{ id: 'me', name: '나' }]).map(member => member.id === 'me' ? { ...member, role: 'admin' } : member);
+      space.exampleActions = { ...hubAdminActionsV18 };
+    }
+  });
+}
+if (!purposeCrudV17.hubSeedV18) hubSeedV18();
+hubNormalizeV18();
+
+function hubSpaceIdsV18() {
+  const left = purposeCrudV17.leftSpaces || [];
+  return Object.keys(purposeSpacesV16).filter(id => !left.includes(id)).sort((a, b) => (a === 'personal' ? -1 : b === 'personal' ? 1 : 0));
+}
+function hubAssigneeV18(taskId) { return purposeCrudV17.assignees[taskId] || 'me'; }
+function hubTasksV18(spaceId, projectId) {
+  return tasks.filter(task => !task.archived).filter(task => {
+    const at = taskSpaceV16(task);
+    return at.space === spaceId && (projectId === undefined || at.project === projectId);
+  });
+}
+function hubRunningV18(task) {
+  return scheduled.some(item => item.taskId === task.id && ['IN_PROGRESS', 'SUSPENDED'].includes(item.state));
+}
+function hubStateV18(task) {
+  if (task.done) return 'done';
+  if (hubRunningV18(task)) return 'running';
+  return hubAssigneeV18(task.id) === 'none' ? 'unassigned' : 'todo';
+}
+function hubDueV18(list) {
+  const open = list.filter(task => !task.done && task.due).map(task => task.due).sort();
+  if (!open.length) return '';
+  const [, month, day] = open[0].split('-');
+  return Number(month) + '/' + Number(day) + ' 마감';
+}
+function hubMarkV18(spaceId) {
+  const space = purposeSpacesV16[spaceId];
+  return '<span class="hub-mark' + (spaceId === 'personal' ? ' is-personal' : '') + '" style="--mark:' + (space.mark || '#727c8d') + '" aria-hidden="true"></span>';
+}
+function hubDotsV18(list) {
+  const order = { done: 0, running: 1, todo: 2, unassigned: 3 };
+  const states = list.map(hubStateV18).sort((a, b) => order[a] - order[b]);
+  if (states.length > 20) {
+    const count = name => states.filter(state => state === name).length;
+    return '<span class="hub-bar" aria-hidden="true">' + ['done', 'running', 'todo', 'unassigned'].map(name => count(name) ? '<i class="is-' + name + '" style="flex:' + count(name) + '"></i>' : '').join('') + '</span>';
+  }
+  return '<span class="hub-dots" aria-hidden="true">' + states.map(state => '<i class="is-' + state + '"></i>').join('') + '</span>';
+}
+function hubSummaryV18(list) {
+  const count = name => list.filter(task => hubStateV18(task) === name).length;
+  const parts = ['작업 ' + list.length + '개 중 ' + count('done') + '개 완료'];
+  if (count('running')) parts.push('진행 중 ' + count('running') + '개');
+  if (count('unassigned')) parts.push('담당자 미정 ' + count('unassigned') + '개');
+  return parts.join(', ');
+}
+function hubMemberNamesV18(spaceId) {
+  return membersPurposeV17(spaceId).map(member => esc(member.id === 'me' ? '나' : member.name) + (member.role === 'admin' ? '<small>관리자</small>' : '')).join('<span class="hub-sep">, </span>');
+}
+function hubActionsV18(spaceId) { return purposeSpacesV16[spaceId].exampleActions || hubAdminActionsV18; }
+function hubReasonV18(spaceId, allowed) { return allowed ? '' : '<p class="hub-reason">' + esc(hubActionsV18(spaceId).reason || '관리자만 할 수 있어요.') + '</p>'; }
+
+function hubRailV18() {
+  const current = purposeSpaceStateV16.space;
+  return '<nav class="hub-rail" aria-label="스페이스 목록"><ul>' + hubSpaceIdsV18().map(id => {
+    const space = purposeSpacesV16[id], open = hubTasksV18(id).filter(task => !task.done).length;
+    const members = membersPurposeV17(id).length;
+    const who = id === 'personal' ? '본인 전용' : members > 1 ? members + '명' : '혼자';
+    return '<li><button type="button" class="hub-rail-item" aria-current="' + (id === current ? 'true' : 'false') + '" onclick="hubSelectV18(\'' + id + '\')">' + hubMarkV18(id) + '<span class="hub-rail-copy"><strong>' + esc(space.name) + '</strong><small>' + who + '</small></span><span class="hub-rail-count" aria-label="미완료 작업 ' + open + '개">' + open + '</span></button></li>';
+  }).join('') + '</ul><p class="hub-rail-note">숫자는 아직 끝나지 않은 작업 수예요.</p></nav>';
+}
+function hubPurposeV18(spaceId) {
+  const space = purposeSpacesV16[spaceId];
+  if (space.purpose) return '<div class="hub-purpose"><p class="hub-purpose-text">' + esc(space.purpose) + '</p><button type="button" class="text-btn" onclick="openPurposeEditorV17()">목적 수정</button></div>';
+  if (spaceId === 'personal') return '<div class="hub-purpose is-empty"><p>목적 없이 바로 기록해도 괜찮아요.</p><button type="button" class="text-btn" onclick="openPurposeEditorV17()">목적 작성</button></div>';
+  return '<div class="hub-purpose is-empty"><p>이 스페이스에서 이루려는 것을 적어 두면 참여자 모두가 같은 방향을 볼 수 있어요.</p><button type="button" class="btn" onclick="openPurposeEditorV17()">목적 작성</button></div>';
+}
+function hubProjectRowV18(spaceId, projectId) {
+  const project = purposeSpacesV16[spaceId].projects[projectId], list = hubTasksV18(spaceId, projectId);
+  const done = list.filter(task => task.done).length, completed = purposeSpaceStateV16.completed[spaceId + '/' + projectId];
+  const actions = hubActionsV18(spaceId);
+  return '<li class="hub-project' + (completed ? ' is-completed' : '') + '"><button type="button" class="hub-project-main" onclick="openPurposeProjectV16(\'' + spaceId + '\',\'' + projectId + '\')" aria-label="' + esc(project.name + ' 작업 보기. ' + hubSummaryV18(list)) + '"><strong>' + esc(project.name) + '</strong><small>' + esc(project.outcome || '') + '</small></button>' + (list.length ? hubDotsV18(list) : '<span class="hub-empty-inline">작업 없음</span>') + '<span class="hub-count">' + done + '/' + list.length + '</span><span class="hub-due">' + hubDueV18(list) + '</span>' +
+    '<details class="hub-menu"><summary aria-label="' + esc(project.name) + ' 프로젝트 동작">' + icon('more') + '</summary><div class="hub-menu-list"><button type="button" onclick="openProjectEditorV17(\'' + projectId + '\')">수정</button><button type="button" onclick="hubToggleProjectV18(\'' + projectId + '\')">' + (completed ? '다시 열기' : '완료로 표시') + '</button><button type="button" class="danger" ' + (actions.deleteProject ? '' : 'disabled ') + 'onclick="openDeletePurposeV17(\'project\',\'' + projectId + '\')">삭제</button>' + (actions.deleteProject ? '' : '<p class="hub-reason">' + esc(actions.reason) + '</p>') + '</div></details></li>';
+}
+function hubProjectsV18(spaceId) {
+  const space = purposeSpacesV16[spaceId], ids = Object.keys(space.projects);
+  const isDone = id => purposeSpaceStateV16.completed[spaceId + '/' + id];
+  const open = ids.filter(id => !isDone(id)), closed = ids.filter(isDone), loose = hubTasksV18(spaceId, '');
+  let body = '<section class="hub-section" id="hubProjectsV18" aria-labelledby="hubProjectsTitleV18"><div class="hub-section-head"><h3 id="hubProjectsTitleV18">프로젝트</h3><button type="button" class="text-btn" onclick="openProjectEditorV17()">' + icon('plus') + '프로젝트 만들기</button></div>';
+  body += open.length ? '<ul class="hub-projects">' + open.map(id => hubProjectRowV18(spaceId, id)).join('') + '</ul>' : '<p class="hub-empty">진행 중인 프로젝트가 없어요. 목적에 다가갈 첫 프로젝트를 만들어 보세요.</p>';
+  if (closed.length) body += '<details class="hub-closed"><summary>완료한 프로젝트 ' + closed.length + '개</summary><ul class="hub-projects">' + closed.map(id => hubProjectRowV18(spaceId, id)).join('') + '</ul></details>';
+  if (loose.length) body += '<button type="button" class="hub-loose" onclick="openPurposeProjectV16(\'' + spaceId + '\',\'\')">프로젝트 없이 기록한 작업 ' + loose.length + '개 보기</button>';
+  return body + '</section>';
+}
+function hubPeopleV18(spaceId) {
+  if (spaceId === 'personal') return '';
+  const members = membersPurposeV17(spaceId), list = hubTasksV18(spaceId), actions = hubActionsV18(spaceId);
+  const open = list.filter(task => !task.done);
+  const unassigned = open.filter(task => hubAssigneeV18(task.id) === 'none');
+  let body = '<section class="hub-section" id="hubPeopleV18" aria-labelledby="hubPeopleTitleV18"><div class="hub-section-head"><h3 id="hubPeopleTitleV18">담당</h3><button type="button" class="btn" ' + (actions.invite ? '' : 'disabled ') + 'onclick="openInvitePurposeV17()">초대 링크 만들기</button></div>' + hubReasonV18(spaceId, actions.invite);
+  if (members.length === 1) body += '<p class="hub-empty">아직 혼자 쓰는 스페이스예요. 초대 링크로 함께할 사람을 불러 보세요.</p>';
+  body += '<ul class="hub-people">' + members.map(member => {
+    const mine = open.filter(task => hubAssigneeV18(task.id) === member.id);
+    return '<li class="hub-person"><span class="hub-person-name">' + esc(member.id === 'me' ? '나' : member.name) + (member.role === 'admin' ? '<small>관리자</small>' : '') + '</span><span class="hub-count">미완료 ' + mine.length + '</span><span class="hub-due">' + hubDueV18(mine) + '</span>' +
+      (member.id !== 'me' && actions.manageMembers ? '<details class="hub-menu"><summary aria-label="' + esc(member.name) + ' 참여자 동작">' + icon('more') + '</summary><div class="hub-menu-list"><button type="button" class="danger" onclick="openRemoveMemberPurposeV17(\'' + member.id + '\')">스페이스에서 제외</button></div></details>' : '<span class="hub-menu-placeholder"></span>') + '</li>';
+  }).join('') + '</ul>';
+  body += unassigned.length
+    ? '<div class="hub-unassigned"><span class="hub-person-name">담당자 미정</span>' + hubDotsV18(unassigned) + '<span class="hub-count">' + unassigned.length + '개</span><button type="button" class="btn primary" onclick="hubOpenAssignV18()">배정하기</button><p>담당자가 없는 작업은 누구의 오늘에도 나오지 않아요.</p></div>'
+    : '<p class="hub-quiet">모든 작업에 담당자가 있어요.</p>';
+  return body + '</section>';
+}
+function hubSettingsV18(spaceId) {
+  const actions = hubActionsV18(spaceId);
+  let body = '<section class="hub-section hub-settings" aria-labelledby="hubSettingsTitleV18"><h3 id="hubSettingsTitleV18">스페이스 설정</h3><div class="hub-settings-row"><button type="button" class="text-btn" onclick="openSpaceInfoEditorV17()">이름·목적 수정</button>';
+  if (spaceId === 'personal') return body + '</div><p class="hub-quiet">나의 스페이스는 본인 전용이라 초대·나가기·삭제가 없어요.</p></section>';
+  body += '<button type="button" class="text-btn" ' + (actions.leave ? '' : 'disabled ') + 'onclick="openLeavePurposeV17()">스페이스 나가기</button><button type="button" class="text-btn danger" ' + (actions.delete ? '' : 'disabled ') + 'onclick="openDeletePurposeV17(\'space\')">스페이스 삭제</button></div>';
+  return body + hubReasonV18(spaceId, actions.delete) + '</section>';
+}
+function renderSpacesHubV18() {
+  if (currentView !== 'spaces') return;
+  hubNormalizeV18();
+  const spaceId = purposeSpaceStateV16.space, space = purposeSpacesV16[spaceId], panel = document.getElementById('alternatePanel');
+  const openMenus = [...panel.querySelectorAll('details[open]')].map(item => item.querySelector('summary')?.getAttribute('aria-label'));
+  panel.innerHTML = '<div class="spaces-hub' + (hubMobileDetailV18 ? ' is-detail' : '') + '">' + hubRailV18() +
+    '<article class="hub-overview" aria-labelledby="hubSpaceTitleV18"><button type="button" class="hub-back" onclick="hubBackV18()">' + icon('left') + '모든 스페이스</button>' +
+    '<header class="hub-identity">' + hubMarkV18(spaceId) + '<h2 id="hubSpaceTitleV18">' + esc(space.name) + '</h2><p class="hub-members">' + (spaceId === 'personal' ? '본인 전용' : hubMemberNamesV18(spaceId)) + '</p></header>' +
+    hubPurposeV18(spaceId) + hubProjectsV18(spaceId) + hubPeopleV18(spaceId) + hubSettingsV18(spaceId) + '</article></div>';
+  openMenus.forEach(label => panel.querySelector('summary[aria-label="' + label + '"]')?.parentElement.setAttribute('open', ''));
+}
+function hubSelectV18(spaceId) {
+  hubMobileDetailV18 = true;
+  choosePurposeSpaceV16(spaceId);
+  renderSpacesHubV18();
+  if (matchMedia('(max-width:760px)').matches) document.querySelector('.hub-back')?.focus();
+  else document.querySelector('.hub-rail-item[aria-current="true"]')?.focus();
+}
+function hubBackV18() {
+  hubMobileDetailV18 = false;
+  renderSpacesHubV18();
+  document.querySelector('.hub-rail-item[aria-current="true"]')?.focus();
+}
+function hubToggleProjectV18(projectId) {
+  const key = purposeSpaceStateV16.space + '/' + projectId;
+  purposeSpaceStateV16.completed[key] = !purposeSpaceStateV16.completed[key];
+  savePurposeSpacesV16(); renderPurposeChromeV16(); renderSpacesHubV18();
+  toast(purposeSpaceStateV16.completed[key] ? '프로젝트를 완료로 표시했어요.' : '프로젝트를 다시 열었어요.');
+}
+function hubOpenAssignV18() {
+  const spaceId = purposeSpaceStateV16.space, members = membersPurposeV17(spaceId);
+  const list = hubTasksV18(spaceId).filter(task => !task.done && hubAssigneeV18(task.id) === 'none');
+  if (!list.length) { closeModal(); renderSpacesHubV18(); return; }
+  modal(modalHead('담당자 미정 작업 ' + list.length + '개') + '<p>맡을 사람을 고르고 배정하세요. 배정한 작업은 그 사람의 오늘에 나와요.</p><ul class="hub-assign">' + list.map(task => {
+    const project = purposeSpacesV16[spaceId].projects[taskSpaceV16(task).project];
+    return '<li><div><strong>' + esc(task.title) + '</strong><small>' + esc((project ? project.name + ', ' : '') + hubDueV18([task])) + '</small></div><label><span class="sr-only">' + esc(task.title) + ' 담당자</span><select id="hubAssign' + task.id + '">' + selectedOptionsV2(members.map(member => [member.id, member.id === 'me' ? '나' : member.name]), 'me') + '</select></label><button type="button" class="btn primary" onclick="hubAssignV18(' + task.id + ')">배정</button></li>';
+  }).join('') + '</ul><div class="dialog-actions"><button class="btn" onclick="closeModal()">닫기</button></div>');
+}
+function hubAssignV18(taskId) {
+  const memberId = document.getElementById('hubAssign' + taskId)?.value;
+  const member = membersPurposeV17(purposeSpaceStateV16.space).find(item => item.id === memberId);
+  if (!member) return;
+  purposeCrudV17.assignees[taskId] = member.id;
+  recordPurposeV17('task', taskId, '담당자 지정 · ' + (member.id === 'me' ? '나' : member.name));
+  refreshPurposeCrudV17('배정했어요.');
+  hubOpenAssignV18();
+}
+
+// The hub replaces the management modal. Existing flows that reopened it now land on the hub.
+openManagePurposeV17 = function (tab = 'purpose') {
+  closeModal();
+  hubMobileDetailV18 = true;
+  navigate('spaces');
+  const target = { projects: 'hubProjectsV18', people: 'hubPeopleV18' }[tab];
+  if (target) requestAnimationFrame(() => document.getElementById(target)?.scrollIntoView({ block: 'start' }));
+};
+openInvitePurposeV17 = function () {
+  const spaceId = purposeSpaceStateV16.space, space = purposeSpacesV16[spaceId];
+  if (spaceId === 'personal' || !hubActionsV18(spaceId).invite) return;
+  modal(modalHead('초대 링크') + '<p>이 링크를 받은 사람은 1시간 동안 <strong>' + esc(space.name) + '</strong>에 참여할 수 있어요. 여러 사람이 같은 링크를 써도 돼요.</p><div class="hub-invite-link"><code>/spaces/join/example-link</code><button type="button" class="btn" onclick="hubCopyInviteV18()">링크 복사</button></div><p class="notice">시안의 예시 링크예요. 실제 링크와 만료 시각은 서버가 발급해요. 참여한 사람은 가입할 때 정한 닉네임으로 표시돼요.</p><div class="dialog-actions"><button class="btn" onclick="closeModal()">닫기</button></div>');
+};
+function hubCopyInviteV18() {
+  const done = () => toast('링크를 복사했어요.');
+  try { navigator.clipboard.writeText(location.origin + '/spaces/join/example-link').then(done, () => toast('복사하지 못했어요. 링크를 직접 선택해 복사하세요.')); }
+  catch (_) { toast('복사하지 못했어요. 링크를 직접 선택해 복사하세요.'); }
+}
+const saveProjectBeforeHubV18 = saveProjectPurposeV17;
+saveProjectPurposeV17 = function (projectId) {
+  const fromHub = currentView === 'spaces';
+  saveProjectBeforeHubV18(projectId);
+  if (fromHub && !document.getElementById('projectNameV17')) navigate('spaces');
+};
+
+// Navigation: a "스페이스" destination after 오늘. Mobile keeps its bar and reaches the hub from the space sheet.
+document.querySelector('.sidebar .nav [data-nav="today"]').insertAdjacentHTML('afterend', '<button data-nav="spaces" onclick="navigate(\'spaces\')">' + icon('spaces') + '스페이스</button>');
+const navigateBeforeHubV18 = navigate;
+navigate = function (view) {
+  if (view !== 'spaces') { navigateBeforeHubV18(view); return; }
+  navigateBeforeHubV18('tasks');
+  currentView = 'spaces';
+  document.querySelectorAll('[data-nav]').forEach(button => button.classList.toggle('active', button.dataset.nav === 'spaces'));
+  document.getElementById('crumb').textContent = '스페이스';
+  document.getElementById('pageTitle').textContent = '스페이스';
+  document.getElementById('pageSubtitle').textContent = '스페이스마다 목적과 프로젝트 진행, 누가 무엇을 맡았는지 확인하세요.';
+  document.getElementById('content').className = 'content spaces-only';
+  document.getElementById('primaryLayout').classList.add('hidden');
+  document.getElementById('focusBanner')?.classList.add('hidden');
+  document.getElementById('alternatePanel').classList.remove('hidden');
+  document.querySelector('.head-actions').innerHTML = '<button class="btn primary" onclick="openNewPurposeSpaceV17()">' + icon('plus') + '스페이스 만들기</button>';
+  renderPurposeChromeV16();
+  renderSpacesHubV18();
+  document.title = '핀잇 · 스페이스';
+};
+const renderTasksBeforeHubV18 = renderTasks;
+renderTasks = function () { renderTasksBeforeHubV18(); renderSpacesHubV18(); };
+
+// Breadcrumb shows the scope the screen actually uses; management shortcuts collapse into the hub destination.
+const chromeBeforeHubV18 = renderPurposeChromeV16;
+renderPurposeChromeV16 = function () {
+  hubNormalizeV18();
+  chromeBeforeHubV18();
+  const state = purposeSpaceStateV16, space = purposeSpacesV16[state.space], project = space.projects[state.project];
+  const crumb = document.querySelector('.breadcrumb .home-crumb');
+  [workspaceV16, mobileSpacePickerV16].forEach(trigger => trigger.querySelector('.space-switcher-avatar')?.style.setProperty('--mark', space.mark || 'transparent'));
+  crumb.innerHTML = currentView === 'tasks' ? hubMarkV18(state.space) + esc(space.name) + (project ? ' › ' + esc(project.name) : '') : '모든 스페이스';
+  projectsNavV16.querySelectorAll('.purpose-create-link').forEach(button => { if (!button.querySelector('svg')) button.remove(); });
+  document.querySelectorAll('.purpose-manage-action').forEach(element => element.remove());
+  if (currentView === 'spaces') document.getElementById('pageTitle').textContent = '스페이스';
+};
+const dialogBeforeHubV18 = renderSpaceDialogV16;
+renderSpaceDialogV16 = function () {
+  dialogBeforeHubV18();
+  spaceDialogV16.querySelectorAll('.space-switcher-option').forEach(option => {
+    option.querySelector('.space-switcher-avatar')?.style.setProperty('--mark', purposeSpacesV16[option.dataset.space]?.mark || 'transparent');
+  });
+  const manage = spaceDialogV16.querySelector('[data-manage-purpose]');
+  if (manage) manage.innerHTML = icon('spaces') + '모든 스페이스 보기';
+};
+
+// Unassigned is a real choice in the example data ('none'); cards and details say so instead of falling back to 나.
+const cardBeforeHubV18 = taskHTML;
+taskHTML = function (task) {
+  const html = cardBeforeHubV18(task);
+  return hubAssigneeV18(task.id) === 'none' ? html.replace('<span class="purpose-assignee">담당 나</span>', '<span class="purpose-assignee is-unassigned">담당자 미정</span>') : html;
+};
+const detailBeforeHubV18 = openDetail;
+openDetail = function (id) {
+  detailBeforeHubV18(id);
+  if (hubAssigneeV18(id) !== 'none') return;
+  document.querySelectorAll('.dialog .detail-grid > div').forEach(cell => { if (cell.querySelector('small')?.textContent === '담당자') cell.querySelector('strong').textContent = '담당자 미정'; });
+};
+const affiliationBeforeHubV18 = updateAffiliationPurposeV17;
+updateAffiliationPurposeV17 = function (rebuildProjects = true) {
+  const panel = document.querySelector('.purpose-affiliation'), select = document.getElementById('assigneeV17');
+  const first = panel && !panel.dataset.hubReady;
+  const wanted = first ? (purposeCrudV17.assignees[panel.dataset.itemId] || 'me') : select?.value;
+  affiliationBeforeHubV18(rebuildProjects);
+  const assignee = document.getElementById('assigneeV17');
+  if (!panel || !assignee) return;
+  panel.dataset.hubReady = '1';
+  if (!assignee.querySelector('[value="none"]')) assignee.insertAdjacentHTML('beforeend', '<option value="none">담당자 미정</option>');
+  if (wanted === 'none') assignee.value = 'none';
+};
+const resetBeforeHubV18 = resetDemo;
+resetDemo = function () { hubMobileDetailV18 = false; resetBeforeHubV18(); hubSeedV18(); hubNormalizeV18(); renderPurposeChromeV16(); renderTasks(); };
+
+renderPurposeChromeV16();
 
 </script>
 </body>
