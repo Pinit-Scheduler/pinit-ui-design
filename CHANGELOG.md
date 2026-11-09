@@ -1,5 +1,9 @@
 # Change history
 
+## Statistics split decisions — 2026-11-09
+- Record in docs/design-evidence/spaces-hub.md: the 통계 menu becomes "my statistics" across all spaces with space/project breakdown, team statistics move to the 스페이스 hub, and time metrics (focus and invested time) may be shared without restriction, including per-person time in team statistics.
+- This supersedes the earlier "team statistics in the 통계 screen with the scope stated" decision that 0.19.0 drew. Follow-ups are listed but not built yet. Documentation only.
+
 ## 0.19.0 — 2026-11-09
 - Scope the schedule and statistics screens to the selected space (and project), and show that scope in the breadcrumb.
 - In a team space, add a "내 일정 | 팀 전체" switch to the schedule panel. It defaults to my schedules, resets on space change, tells how many teammate schedules are hidden that day, and names each schedule's assignee in the team view. A linked schedule follows its task's assignee. Today keeps showing only my schedules across spaces.
