@@ -115,6 +115,29 @@
 .hub-stats-scope{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin:0 0 14px;font-size:13px;color:var(--muted)}
 .hub-stats-scope strong{color:var(--ink);font-weight:600;margin-right:2px}
 
+/* 0.20 team record in the hub and my breakdown in statistics. Bars stay neutral: blue is for actions. */
+.hub-quiet-inline{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.hub-record-total{font-size:14px;color:var(--ink);margin:2px 0 12px;font-variant-numeric:tabular-nums}
+.hub-days{display:flex;align-items:flex-end;gap:10px;height:72px;padding:0 2px 4px;margin-bottom:16px;border-bottom:1px solid #f0f2f6}
+.hub-day{flex:1;display:grid;justify-items:center;gap:6px;max-width:44px}
+.hub-day i{display:block;width:100%;max-width:22px;border-radius:4px 4px 2px 2px;background:#5b6578}
+.hub-day small{font-size:11px;color:var(--muted)}
+.hub-day.is-today small{color:var(--ink);font-weight:600}
+.hub-record-split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin-bottom:6px}
+.content.spaces-only #alternatePanel .hub-record-split h4{font-size:12px;font-weight:600;color:var(--muted);margin:0 0 8px}
+.hub-bars{display:grid;gap:8px}
+.hub-bar-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(60px,1.2fr) 84px;align-items:center;gap:10px;font-size:13px}
+.hub-bar-row strong{text-align:right}
+.hub-bar-row.is-child{font-size:12px;color:var(--muted)}
+.hub-bar-row.is-child .hub-bar-label{padding-left:18px}
+.hub-bar-label{display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hub-bar-track{height:8px;border-radius:4px;background:#eef1f5;overflow:hidden}
+.hub-bar-track i{display:block;height:100%;border-radius:4px;background:#5b6578}
+.hub-bar-row.is-child .hub-bar-track i{background:#a9b1be}
+.hub-bar-row strong{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hub-my-breakdown{grid-column:1/-1;margin-top:16px}
+.hub-my-breakdown .hub-bars{margin-top:12px;max-width:640px}
+
 @media(min-width:1600px){
   .hub-overview{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(320px,1fr);column-gap:40px}
   .hub-back,.hub-identity,.hub-purpose,.hub-settings{grid-column:1/-1}
@@ -152,6 +175,8 @@
   .hub-settings-row .text-btn{min-height:44px}
   .hub-assign li{grid-template-columns:1fr auto}
   .hub-assign li div{grid-column:1/-1}
+  .hub-record-split{grid-template-columns:1fr;gap:18px}
+  .hub-days{gap:6px}
   .panel-head:has(#hubScheduleScopeV18){flex-wrap:wrap;row-gap:10px}
   .hub-scope-toggle{order:10;flex:1 0 100%;margin-left:0}
   .hub-scope-toggle button{flex:1;min-height:40px;font-size:14px}

@@ -1,5 +1,12 @@
 # Change history
 
+## 0.20.0 — 2026-11-09
+- Make the 통계 menu "my statistics": the same numbers whichever space is selected, counting schedules I actually ran (or that are mine and not yet run) and tasks I am assigned, with a "스페이스별 내 완료 시간" breakdown by space and project. The breadcrumb reads 모든 스페이스.
+- Add "이번 주 팀 기록" to the hub for spaces with two or more members: completed schedule count and time, per-day bars, time by project and time by the person who actually ran each schedule. Bars stay neutral grey; blue remains for actions.
+- Record the runner on schedules started or completed in the prototype and seed three completed example schedules. Time is the planned duration of completed schedules, as in the existing statistics, and the screens say so.
+- Why: the user decided statistics are personal across all spaces, team statistics live in the hub, time may be shared without restriction, and "my record" means the person who actually ran it. Supersedes the 0.19.0 in-screen team statistics.
+- Propose the matching backend contract in spaces-summary-api.md. Validation: npm run check and npm run build; browser checks at 1365×900 and 390×844 with an empty error log.
+
 ## Statistics split decisions — 2026-11-09
 - Record in docs/design-evidence/spaces-hub.md: the 통계 menu becomes "my statistics" across all spaces with space/project breakdown, team statistics move to the 스페이스 hub, and time metrics (focus and invested time) may be shared without restriction, including per-person time in team statistics.
 - This supersedes the earlier "team statistics in the 통계 screen with the scope stated" decision that 0.19.0 drew. Follow-ups are listed but not built yet. Documentation only.

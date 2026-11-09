@@ -399,6 +399,29 @@ h2,h3,.panel-head h2,.dialog-head h2,.dialog-fixed-v11 .dialog-head h2,.sequence
 .hub-stats-scope{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin:0 0 14px;font-size:13px;color:var(--muted)}
 .hub-stats-scope strong{color:var(--ink);font-weight:600;margin-right:2px}
 
+/* 0.20 team record in the hub and my breakdown in statistics. Bars stay neutral: blue is for actions. */
+.hub-quiet-inline{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.hub-record-total{font-size:14px;color:var(--ink);margin:2px 0 12px;font-variant-numeric:tabular-nums}
+.hub-days{display:flex;align-items:flex-end;gap:10px;height:72px;padding:0 2px 4px;margin-bottom:16px;border-bottom:1px solid #f0f2f6}
+.hub-day{flex:1;display:grid;justify-items:center;gap:6px;max-width:44px}
+.hub-day i{display:block;width:100%;max-width:22px;border-radius:4px 4px 2px 2px;background:#5b6578}
+.hub-day small{font-size:11px;color:var(--muted)}
+.hub-day.is-today small{color:var(--ink);font-weight:600}
+.hub-record-split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin-bottom:6px}
+.content.spaces-only #alternatePanel .hub-record-split h4{font-size:12px;font-weight:600;color:var(--muted);margin:0 0 8px}
+.hub-bars{display:grid;gap:8px}
+.hub-bar-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(60px,1.2fr) 84px;align-items:center;gap:10px;font-size:13px}
+.hub-bar-row strong{text-align:right}
+.hub-bar-row.is-child{font-size:12px;color:var(--muted)}
+.hub-bar-row.is-child .hub-bar-label{padding-left:18px}
+.hub-bar-label{display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hub-bar-track{height:8px;border-radius:4px;background:#eef1f5;overflow:hidden}
+.hub-bar-track i{display:block;height:100%;border-radius:4px;background:#5b6578}
+.hub-bar-row.is-child .hub-bar-track i{background:#a9b1be}
+.hub-bar-row strong{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hub-my-breakdown{grid-column:1/-1;margin-top:16px}
+.hub-my-breakdown .hub-bars{margin-top:12px;max-width:640px}
+
 @media(min-width:1600px){
   .hub-overview{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(320px,1fr);column-gap:40px}
   .hub-back,.hub-identity,.hub-purpose,.hub-settings{grid-column:1/-1}
@@ -436,6 +459,8 @@ h2,h3,.panel-head h2,.dialog-head h2,.dialog-fixed-v11 .dialog-head h2,.sequence
   .hub-settings-row .text-btn{min-height:44px}
   .hub-assign li{grid-template-columns:1fr auto}
   .hub-assign li div{grid-column:1/-1}
+  .hub-record-split{grid-template-columns:1fr;gap:18px}
+  .hub-days{gap:6px}
   .panel-head:has(#hubScheduleScopeV18){flex-wrap:wrap;row-gap:10px}
   .hub-scope-toggle{order:10;flex:1 0 100%;margin-left:0}
   .hub-scope-toggle button{flex:1;min-height:40px;font-size:14px}
@@ -1910,7 +1935,7 @@ function renderSpacesHubV18() {
   panel.innerHTML = '<div class="spaces-hub' + (hubMobileDetailV18 ? ' is-detail' : '') + '">' + hubRailV18() +
     '<article class="hub-overview" aria-labelledby="hubSpaceTitleV18"><button type="button" class="hub-back" onclick="hubBackV18()">' + icon('left') + '모든 스페이스</button>' +
     '<header class="hub-identity">' + hubMarkV18(spaceId) + '<h2 id="hubSpaceTitleV18">' + esc(space.name) + '</h2><p class="hub-members">' + (spaceId === 'personal' ? '본인 전용' : hubMemberNamesV18(spaceId)) + '</p></header>' +
-    hubPurposeV18(spaceId) + hubProjectsV18(spaceId) + hubPeopleV18(spaceId) + hubSettingsV18(spaceId) + '</article></div>';
+    hubPurposeV18(spaceId) + hubProjectsV18(spaceId) + hubPeopleV18(spaceId) + hubTeamRecordV18(spaceId) + hubSettingsV18(spaceId) + '</article></div>';
   openMenus.forEach(label => panel.querySelector('summary[aria-label="' + label + '"]')?.parentElement.setAttribute('open', ''));
 }
 function hubSelectV18(spaceId) {
@@ -2006,7 +2031,7 @@ renderPurposeChromeV16 = function () {
   const state = purposeSpaceStateV16, space = purposeSpacesV16[state.space], project = space.projects[state.project];
   const crumb = document.querySelector('.breadcrumb .home-crumb');
   [workspaceV16, mobileSpacePickerV16].forEach(trigger => trigger.querySelector('.space-switcher-avatar')?.style.setProperty('--mark', space.mark || 'transparent'));
-  crumb.innerHTML = ['tasks', 'schedules', 'statistics'].includes(currentView) ? hubMarkV18(state.space) + esc(space.name) + (project ? ' › ' + esc(project.name) : '') : '모든 스페이스';
+  crumb.innerHTML = ['tasks', 'schedules'].includes(currentView) ? hubMarkV18(state.space) + esc(space.name) + (project ? ' › ' + esc(project.name) : '') : '모든 스페이스';
   if (hubLastSpaceV18 !== state.space) { hubLastSpaceV18 = state.space; hubScheduleScopeV18 = 'mine'; }
   if (currentView === 'schedules') { renderWeek(); renderTimeline(); }
   if (currentView === 'statistics' && !hubStatsRenderingV18) { hubStatsRenderingV18 = true; try { renderStats(); } finally { hubStatsRenderingV18 = false; } }
@@ -2063,7 +2088,35 @@ function hubScheduleSeedV18() {
   purposeCrudV17.hubScheduleSeedV18 = true;
   save(); persistPurposeCrudV17();
 }
-function hubScheduleAssigneeV18(item) { return item.taskId ? hubAssigneeV18(item.taskId) : 'me'; }
+function hubScheduleAssigneeV18(item) { return item.assignee || (item.taskId ? hubAssigneeV18(item.taskId) : 'me'); }
+// 실제로 실행한 사람(사용자 확정: 내 기록과 사람별 시간의 기준). 시작하지 않은 일정에는 실행한 사람이 없다.
+function hubRunnerV18(item) { return item.runner || null; }
+function hubMineForStatsV18(item) {
+  const runner = hubRunnerV18(item);
+  return runner ? runner === 'me' : item.state === 'NOT_STARTED' && hubScheduleAssigneeV18(item) === 'me';
+}
+function hubRunnerSeedV18() {
+  // 이전 버전에서 내가 시작·완료한 일정에는 실행한 사람이 없으므로 나로 채운다.
+  scheduled.forEach(item => { if (!item.runner && item.state !== 'NOT_STARTED') item.runner = hubScheduleAssigneeV18(item) === 'me' ? 'me' : hubScheduleAssigneeV18(item); });
+  [
+    [9105, '카드 마감 색 비교', '2026-10-27', '10:00', 60, 101, null, 'minji'],
+    [9106, '가이드 링크 점검', '2026-10-27', '16:00', 30, 106, null, 'me'],
+    [9107, '원형 크기 시안 세 가지 비교', '2026-10-26', '14:00', 90, null, 'junho', 'junho']
+  ].forEach(([id, title, date, time, duration, taskId, assignee, runner]) => {
+    if (scheduled.some(item => item.id === id)) return;
+    scheduled.push({ id, title, date, time, duration, type: 'DEEP_WORK', state: 'COMPLETED', taskId, assignee: assignee || undefined, runner, description: '스페이스 허브 팀 기록 시안의 예시 일정이에요.' });
+    if (!taskId) purposeCrudV17.schedules[id] = { space: 'pinit', project: 'cards', visibility: 'shared' };
+  });
+  purposeCrudV17.hubRunnerSeedV18 = true;
+  save(); persistPurposeCrudV17();
+}
+const changeStateBeforeHubV18 = changeStateV2;
+changeStateV2 = function (id, state) {
+  const item = scheduled.find(schedule => schedule.id === id);
+  if (item && !item.runner && ['IN_PROGRESS', 'COMPLETED'].includes(state)) item.runner = 'me';
+  if (item && state === 'NOT_STARTED') item.runner = null;
+  return changeStateBeforeHubV18(id, state);
+};
 function hubScheduleInScopeV18(item) {
   const at = scheduleSpacePurposeV17(item), state = purposeSpaceStateV16;
   return at.space === state.space && (!state.project || at.project === state.project);
@@ -2071,7 +2124,7 @@ function hubScheduleInScopeV18(item) {
 function hubScheduleVisibleV18(item) {
   if ((purposeCrudV17.leftSpaces || []).includes(scheduleSpacePurposeV17(item).space)) return false;
   if (currentView === 'today') return hubScheduleAssigneeV18(item) === 'me';
-  if (currentView === 'statistics') return hubScheduleInScopeV18(item);
+  if (currentView === 'statistics') return hubMineForStatsV18(item);
   if (currentView !== 'schedules') return true;
   if (!hubScheduleInScopeV18(item)) return false;
   return !sharedPurposeV17(purposeSpaceStateV16.space) || hubScheduleScopeV18 === 'team' || hubScheduleAssigneeV18(item) === 'me';
@@ -2080,7 +2133,11 @@ let hubAllTasksV18 = null, hubStatsRenderingV18 = false;
 function hubWithScopedSchedulesV18(render) {
   hubAllSchedulesV18 = scheduled;
   scheduled = scheduled.filter(hubScheduleVisibleV18);
-  if (currentView === 'statistics') { hubAllTasksV18 = tasks; tasks = tasks.filter(task => taskInPurposeScopeV16(task)); }
+  if (currentView === 'statistics') {
+    const left = purposeCrudV17.leftSpaces || [];
+    hubAllTasksV18 = tasks;
+    tasks = tasks.filter(task => hubAssigneeV18(task.id) === 'me' && !left.includes(taskSpaceV16(task).space));
+  }
   try { render(); } finally {
     scheduled = hubAllSchedulesV18; hubAllSchedulesV18 = null;
     if (hubAllTasksV18) { tasks = hubAllTasksV18; hubAllTasksV18 = null; }
@@ -2128,22 +2185,67 @@ scheduleHTMLV2 = function (item) {
   const label = id === 'none' ? '담당자 미정' : id === 'me' ? '나' : member ? member.name : '참여자 아님';
   return html.replace('<div class="schedule-caption">', '<div class="schedule-caption"><span class="hub-schedule-who' + (id === 'none' ? ' is-unassigned' : id === 'me' ? ' is-me' : '') + '">' + esc(label) + '</span>');
 };
+// 0.20: 통계 메뉴는 모든 스페이스에서 내가 실행한 기록(사용자 확정). 팀 기록은 스페이스 허브에 둔다.
+function hubMinutesV18(minutes) {
+  const h = Math.floor(minutes / 60), m = minutes % 60;
+  return h ? h + '시간' + (m ? ' ' + m + '분' : '') : m + '분';
+}
+function hubWeekV18() {
+  const today = new Date(TODAY + 'T00:00:00Z'), shift = (today.getUTCDay() + 6) % 7, start = new Date(today.getTime() - shift * 86400000);
+  return Array.from({ length: 7 }, (_, index) => new Date(start.getTime() + index * 86400000).toISOString().slice(0, 10));
+}
+function hubShortDateV18(key) { const [, month, day] = key.split('-'); return Number(month) + '/' + Number(day); }
+function hubBarsV18(rows) {
+  const max = Math.max(1, ...rows.map(row => row.minutes));
+  return rows.map(row => '<div class="hub-bar-row' + (row.child ? ' is-child' : '') + '"><span class="hub-bar-label">' + (row.mark || '') + esc(row.name) + '</span><span class="hub-bar-track"><i style="width:' + Math.round(row.minutes / max * 100) + '%"></i></span><strong>' + hubMinutesV18(row.minutes) + '</strong></div>').join('');
+}
+function hubMyBreakdownV18() {
+  const period = PinitStats.summarize([], { today: TODAY, mode: statsMode === 'month' ? 'month' : 'week', offset: statsOffset, weekStart: prefsV2.week === '일요일' ? 0 : 1 });
+  const done = scheduled.filter(item => item.state === 'COMPLETED' && item.date >= period.start && item.date <= period.end);
+  const rows = [];
+  hubSpaceIdsV18().forEach(spaceId => {
+    const mine = done.filter(item => scheduleSpacePurposeV17(item).space === spaceId);
+    if (!mine.length) return;
+    rows.push({ name: purposeSpacesV16[spaceId].name, mark: hubMarkV18(spaceId), minutes: mine.reduce((sum, item) => sum + Number(item.duration || 0), 0) });
+    const byProject = new Map();
+    mine.forEach(item => { const project = scheduleSpacePurposeV17(item).project; byProject.set(project, (byProject.get(project) || 0) + Number(item.duration || 0)); });
+    [...byProject].sort((a, b) => b[1] - a[1]).forEach(([project, minutes]) => rows.push({ name: purposeSpacesV16[spaceId].projects[project]?.name || '프로젝트 없음', minutes, child: true }));
+  });
+  document.getElementById('alternatePanel').insertAdjacentHTML('beforeend', '<section class="stats-chart-panel hub-my-breakdown"><h2>스페이스별 내 완료 시간</h2><p class="stats-chart-copy">' + hubShortDateV18(period.start) + '–' + hubShortDateV18(period.end) + ', 내가 실행해 완료한 일정의 계획 시간 기준</p>' + (rows.length ? '<div class="hub-bars">' + hubBarsV18(rows) + '</div>' : '<p class="stats-zero">이 기간에 내가 완료한 일정이 없어요.</p>') + '</section>');
+}
 function hubStatsScopeV18() {
   const panel = document.getElementById('alternatePanel');
   panel?.querySelector('.hub-stats-scope')?.remove();
   if (currentView !== 'statistics' || !panel) return;
-  const id = purposeSpaceStateV16.space, space = purposeSpacesV16[id], project = space.projects[purposeSpaceStateV16.project];
-  const members = membersPurposeV17(id).length, name = space.name + (project ? ' › ' + project.name : '');
-  const who = id !== 'personal' && members > 1 ? ' 참여자 ' + members + '명 전체의 기록이에요.' : '의 기록이에요.';
-  panel.insertAdjacentHTML('afterbegin', '<p class="hub-stats-scope">' + hubMarkV18(id) + '<span><strong>' + esc(name) + '</strong>' + who + '</span></p>');
-  document.getElementById('pageSubtitle').textContent = '선택한 스페이스의 기록을 기존 집계 기준으로 돌아보세요.';
+  panel.insertAdjacentHTML('afterbegin', '<p class="hub-stats-scope"><span><strong>모든 스페이스</strong>에서 내가 실행한 기록이에요. 팀 기록은 스페이스에서 볼 수 있어요.</span></p>');
+  document.getElementById('pageSubtitle').textContent = '내가 실행한 일정과 맡은 작업을 기존 집계 기준으로 돌아보세요.';
 }
 const statsBeforeHubV18 = renderStats;
-renderStats = function () { hubWithScopedSchedulesV18(statsBeforeHubV18); hubStatsScopeV18(); };
+renderStats = function () { hubWithScopedSchedulesV18(() => { statsBeforeHubV18(); hubMyBreakdownV18(); }); hubStatsScopeV18(); };
+function hubTeamRecordV18(spaceId) {
+  if (spaceId === 'personal' || membersPurposeV17(spaceId).length < 2) return '';
+  const week = hubWeekV18(), members = membersPurposeV17(spaceId);
+  const done = scheduled.filter(item => item.state === 'COMPLETED' && week.includes(item.date) && scheduleSpacePurposeV17(item).space === spaceId);
+  const total = done.reduce((sum, item) => sum + Number(item.duration || 0), 0);
+  let body = '<section class="hub-section hub-team-record" aria-labelledby="hubTeamRecordTitleV18"><div class="hub-section-head"><h3 id="hubTeamRecordTitleV18">이번 주 팀 기록</h3><span class="hub-quiet-inline">' + hubShortDateV18(week[0]) + '–' + hubShortDateV18(week[6]) + '</span></div>';
+  if (!done.length) return body + '<p class="hub-empty">이번 주에 완료한 일정이 아직 없어요.</p></section>';
+  const perDay = week.map(key => done.filter(item => item.date === key).reduce((sum, item) => sum + Number(item.duration || 0), 0)), maxDay = Math.max(1, ...perDay);
+  body += '<p class="hub-record-total">완료한 일정 ' + done.length + '개, ' + hubMinutesV18(total) + '</p><div class="hub-days" role="img" aria-label="' + week.map((key, index) => hubShortDateV18(key) + ' ' + hubMinutesV18(perDay[index])).join(', ') + '">' + week.map((key, index) => '<span class="hub-day' + (key === TODAY ? ' is-today' : '') + '"><i style="height:' + Math.max(perDay[index] ? 8 : 2, Math.round(perDay[index] / maxDay * 48)) + 'px"></i><small>' + ['월', '화', '수', '목', '금', '토', '일'][index] + '</small></span>').join('') + '</div>';
+  const byProject = new Map(), byRunner = new Map();
+  done.forEach(item => {
+    const project = scheduleSpacePurposeV17(item).project, runner = hubRunnerV18(item) || hubScheduleAssigneeV18(item);
+    byProject.set(project, (byProject.get(project) || 0) + Number(item.duration || 0));
+    byRunner.set(runner, (byRunner.get(runner) || 0) + Number(item.duration || 0));
+  });
+  const projectRows = [...byProject].sort((a, b) => b[1] - a[1]).map(([project, minutes]) => ({ name: purposeSpacesV16[spaceId].projects[project]?.name || '프로젝트 없음', minutes }));
+  const personRows = [...byRunner].sort((a, b) => b[1] - a[1]).map(([runner, minutes]) => ({ name: runner === 'me' ? '나' : members.find(member => member.id === runner)?.name || '이전 참여자', minutes }));
+  return body + '<div class="hub-record-split"><div><h4>프로젝트별</h4><div class="hub-bars">' + hubBarsV18(projectRows) + '</div></div><div><h4>실행한 사람별</h4><div class="hub-bars">' + hubBarsV18(personRows) + '</div></div></div><p class="hub-quiet">완료한 일정의 계획 시간 기준이에요. 사람별 시간은 일정을 실제로 실행한 사람으로 나눠요.</p></section>';
+}
 
 if (!purposeCrudV17.hubScheduleSeedV18) hubScheduleSeedV18();
+if (!purposeCrudV17.hubRunnerSeedV18) hubRunnerSeedV18();
 const resetBeforeHubV18 = resetDemo;
-resetDemo = function () { hubMobileDetailV18 = false; hubScheduleScopeV18 = 'mine'; resetBeforeHubV18(); hubSeedV18(); hubScheduleSeedV18(); hubNormalizeV18(); renderPurposeChromeV16(); renderTasks(); renderWeek(); renderTimeline(); };
+resetDemo = function () { hubMobileDetailV18 = false; hubScheduleScopeV18 = 'mine'; resetBeforeHubV18(); hubSeedV18(); hubScheduleSeedV18(); hubRunnerSeedV18(); hubNormalizeV18(); renderPurposeChromeV16(); renderTasks(); renderWeek(); renderTimeline(); };
 
 renderPurposeChromeV16();
 
