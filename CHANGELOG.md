@@ -1,5 +1,14 @@
 # Change history
 
+## 0.21.0 — 2026-11-09
+- Draw the seven follow-up decisions. Up to 899px the sidebar hides (as in pinit-fe) and the space button stays pinned in the top bar. The narrow space sheet opens the selected space's projects right below it.
+- Outside the hub, unavailable actions turn grey with a one-line reason (task detail delete, form space/project, trash restore), using static example records for 주말 러닝 모임.
+- A version conflict shows one dialog with "내 입력 보기" (per-field and copy-all) and a single "최신 내용 불러오기"; the form reloads the latest values and keeps my input folded at the top. No toast, no auto-overwrite.
+- Task and schedule forms open with one affiliation line ("스페이스 › 프로젝트, 담당자"); choosing a space lists its effects at once (assignee release, who sees it, linked schedules moving, links released). The optional linked-schedule checkbox and the always-on move paragraph are gone.
+- Categories give way to projects: no category chip, picker, detail cell or filter; card paths show only what lies beyond the current scope, with the space mark on 오늘; the statistics category chart is replaced by "스페이스별 내 완료 시간".
+- Why: the user decided these seven items on 2026-11-09 after the per-page review. Proposals (move dialog removal, reading of "out of scope", reason source, colour assignment) are listed in docs/design-evidence/spaces-followups.md.
+- Validation: npm run check and npm run build; browser checks at 1365×900, 820×900 and 390×844 with an empty error log.
+
 ## Follow-up decisions — 2026-11-09
 - Record eight user decisions from the per-page review in docs/design-evidence/spaces-hub.md: a fixed mobile space button up to 899px, projects inside the space sheet, unavailable reasons outside the hub, a single conflict notice that keeps my input, a form affiliation summary with immediate move impact, no active invite list, categories replaced by projects, and automatic space marks in the FE. Documentation only; not drawn yet.
 

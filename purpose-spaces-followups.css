@@ -1,0 +1,83 @@
+/* Spaces follow-ups (0.21.0). Blue stays for actions and selection; unavailable controls are grey, not faded blue. */
+:root{--disabled-bg:#eef1f5;--disabled-line:#e3e7ee;--disabled-ink:#9aa3b2}
+
+/* 3. Unavailable actions: grey and still readable, with the reason on one line next to them. */
+.btn:disabled,.btn.primary:disabled,.btn.danger:disabled{opacity:1;background:var(--disabled-bg);border-color:var(--disabled-line);color:var(--disabled-ink);box-shadow:none;filter:none;cursor:not-allowed}
+.text-btn:disabled,.hub-menu-list button:disabled{opacity:1;color:var(--disabled-ink);cursor:not-allowed}
+.dialog select:disabled,.field select:disabled{opacity:1;background:var(--disabled-bg);border-color:var(--disabled-line);color:var(--disabled-ink);cursor:not-allowed}
+.unavailable-reason{font-size:12px!important;line-height:1.7;margin:6px 0 0}
+.detail-reason{text-align:right;margin:8px 0 0}
+.setting-row.has-reason{flex-wrap:wrap}
+.setting-row.has-reason .unavailable-reason{flex-basis:100%;text-align:right;margin:2px 0 0}
+
+/* 5. Affiliation summary line at the top of task and schedule forms. */
+.purpose-affiliation[data-followup]{padding:0;border:0;background:none;margin:0 0 6px}
+.affiliation-summary{display:flex;align-items:center;gap:8px;width:100%;min-height:46px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);text-align:left;color:var(--ink);font-size:13px}
+.affiliation-summary:hover{border-color:#cfd8e8}
+.affiliation-summary[aria-expanded=true]{border-color:var(--blue);border-bottom-left-radius:0;border-bottom-right-radius:0}
+.affiliation-summary .hub-mark{margin:0}
+.affiliation-summary-text{flex:1;min-width:0;overflow-wrap:anywhere;line-height:1.6}
+.affiliation-summary-text strong{font-weight:600}
+.affiliation-summary-action{flex:none;color:var(--blue);font-size:12px;font-weight:500}
+.affiliation-fields{padding:4px 14px 12px;border:1px solid var(--blue);border-top:0;border-radius:0 0 10px 10px}
+.affiliation-fields .field{margin:12px 0}
+.affiliation-impact{list-style:none;margin:4px 0 8px;padding:10px 12px;border-radius:8px;background:var(--bg);display:grid;gap:4px}
+.affiliation-impact li{font-size:12px;line-height:1.7;color:var(--ink);padding-left:14px;position:relative}
+.affiliation-impact li:before{content:'';position:absolute;left:2px;top:.72em;width:5px;height:5px;border-radius:50%;background:#9aa3b2}
+.affiliation-impact li.is-release:before{background:#a77d35}
+.affiliation-fields #sharingWarningV17{margin:0 0 8px;padding:10px 12px;background:var(--bg);color:var(--ink);font-size:12px}
+.affiliation-fields #sharingWarningV17 p{font-size:12px!important;line-height:1.7;margin:4px 0 6px}
+.affiliation-fields #sharingWarningV17 .check-field{min-height:40px}
+
+/* 4. One conflict dialog; my input stays behind a disclosure, also inside the reloaded form. */
+.conflict-dialog .dialog-head{margin-bottom:12px}
+.conflict-mine{margin:16px 0 4px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.conflict-mine summary{cursor:pointer;padding:12px 14px;font-size:12px;font-weight:500;color:var(--ink);min-height:44px;display:flex;align-items:center}
+.conflict-mine[open] summary{border-bottom:1px solid var(--line)}
+.conflict-mine dl{margin:0;padding:6px 14px 2px}
+.conflict-mine dl>div{padding:8px 0;border-bottom:1px solid var(--line)}
+.conflict-mine dl>div:last-child{border:0}
+.conflict-mine dt{font-size:11px;color:var(--muted);margin-bottom:3px}
+.conflict-mine dd{margin:0;display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.7;color:var(--ink)}
+.conflict-mine dd span{flex:1;min-width:0;overflow-wrap:anywhere;white-space:pre-wrap}
+.conflict-mine dd .text-btn{color:var(--blue);flex:none;min-height:32px}
+.conflict-mine>.btn{margin:4px 14px 14px}
+.conflict-mine>p{padding:10px 14px}
+.dialog form>.conflict-mine{margin:0 0 12px;background:var(--surface)}
+
+/* 6. Projects replace categories; the path names only what lies beyond the current scope. */
+.space-task-link.has-mark{display:inline-flex;align-items:center;gap:6px}
+.space-task-link.has-mark .hub-mark{margin:0}
+.space-task-project{font-size:12px;color:var(--muted);line-height:1.8}
+
+/* 2. Project list inside the narrow space sheet. */
+.space-switcher-option.is-expanded{border-bottom-left-radius:0;border-bottom-right-radius:0}
+.sheet-projects{display:grid;gap:2px;margin:0 0 8px;padding:4px 6px 8px 56px;background:var(--blue-soft);border-radius:0 0 10px 10px}
+.sheet-project{display:flex;align-items:center;gap:10px;min-height:44px;padding:8px 10px;border-radius:8px;text-align:left;font-size:14px;color:var(--ink)}
+.sheet-project span:first-child{flex:1;min-width:0;overflow-wrap:anywhere}
+.sheet-project small{font-size:11px;color:var(--muted)}
+.sheet-project[aria-pressed=true]{background:var(--surface);color:var(--blue);font-weight:600}
+.sheet-project:focus-visible{outline:3px solid #829cf3;outline-offset:1px}
+
+/* 1. pinit-fe hides the sidebar up to 899px; the space button lives in the top bar there and stays pinned. */
+@media(max-width:899px){
+  .topbar{position:sticky;top:0;z-index:35;background:var(--surface)}
+  .topbar .breadcrumb .home-crumb{display:none}
+  .space-mobile-picker{display:flex;align-items:center;gap:7px;max-width:min(260px,52vw);min-width:0;min-height:44px;background:var(--surface);border:0;border-radius:8px;color:var(--ink);font:inherit;font-size:13px;font-weight:500;padding:5px 8px 5px 0}
+  .space-mobile-picker .space-switcher-avatar{width:28px;height:28px;border-radius:8px;font-size:11px}
+  .space-mobile-picker .space-trigger-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
+@media(min-width:761px) and (max-width:899px){
+  .app{display:block}
+  .sidebar{display:none}
+  .main{grid-column:auto}
+  .content{padding-bottom:96px}
+  .mobile-nav{position:fixed;display:flex;height:66px;inset:auto 0 0;background:#fffffff2;backdrop-filter:blur(12px);border-top:1px solid var(--line);z-index:40;align-items:center;justify-content:space-around}
+  .toast{left:50%}
+}
+@media(max-width:760px){
+  .space-mobile-picker{max-width:min(220px,58vw)}
+  .sheet-projects{padding-left:62px}
+  .affiliation-summary{min-height:48px}
+}
+.stats-chart-grid>.hub-my-breakdown{grid-column:auto;margin:0}

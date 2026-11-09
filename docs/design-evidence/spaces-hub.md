@@ -162,9 +162,9 @@
 - [데스크톱 이번 주 팀 기록](spaces-hub/desktop-team-record.jpg), [데스크톱 내 통계의 스페이스별 완료 시간](spaces-hub/desktop-my-statistics.jpg)
 - [모바일 이번 주 팀 기록](spaces-hub/mobile-team-record.jpg)
 
-## 후속 화면 결정 (2026-11-09, 미구현)
+## 후속 화면 결정 (2026-11-09)
 
-페이지별 분석에서 나온 개선 항목을 사용자가 정했다. 이 시안에는 아직 그리지 않았다. FE 반영은 pinit-docs의 FE 계획 "B단계 4. FE 개선"에서 다룬다.
+페이지별 분석에서 나온 개선 항목을 사용자가 정했다. 0.21.0 시안에 그렸고 동작·제안·검증은 [후속 화면 증적](spaces-followups.md)에 있다. FE 반영 계획은 pinit-docs의 `docs/superpowers/plans/2026-11-09-spaces-hub-fe-followups.md`다(FE 미구현).
 
 | 항목 | 결정 |
 | --- | --- |
