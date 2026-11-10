@@ -1,6 +1,6 @@
 # 새 작업·일정의 기본 소속
 
-2026-11-10 · 디자인 시안 0.23.0 · `origin/main`(`d65d70d`)에서 `claude/create-defaults`로 분기. FE 구현은 `pinit-fe`의 `claude/create-defaults`(`b17f55d`)다.
+2026-11-10 · 디자인 시안 0.23.0 · `origin/main`(`d65d70d`)에서 `claude/create-defaults`로 분기. FE 구현은 `pinit-fe#52`이고 master `3373942`로 병합돼 2026-11-10 운영에 배포됐다(SW `pinit-cache-v30`).
 
 ## 출발점
 
@@ -48,7 +48,7 @@
   - 면접 준비를 완료로 둔 뒤 작업 화면: "커리어 성장, 담당 나". 확인 후 완료를 되돌렸다.
   - 폼을 열 때 `m-fade` 0개, 프로젝트를 "프로젝트 없음"으로 바꾸면 표시 색과 글자 두 요소에 `m-fade-in`, 끝난 뒤 클래스 0개.
   - 390×844 일정 화면에서 새 일정 폼의 요약 줄과 가로 스크롤 없음. 콘솔 오류 0건.
-- FE에서 실행한 것은 [FE 문서](https://github.com/Pinit-Scheduler/pinit-fe/blob/claude/create-defaults/docs/purpose-spaces.md)의 "새 항목의 기본 소속" 절에 있다(로컬 mock API만, 운영 API 미사용).
+- FE에서 실행한 것은 [FE 문서](https://github.com/Pinit-Scheduler/pinit-fe/blob/3373942/docs/purpose-spaces.md)의 "새 항목의 기본 소속" 절에 있다(로컬 mock API만, 운영 API 미사용).
 
 확인하지 못한 것:
 
