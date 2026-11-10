@@ -281,6 +281,23 @@
     };
   }
 
+  /* ---------- Form affiliation line (0.23.0) ---------- */
+  /* The summary is rebuilt with innerHTML whenever the space, project or assignee changes. When its text
+     really changed, the new mark and text fade in. The line the form opens with does not animate:
+     the dialog's own entrance covers it. */
+  if (typeof followupAffiliationRefreshV21 === 'function') {
+    const affiliationRefreshBeforeMotionV23 = followupAffiliationRefreshV21;
+    followupAffiliationRefreshV21 = function () {
+      const summary = () => document.getElementById('affiliationSummaryV21');
+      const text = () => summary()?.querySelector('.affiliation-summary-text')?.textContent || '';
+      const was = text();
+      const result = affiliationRefreshBeforeMotionV23.apply(this, arguments);
+      const now = text();
+      if (was && was !== now) summary()?.querySelectorAll('.affiliation-summary-text,.space-mark,.hub-mark').forEach(el => restart(el, 'm-fade', token('--motion-base') + 60));
+      return result;
+    };
+  }
+
   /* ---------- Dialogs, toasts and the schedule player (any code path that adds or removes them) ---------- */
   let overlayGhost = null;
   function watchLayer(root, selector, onEnter, onLeave) {

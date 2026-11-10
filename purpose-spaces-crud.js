@@ -319,11 +319,23 @@ function validateAffiliationPurposeV17() {
   if (!document.getElementById('sharingWarningV17').classList.contains('hidden') && !document.getElementById('shareHistoryConfirmedV17').checked) return fail('이동 전 기록의 공개 범위를 확인하세요.');
   return true;
 }
+/* 0.23.0: a new item starts where the person was looking (same rule as pinit-fe createAffiliationFor).
+   - 오늘: 나의 스페이스.
+   - Lists of the selected space (작업, 일정, 작업 맵, 반복 관리): the selected space and its project,
+     unless that project is completed.
+   - Anywhere else: the selected space, no project. */
+function createAssignmentPurposeV23() {
+  const { space, project, completed } = purposeSpaceStateV16;
+  if (currentView === 'today') return { space: 'personal', project: '' };
+  const selectedList = ['tasks', 'schedules', 'map', 'recurrences'].includes(currentView);
+  const keepProject = selectedList && project && purposeSpacesV16[space]?.projects[project] && !(completed || {})[space + '/' + project];
+  return { space, project: keepProject ? project : '' };
+}
 const taskFormBeforeCrudV17 = openTaskFormV2;
 openTaskFormV2 = function (id) {
   taskFormBeforeCrudV17(id);
   const form = document.querySelector('.dialog form'), original = tasks.find(t => t.id === id);
-  const assignment = original ? taskSpaceV16(original) : currentView === 'tasks' ? { space: purposeSpaceStateV16.space, project: purposeSpaceStateV16.project || '' } : { space: 'personal', project: '' };
+  const assignment = original ? taskSpaceV16(original) : createAssignmentPurposeV23();
   form.querySelector('.space-form-destination')?.remove();
   form.insertAdjacentHTML('afterbegin', affiliationMarkupPurposeV17(assignment, 'task', id));
   updateAffiliationPurposeV17(false);
@@ -369,7 +381,7 @@ const scheduleFormBeforeCrudV17 = openScheduleFormV2;
 openScheduleFormV2 = function (id, taskId) {
   scheduleFormBeforeCrudV17(id, taskId);
   const schedule = scheduled.find(s => s.id === id), task = tasks.find(t => t.id === (schedule?.taskId || taskId));
-  const assignment = schedule ? scheduleSpacePurposeV17(schedule) : task ? { ...taskSpaceV16(task), visibility: 'personal' } : { space: currentView === 'tasks' ? purposeSpaceStateV16.space : 'personal', project: currentView === 'tasks' ? purposeSpaceStateV16.project : '', visibility: 'personal' };
+  const assignment = schedule ? scheduleSpacePurposeV17(schedule) : task ? { ...taskSpaceV16(task), visibility: 'personal' } : { ...createAssignmentPurposeV23(), visibility: 'personal' };
   document.querySelector('.dialog form').insertAdjacentHTML('afterbegin', affiliationMarkupPurposeV17(assignment, 'schedule', id));
   updateAffiliationPurposeV17(false);
 };
