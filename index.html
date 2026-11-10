@@ -650,10 +650,13 @@ h2,h3,.panel-head h2,.dialog-head h2,.dialog-fixed-v11 .dialog-head h2,.sequence
 .m-tick{animation:m-tick var(--motion-base) var(--motion-ease) both}
 #taskCount,#sideCount,.today-section-title span,#progressPercent{font-variant-numeric:tabular-nums}
 
+/* 6. Form affiliation line (0.23.0): a value that changes in place fades in instead of swapping in one frame. */
+.affiliation-summary .m-fade{animation:m-fade-in var(--motion-base) var(--motion-ease) both}
+
 /* Reduced motion: opacity only, shorter. Overrides the global `animation:none!important` from base.html
    because these selectors are more specific. Movement, stroke and strike draws are skipped. */
 @media(prefers-reduced-motion:reduce){
-  .m-enter,.m-screen-in,.toast.m-enter,#playerV2 .player.m-enter,.overlay.m-open,.space-switcher-dialog[open]{animation:m-fade-in var(--motion-fast) linear both!important}
+  .m-enter,.m-screen-in,.toast.m-enter,#playerV2 .player.m-enter,.overlay.m-open,.space-switcher-dialog[open],.affiliation-summary .m-fade{animation:m-fade-in var(--motion-fast) linear both!important}
   .m-ghost.m-exit,.m-ghost,.overlay.m-ghost,.toast.m-ghost,.player.m-ghost.m-exit,.space-switcher-dialog.m-closing{animation:m-fade-out var(--motion-fast) linear both!important}
   .overlay.m-open>.dialog,.overlay.m-ghost>.dialog,.m-tick,.m-flip{animation:none!important;transition:none!important;translate:none!important}
   ::view-transition-old(m-content){animation:m-fade-out var(--motion-fast) linear both!important}
@@ -1805,11 +1808,23 @@ function validateAffiliationPurposeV17() {
   if (!document.getElementById('sharingWarningV17').classList.contains('hidden') && !document.getElementById('shareHistoryConfirmedV17').checked) return fail('이동 전 기록의 공개 범위를 확인하세요.');
   return true;
 }
+/* 0.23.0: a new item starts where the person was looking (same rule as pinit-fe createAffiliationFor).
+   - 오늘: 나의 스페이스.
+   - Lists of the selected space (작업, 일정, 작업 맵, 반복 관리): the selected space and its project,
+     unless that project is completed.
+   - Anywhere else: the selected space, no project. */
+function createAssignmentPurposeV23() {
+  const { space, project, completed } = purposeSpaceStateV16;
+  if (currentView === 'today') return { space: 'personal', project: '' };
+  const selectedList = ['tasks', 'schedules', 'map', 'recurrences'].includes(currentView);
+  const keepProject = selectedList && project && purposeSpacesV16[space]?.projects[project] && !(completed || {})[space + '/' + project];
+  return { space, project: keepProject ? project : '' };
+}
 const taskFormBeforeCrudV17 = openTaskFormV2;
 openTaskFormV2 = function (id) {
   taskFormBeforeCrudV17(id);
   const form = document.querySelector('.dialog form'), original = tasks.find(t => t.id === id);
-  const assignment = original ? taskSpaceV16(original) : currentView === 'tasks' ? { space: purposeSpaceStateV16.space, project: purposeSpaceStateV16.project || '' } : { space: 'personal', project: '' };
+  const assignment = original ? taskSpaceV16(original) : createAssignmentPurposeV23();
   form.querySelector('.space-form-destination')?.remove();
   form.insertAdjacentHTML('afterbegin', affiliationMarkupPurposeV17(assignment, 'task', id));
   updateAffiliationPurposeV17(false);
@@ -1855,7 +1870,7 @@ const scheduleFormBeforeCrudV17 = openScheduleFormV2;
 openScheduleFormV2 = function (id, taskId) {
   scheduleFormBeforeCrudV17(id, taskId);
   const schedule = scheduled.find(s => s.id === id), task = tasks.find(t => t.id === (schedule?.taskId || taskId));
-  const assignment = schedule ? scheduleSpacePurposeV17(schedule) : task ? { ...taskSpaceV16(task), visibility: 'personal' } : { space: currentView === 'tasks' ? purposeSpaceStateV16.space : 'personal', project: currentView === 'tasks' ? purposeSpaceStateV16.project : '', visibility: 'personal' };
+  const assignment = schedule ? scheduleSpacePurposeV17(schedule) : task ? { ...taskSpaceV16(task), visibility: 'personal' } : { ...createAssignmentPurposeV23(), visibility: 'personal' };
   document.querySelector('.dialog form').insertAdjacentHTML('afterbegin', affiliationMarkupPurposeV17(assignment, 'schedule', id));
   updateAffiliationPurposeV17(false);
 };
@@ -3011,6 +3026,23 @@ renderPurposeChromeV16(); renderTasks();
         restart(row, 'm-state-in', token('--motion-base') + 60);
         if (now === 'COMPLETED') restart(row, 'm-state-done', token('--motion-base') + 60);
       });
+      return result;
+    };
+  }
+
+  /* ---------- Form affiliation line (0.23.0) ---------- */
+  /* The summary is rebuilt with innerHTML whenever the space, project or assignee changes. When its text
+     really changed, the new mark and text fade in. The line the form opens with does not animate:
+     the dialog's own entrance covers it. */
+  if (typeof followupAffiliationRefreshV21 === 'function') {
+    const affiliationRefreshBeforeMotionV23 = followupAffiliationRefreshV21;
+    followupAffiliationRefreshV21 = function () {
+      const summary = () => document.getElementById('affiliationSummaryV21');
+      const text = () => summary()?.querySelector('.affiliation-summary-text')?.textContent || '';
+      const was = text();
+      const result = affiliationRefreshBeforeMotionV23.apply(this, arguments);
+      const now = text();
+      if (was && was !== now) summary()?.querySelectorAll('.affiliation-summary-text,.space-mark,.hub-mark').forEach(el => restart(el, 'm-fade', token('--motion-base') + 60));
       return result;
     };
   }

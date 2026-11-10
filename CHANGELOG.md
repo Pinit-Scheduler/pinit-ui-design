@@ -1,5 +1,11 @@
 # Change history
 
+## 0.23.0 — 2026-11-10
+- New tasks and schedules start where the person was looking, with the same rule as pinit-fe (claude/create-defaults, b17f55d): on 작업, 일정, 작업 맵 and 반복 관리 the selected space and its project (not a completed project); on 오늘 the personal space; anywhere else the selected space with no project. Before, only a new task opened from 작업 took the selection and everything else, new schedules from 일정 included, started in the personal space. The form still changes it with "바꾸기".
+- The form's affiliation line fades in a value that changes in place (mark and text, --motion-base, --motion-fast under reduced motion). The line the form opens with does not animate.
+- Why: the user asked on 2026-11-10 for new items to default to the open space and project, with motion covering the moments that could look abrupt, and for these docs to follow the implementation. docs/design-evidence/create-defaults.md has the rule, the FE details and the checks; motion.md gains section 6.
+- Validation: npm run check and npm run build; browser checks of every screen's new task and schedule form, a completed project, the fade on change and none on open, and 390×844 with an empty console error log. The browser ran with reduced motion, so only the 120ms fade was seen.
+
 ## 0.22.0 — 2026-11-10
 - Add a motion layer as motion.css and motion.js, appended last in the build. Tokens: --motion-ease cubic-bezier(0.2,0,0,1), --motion-ease-exit cubic-bezier(0.4,0,1,1), --motion-fast 120ms, --motion-base 180ms, --motion-enter 240ms, --motion-exit 160ms, --motion-distance 8px. Only translate/scale, opacity, colour and stroke move; no bounce or loops.
 - Screen changes: nav clicks run in a View Transition that fades the old content and raises the new one while the sidebar, top bar and bottom nav stay still; programmatic navigation gets the same rise without delaying the call; scroll resets on a real screen change.

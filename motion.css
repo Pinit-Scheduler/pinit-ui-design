@@ -96,10 +96,13 @@
 .m-tick{animation:m-tick var(--motion-base) var(--motion-ease) both}
 #taskCount,#sideCount,.today-section-title span,#progressPercent{font-variant-numeric:tabular-nums}
 
+/* 6. Form affiliation line (0.23.0): a value that changes in place fades in instead of swapping in one frame. */
+.affiliation-summary .m-fade{animation:m-fade-in var(--motion-base) var(--motion-ease) both}
+
 /* Reduced motion: opacity only, shorter. Overrides the global `animation:none!important` from base.html
    because these selectors are more specific. Movement, stroke and strike draws are skipped. */
 @media(prefers-reduced-motion:reduce){
-  .m-enter,.m-screen-in,.toast.m-enter,#playerV2 .player.m-enter,.overlay.m-open,.space-switcher-dialog[open]{animation:m-fade-in var(--motion-fast) linear both!important}
+  .m-enter,.m-screen-in,.toast.m-enter,#playerV2 .player.m-enter,.overlay.m-open,.space-switcher-dialog[open],.affiliation-summary .m-fade{animation:m-fade-in var(--motion-fast) linear both!important}
   .m-ghost.m-exit,.m-ghost,.overlay.m-ghost,.toast.m-ghost,.player.m-ghost.m-exit,.space-switcher-dialog.m-closing{animation:m-fade-out var(--motion-fast) linear both!important}
   .overlay.m-open>.dialog,.overlay.m-ghost>.dialog,.m-tick,.m-flip{animation:none!important;transition:none!important;translate:none!important}
   ::view-transition-old(m-content){animation:m-fade-out var(--motion-fast) linear both!important}
