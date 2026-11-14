@@ -1,0 +1,226 @@
+.today-page {
+  min-width: 0;
+}
+.today-page .workspace-page-actions {
+  flex-wrap: wrap;
+  flex-shrink: 1;
+  max-width: 100%;
+}
+@media (max-width: 600px) {
+  .today-page .workspace-page-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+  .today-page .workspace-page-actions > a {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}
+.today-page__date {
+  color: var(--c-slate-500);
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+.today-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(340px, 0.85fr);
+  gap: 26px;
+  align-items: start;
+}
+.today-page__legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font-size: 12px !important;
+}
+.today-page__legend i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c-blue-400);
+}
+.today-page__legend i:last-of-type {
+  margin-left: 5px;
+  background: var(--c-indigo-300);
+}
+.today-workspace__task-body {
+  padding: 4px 20px 0;
+}
+.today-page__section-title {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--c-slate-500);
+  padding: 16px 8px 8px;
+}
+.today-page__section-title:after {
+  content: '';
+  height: 1px;
+  background: var(--c-slate-200);
+  flex: 1;
+  margin-left: 8px;
+}
+.today-page__section-title span {
+  font-size: 13px;
+}
+.today-page__all {
+  padding: 18px 24px;
+  border-top: 1px solid var(--c-slate-200);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--c-slate-500);
+  font-size: 14px;
+  text-decoration: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+.today-page__all,
+.today-workspace__schedules > .workspace-panel__head a {
+  transition: color var(--motion-fast) var(--motion-ease);
+}
+.today-page__all:hover {
+  color: var(--c-blue-600);
+}
+.today-workspace__schedules > .workspace-panel__head a {
+  font-size: 13px;
+  text-decoration: none;
+  color: var(--c-slate-500);
+}
+.today-workspace__schedules > .workspace-panel__head a:hover {
+  color: var(--c-blue-600);
+}
+.today-page__schedule-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  padding: 7px 24px 20px;
+  border-bottom: 1px solid var(--c-slate-200);
+}
+.today-page__schedule-date span {
+  margin-left: auto;
+  color: var(--c-slate-400);
+}
+.today-page__schedule-list {
+  padding: 8px 20px;
+}
+.today-page__schedule-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 9px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--c-slate-200);
+}
+.today-page__schedule-row:last-child {
+  border: 0;
+}
+.today-page__schedule-row > time {
+  color: var(--c-slate-500);
+  font-size: 13px;
+  padding-top: 14px;
+  font-variant-numeric: tabular-nums;
+  transition: color var(--motion-base) var(--motion-ease);
+}
+/* The time follows the schedule's state: the accent while it runs, muted once it is done. */
+.today-page__schedule-row[data-state='in_progress'] > time {
+  color: var(--c-blue-600);
+}
+.today-page__schedule-row[data-state='completed'] > time {
+  color: var(--c-slate-400);
+}
+.today-page__empty {
+  padding: 22px 8px;
+  color: var(--c-slate-500);
+  font-size: 14px;
+  line-height: 1.8;
+}
+.today-page .workspace-inline-error {
+  margin-block: 12px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Motion. Tokens and keyframes come from src/shared/styles/motion.css */
+/* (see docs/motion/README.md). Rows enter and leave through           */
+/* useListPresence; nothing here plays on a refetch.                  */
+/* ------------------------------------------------------------------ */
+
+/* Rows sit in wrappers, so the card's own :last-child rule no longer sees its neighbours. */
+.today-workspace__task-body .today-page__task-row > .workspace-task {
+  border-bottom: 1px solid var(--c-slate-200);
+}
+.today-workspace__task-body
+  .today-page__task-list:last-child
+  > .today-page__task-row:last-child
+  > .workspace-task {
+  border-bottom: 0;
+}
+
+/* A loading line waits before it shows, so a quick first load shows nothing at all. */
+.today-page__loading {
+  animation: motion-fade-in var(--motion-base) var(--motion-ease)
+    var(--motion-status-delay) both;
+}
+
+/* The first content for a day fades up where the loading line was. Backwards fill only, so the
+   panel keeps no transform (and no stacking context) once it has arrived. */
+.today-page__reveal {
+  animation: motion-rise-in var(--motion-enter) var(--motion-ease) backwards;
+}
+
+/* An empty line that replaces the last row appears after that row has faded out. A cached empty
+   list shown again on a return to the tab does not fade. */
+.today-page__empty--after-rows {
+  animation: motion-fade-in var(--motion-base) var(--motion-ease) backwards;
+}
+
+.today-page__count {
+  font-variant-numeric: tabular-nums;
+}
+.today-page__count--reveal {
+  animation: motion-fade-in var(--motion-base) var(--motion-ease) backwards;
+}
+
+/* The panel headings take the focus when the last row of a list leaves under it. */
+.today-workspace h2[tabindex='-1']:focus:not(:focus-visible) {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .today-page__loading,
+  .today-page__reveal,
+  .today-page__empty--after-rows,
+  .today-page__count--reveal {
+    --motion-keep-animation: var(--motion-base);
+  }
+  .today-page__schedule-row > time,
+  .today-page__all,
+  .today-workspace__schedules > .workspace-panel__head a {
+    --motion-keep-transition: var(--motion-base);
+  }
+}
+@media (max-width: 1150px) {
+  .today-workspace {
+    gap: 18px;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 0.9fr);
+  }
+}
+@media (max-width: 1000px) {
+  .today-workspace {
+    grid-template-columns: 1fr;
+  }
+  .today-workspace__task-body {
+    padding-inline: 16px;
+  }
+  .today-page__schedule-list {
+    padding-inline: 16px;
+  }
+  .today-page__schedule-date {
+    padding-inline: 18px;
+  }
+}

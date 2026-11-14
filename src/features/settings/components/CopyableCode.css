@@ -1,0 +1,46 @@
+.copyable-code {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.copyable-code__field {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--c-slate-200);
+  background-color: var(--c-slate-50);
+  color: var(--c-slate-900);
+  font-family: 'Pinit Pretendard', sans-serif;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  line-height: 1.5;
+  user-select: text;
+}
+
+.copyable-code__btn {
+  flex-shrink: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--c-slate-300);
+  background-color: var(--c-surface);
+  color: var(--c-slate-900);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    background-color var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease),
+    opacity var(--motion-base) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-ease);
+}
+
+.copyable-code__btn:hover {
+  background-color: var(--c-slate-100);
+}
+
+.copyable-code__btn:not(:disabled):active {
+  transform: scale(var(--motion-press-scale));
+}

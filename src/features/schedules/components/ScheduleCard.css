@@ -1,0 +1,463 @@
+.schedule-card {
+  background-color: var(--c-surface);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  cursor: pointer;
+  /* State changes recolor the edge; hover only deepens the border. Nothing lifts. */
+  transition:
+    border-color var(--motion-base) var(--motion-ease),
+    background-color var(--motion-fast) var(--motion-ease);
+}
+
+.schedule-card:hover {
+  box-shadow: 0 4px 6px rgba(15, 23, 42, 0.12);
+}
+
+.schedule-card__main {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: flex-start;
+  column-gap: 12px;
+}
+
+.schedule-card__text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.schedule-card__title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.schedule-card__state-icon {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--c-slate-200);
+  background: linear-gradient(145deg, var(--c-slate-50), var(--c-indigo-50));
+  color: var(--c-slate-600);
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  transition:
+    color var(--motion-base) var(--motion-ease),
+    background-color var(--motion-base) var(--motion-ease),
+    border-color var(--motion-base) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-ease);
+  flex-shrink: 0;
+  box-shadow:
+    inset 0 2px 4px rgba(148, 163, 184, 0.35),
+    0 6px 14px rgba(15, 23, 42, 0.12);
+}
+
+.schedule-card__state-icon:focus-visible {
+  outline: 2px solid var(--c-blue-500);
+  outline-offset: 2px;
+}
+
+.schedule-card__state-icon--clickable {
+  cursor: pointer;
+}
+
+.schedule-card__state-icon--clickable:hover {
+  box-shadow:
+    inset 0 2px 6px rgba(148, 163, 184, 0.4),
+    0 10px 18px rgba(15, 23, 42, 0.16);
+}
+
+/* A press answers at once, before the save does (and wins over the hover reset below). */
+.schedule-card .schedule-card__state-icon--clickable:active {
+  transform: scale(var(--motion-press-scale-small));
+}
+
+.schedule-card__state-icon--not_started {
+  border-color: var(--c-slate-300);
+  background: linear-gradient(145deg, var(--c-slate-50), var(--c-slate-200));
+  color: var(--c-slate-600);
+}
+
+.schedule-card__state-icon--in_progress {
+  /* 밝은 틴트에서 진한 색으로 가는 알약 버튼이라 두 테마에서 같은 색을 쓴다(글자가 늘 어두워야 읽힌다). */
+  border-color: #60a5fa;
+  background: linear-gradient(145deg, #dbeafe, #60a5fa);
+  color: #0b3b7e;
+}
+
+.schedule-card__state-icon--completed {
+  border-color: #34d399;
+  background: linear-gradient(145deg, #bbf7d0, #34d399);
+  color: #065f46;
+}
+
+.schedule-card__state-icon--suspended {
+  border-color: #fb923c;
+  background: linear-gradient(145deg, #ffedd5, #fb923c);
+  color: #7c2d12;
+}
+
+.schedule-card__title {
+  font-size: 16px;
+  font-weight: 600;
+  transition: color var(--motion-base) var(--motion-ease);
+}
+
+.schedule-card__subtitle {
+  font-size: 13px;
+  color: var(--c-slate-500);
+}
+
+/* 팀 전체 보기의 담당자. 파랑은 누르는 것에만 쓰므로 중립색으로 둔다. */
+.schedule-card__assignee {
+  font-weight: 600;
+  color: var(--c-slate-700);
+}
+
+.schedule-card__assignee--unassigned {
+  font-weight: 500;
+  color: var(--c-amber-800);
+}
+
+.schedule-card__state {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+.schedule-card__state--pending {
+  background-color: var(--c-blue-100);
+  color: var(--c-blue-700);
+}
+
+.schedule-card__state--in_progress {
+  background-color: var(--c-amber-100);
+  color: var(--c-amber-800);
+}
+
+.schedule-card__state--completed {
+  background-color: var(--c-green-100);
+  color: var(--c-green-700);
+}
+
+.schedule-card__state--canceled {
+  background-color: var(--c-red-100);
+  color: var(--c-red-700);
+}
+
+.schedule-card__state--suspended {
+  background-color: var(--c-slate-200);
+  color: var(--c-slate-700);
+}
+
+.schedule-card__delete-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background-color: transparent;
+  color: var(--c-red-500);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background-color var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-ease);
+}
+
+.schedule-card__delete-btn:hover {
+  background-color: var(--c-red-100);
+}
+
+.schedule-card__delete-btn:active {
+  transform: scale(var(--motion-press-scale-small));
+}
+
+.schedule-card__description {
+  font-size: 14px;
+  color: var(--c-slate-600);
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.schedule-card__pill {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background-color: var(--c-slate-100);
+}
+
+.schedule-card__quick-complete {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, #bbf7d0, #34d399);
+  color: #065f46;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 6px 12px rgba(52, 211, 153, 0.24);
+  transition:
+    background-color var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-ease);
+  white-space: nowrap;
+}
+
+.schedule-card__quick-complete:hover {
+  box-shadow: 0 8px 16px rgba(52, 211, 153, 0.28);
+}
+
+.schedule-card__quick-complete:active {
+  transform: scale(var(--motion-press-scale-small));
+}
+
+/* The schedule completed: the button fades where it was while the mark draws. */
+.schedule-card__quick-complete[data-state='closing'] {
+  animation: motion-fade-out var(--motion-exit) var(--motion-ease-exit) both;
+  pointer-events: none;
+}
+
+.schedule-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+.schedule-card__action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background-color: var(--c-slate-100);
+  color: var(--c-slate-700);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background-color var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-ease);
+}
+
+.schedule-card__action-btn:active:not(:disabled) {
+  transform: scale(var(--motion-press-scale-small));
+}
+
+.schedule-card__action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.schedule-card__action-btn--start {
+  background-color: var(--c-blue-100);
+  color: var(--c-blue-800);
+}
+
+.schedule-card__action-btn--start:hover:not(:disabled) {
+  background-color: var(--c-blue-200);
+}
+
+.schedule-card__action-btn--pause {
+  background-color: var(--c-amber-100);
+  color: var(--c-amber-800);
+}
+
+.schedule-card__action-btn--pause:hover:not(:disabled) {
+  background-color: var(--c-amber-200);
+}
+
+.schedule-card__action-btn--complete {
+  background-color: var(--c-green-100);
+  color: var(--c-green-700);
+}
+
+.schedule-card__action-btn--complete:hover:not(:disabled) {
+  background-color: var(--c-green-200);
+}
+
+.schedule-card__action-btn--cancel {
+  background-color: var(--c-red-100);
+  color: var(--c-red-700);
+}
+
+.schedule-card__action-btn--cancel:hover:not(:disabled) {
+  background-color: var(--c-red-200);
+}
+
+/* Workspace cards share a neutral surface; state is an accent rather than a competing palette. */
+.schedule-card {
+  border: 1px solid var(--c-slate-200);
+  border-radius: 9px;
+  box-shadow: none;
+  padding: 14px;
+  background: var(--c-surface);
+}
+.schedule-card:hover {
+  box-shadow: 0 2px 8px #203b6508;
+  transform: none;
+  border-color: var(--c-slate-300);
+}
+.schedule-card__main {
+  column-gap: 10px;
+}
+.schedule-card__title {
+  font-size: 16px;
+  line-height: 1.6;
+}
+.schedule-card__subtitle,
+.schedule-card__description {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--c-slate-500);
+}
+.schedule-card__state-icon {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  border: 0;
+  box-shadow: none;
+  background: var(--c-slate-100);
+  color: var(--c-slate-500);
+  font-size: 17px;
+}
+.schedule-card__state-icon--in_progress {
+  background: var(--c-blue-50);
+  color: var(--c-blue-600);
+}
+.schedule-card__state-icon--suspended,
+.schedule-card__state-icon--completed {
+  background: var(--c-slate-100);
+  color: var(--c-slate-500);
+}
+.schedule-card__state-icon--clickable:hover {
+  box-shadow: none;
+  transform: none;
+}
+.schedule-card__quick-complete {
+  background: var(--c-blue-50);
+  color: var(--c-blue-700);
+  box-shadow: none;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 8px;
+}
+.schedule-card__quick-complete:hover {
+  box-shadow: none;
+  background: var(--c-blue-100);
+}
+.schedule-card__delete-btn {
+  font-size: 14px;
+  color: var(--c-slate-400);
+  width: 28px;
+  height: 30px;
+}
+.schedule-card__actions {
+  flex-wrap: wrap;
+  max-width: 105px;
+  gap: 4px;
+}
+.schedule-card__state-icon:disabled {
+  opacity: 1;
+}
+
+/* The same shape and accent identify the state in cards and the player. */
+.schedule-card {
+  border-inline-start-width: 3px;
+}
+.schedule-card:is(.schedule-state--in_progress, .schedule-state--suspended) {
+  border-inline-start-color: var(--schedule-state-ink);
+}
+.schedule-card .schedule-card__state-icon {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  color: var(--schedule-state-ink);
+  background: transparent;
+}
+.schedule-card__state-icon .workspace-icon {
+  width: 26px;
+  height: 26px;
+  stroke-width: 1.9;
+}
+.schedule-card__status {
+  color: var(--schedule-state-ink);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  transition: color var(--motion-base) var(--motion-ease);
+}
+
+/* ------------------------------------------------------------------ */
+/* State changes. See docs/motion/README.md.                           */
+/* ------------------------------------------------------------------ */
+
+/* One slot for the state icon and the completed mark, so swapping them moves nothing. */
+.schedule-card__state-slot {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+}
+
+.schedule-card__glyph {
+  display: grid;
+  place-items: center;
+}
+
+/* A state changed on screen: the new glyph and label fade in where the old ones were. */
+.schedule-card__glyph.is-fresh,
+.schedule-card__swap {
+  animation: motion-fade-in var(--motion-base) var(--motion-ease) both;
+}
+
+/* Completion: the box fills with the state ink, the tick draws, the title is struck through. */
+.schedule-card__check {
+  display: grid;
+  place-items: center;
+  --check-accent: var(--schedule-state-ink);
+}
+/* .completion-check sets its own default size, so the card's size goes on the check itself. */
+.schedule-card__check .completion-check {
+  --check-size: 26px;
+}
+
+/* The completed card settles into a muted title. Color only, so nothing moves. */
+.schedule-card.is-completed .schedule-card__title {
+  color: var(--c-slate-500);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .schedule-card__glyph.is-fresh,
+  .schedule-card__swap {
+    --motion-keep-animation: var(--motion-base);
+  }
+  .schedule-card__quick-complete[data-state='closing'] {
+    --motion-keep-animation: var(--motion-exit);
+  }
+  .schedule-card__title,
+  .schedule-card__status {
+    --motion-keep-transition: var(--motion-base);
+  }
+}

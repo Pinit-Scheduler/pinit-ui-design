@@ -1,0 +1,426 @@
+.schedules-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.schedules-tab__header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.schedules-tab__header h2 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.schedules-tab__header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.schedules-tab__refresh {
+  border: none;
+  background: none;
+  color: var(--c-blue-600);
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.schedules-tab__list {
+  flex: 1;
+  min-height: 0;
+  border-radius: 16px;
+  background-color: var(--c-surface);
+  padding: 16px;
+  padding-bottom: 120px; /* 여유 공간을 둬 미니 플레이어와 겹치지 않도록 */
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  position: relative;
+}
+
+.schedules-tab__item {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--c-slate-200);
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+  /* Released cards settle back into place; a moving card dims while it saves. */
+  transition:
+    transform var(--motion-base) var(--motion-ease),
+    opacity var(--motion-fast) var(--motion-ease);
+}
+
+/* A dragged card follows the pointer a little (useScheduleDrag sets --schedule-drag-x),
+   with no transition so it never lags behind the hand. */
+.schedules-tab__item.is-dragging {
+  transform: translateX(var(--schedule-drag-x, 0px));
+  transition-property: opacity;
+}
+
+.schedules-tab__item.is-dragging,
+.schedules-tab__item.is-dragging * {
+  cursor: grabbing;
+}
+.schedules-tab__drag-hint {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--c-slate-600);
+}
+
+.schedules-tab__item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.schedules-tab__item.is-dragging .schedule-card {
+  border-color: var(--c-blue-600);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+}
+
+.schedules-tab__item.is-moving {
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.schedules-tab__edge {
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  width: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--motion-base) var(--motion-ease);
+  color: var(--c-blue-900);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.schedules-tab__edge span {
+  padding: 6px 10px;
+  background: color-mix(in srgb, var(--c-surface) 90%, transparent);
+  border-radius: 999px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.2);
+  transition:
+    background-color var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease);
+}
+
+.schedules-tab__edge--left {
+  left: -10px;
+  background: linear-gradient(
+    90deg,
+    rgba(59, 130, 246, 0.18),
+    rgba(59, 130, 246, 0)
+  );
+  border-radius: 14px;
+}
+
+.schedules-tab__edge--right {
+  right: -10px;
+  background: linear-gradient(
+    270deg,
+    rgba(59, 130, 246, 0.18),
+    rgba(59, 130, 246, 0)
+  );
+  border-radius: 14px;
+}
+
+.schedules-tab__edge.is-visible {
+  opacity: 0.35;
+}
+
+/* The card is over a drop zone: the zone firms up and its label takes the accent. */
+.schedules-tab__edge.is-active {
+  opacity: 0.85;
+}
+.schedules-tab__edge.is-active span {
+  background-color: var(--c-blue-600);
+  color: var(--c-surface);
+}
+
+.schedules-tab__weekly-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background-color: var(--c-indigo-50);
+  color: var(--c-blue-800);
+  font-weight: 600;
+}
+
+/* Loading text stays invisible briefly, so a quick load goes straight to the total. */
+.schedules-tab__stats-pending {
+  animation: motion-fade-in var(--motion-base) var(--motion-ease)
+    var(--motion-status-delay) both;
+}
+.schedules-tab__stats-value {
+  font-variant-numeric: tabular-nums;
+  animation: motion-fade-in var(--motion-base) var(--motion-ease) both;
+}
+
+.schedules-tab__weekly-stats button {
+  border: none;
+  background: transparent;
+  color: var(--c-blue-700);
+  font-weight: 600;
+}
+
+/* Week change only (the page sets these after the week moves, never on mount):
+   the strip and the week total slide in from the side of the week you moved to. */
+.week-transition--forward {
+  animation: schedules-week-forward var(--motion-enter) var(--motion-ease) both;
+}
+
+.week-transition--backward {
+  animation: schedules-week-backward var(--motion-enter) var(--motion-ease) both;
+}
+
+@keyframes schedules-week-forward {
+  from {
+    opacity: 0;
+    transform: translateX(calc(var(--motion-distance) * 1.5));
+  }
+}
+
+@keyframes schedules-week-backward {
+  from {
+    opacity: 0;
+    transform: translateX(calc(var(--motion-distance) * -1.5));
+  }
+}
+
+/* Week and month views crossfade when you switch between them. */
+.schedules-tab__calendar-in {
+  animation: motion-fade-in var(--motion-base) var(--motion-ease) both;
+}
+
+/* The overdue banner rises in when overdue schedules appear and fades when none are left. */
+.schedules-tab__overdue[data-enter] {
+  animation: motion-rise-in var(--motion-enter) var(--motion-ease) both;
+}
+.schedules-tab__overdue[data-state='closing'] {
+  animation: motion-fade-out var(--motion-exit) var(--motion-ease-exit) both;
+  pointer-events: none;
+}
+
+.schedules-tab__notice {
+  margin: 0 0 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--c-blue-50);
+  color: var(--c-blue-800);
+  font-size: 13px;
+}
+
+/* 팀 스페이스 일정의 내 일정/팀 전체 전환(시안 0.19.0) */
+.schedules-tab__audience {
+  display: inline-flex;
+  gap: 2px;
+  margin-left: auto;
+  padding: 3px;
+  border-radius: 9px;
+  background-color: var(--c-slate-100);
+}
+
+.schedules-tab__audience button {
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-size: 12px;
+  color: var(--c-slate-500);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease);
+}
+
+.schedules-tab__audience button[aria-pressed='true'] {
+  background-color: var(--c-surface);
+  color: var(--c-slate-900);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(32, 59, 101, 0.08);
+}
+
+.schedules-tab__audience button:focus-visible {
+  outline: 2px solid var(--workspace-blue);
+  outline-offset: 1px;
+}
+
+.schedules-tab__hidden-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  background-color: var(--c-slate-100);
+  color: var(--c-slate-600);
+  font-size: 13px;
+}
+
+.schedules-tab__hidden-note button {
+  padding: 0;
+  color: var(--workspace-blue);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+@media (max-width: 760px) {
+  .schedules-tab__audience {
+    order: 10;
+    flex: 1 0 100%;
+    margin-left: 0;
+  }
+
+  .schedules-tab__audience button {
+    flex: 1;
+    min-height: 40px;
+    font-size: 14px;
+  }
+
+  .schedules-tab__hidden-note button {
+    min-height: 40px;
+  }
+}
+
+.schedules-tab__view-toggle {
+  align-self: flex-end;
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 10px;
+  background-color: var(--c-slate-100);
+}
+
+.schedules-tab__view-toggle button {
+  min-width: 44px;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-slate-500);
+  cursor: pointer;
+  transition:
+    background-color var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease);
+}
+
+.schedules-tab__view-toggle button.is-active {
+  background-color: var(--c-surface);
+  color: var(--c-slate-900);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.schedules-tab {
+  height: auto;
+  overflow: visible;
+  gap: 20px;
+}
+.schedules-tab__header h2 {
+  font-size: 26px;
+}
+.schedules-tab__list {
+  overflow: visible;
+  padding: 18px;
+  border: 1px solid var(--c-slate-200);
+  border-radius: 13px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 20px;
+  background: var(--c-surface);
+  flex: none;
+}
+.schedules-tab__item {
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.schedules-tab__weekly-stats {
+  font-size: 14px;
+  color: var(--c-slate-500);
+}
+.schedules-tab__header-actions button {
+  min-height: 38px;
+  padding: 8px 12px;
+  border-radius: 7px;
+  border: 1px solid var(--c-slate-200);
+  background: var(--c-surface);
+  color: var(--c-slate-600);
+}
+.schedules-tab__header-actions .schedules-tab__create {
+  min-height: 44px;
+  background: var(--workspace-blue);
+  border-color: var(--workspace-blue);
+  color: var(--workspace-on-accent);
+  font-weight: 600;
+}
+@media (max-width: 1100px) {
+  .schedules-tab__list {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .schedules-tab__list {
+    padding: 12px;
+    gap: 16px;
+  }
+}
+
+.schedules-tab__header-actions button {
+  transition:
+    background-color var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-ease);
+}
+.schedules-tab__header-actions button:active {
+  transform: scale(var(--motion-press-scale));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Opacity only: the week slide becomes a fade, the drag no longer follows the pointer. */
+  .week-transition--forward,
+  .week-transition--backward {
+    animation-name: motion-fade-in;
+  }
+  .week-transition--forward,
+  .week-transition--backward,
+  .schedules-tab__calendar-in,
+  .schedules-tab__overdue[data-enter],
+  .schedules-tab__stats-value,
+  .schedules-tab__stats-pending {
+    --motion-keep-animation: var(--motion-base);
+  }
+  .schedules-tab__overdue[data-state='closing'] {
+    --motion-keep-animation: var(--motion-exit);
+  }
+  .schedules-tab__item.is-dragging {
+    transform: none;
+  }
+}

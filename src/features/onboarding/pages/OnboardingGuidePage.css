@@ -1,0 +1,212 @@
+.onboarding-guide {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.onboarding-guide__header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 8px 0 4px;
+}
+
+.onboarding-guide__eyebrow {
+  font-size: 12px;
+  color: var(--c-slate-400);
+}
+
+.onboarding-guide__title {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--c-slate-900);
+}
+
+.onboarding-guide__description {
+  font-size: 13px;
+  color: var(--c-slate-600);
+}
+
+.onboarding-guide__replay,
+.onboarding-guide__retry {
+  margin-top: 8px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: var(--c-blue-600);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform var(--motion-fast) var(--motion-ease);
+}
+
+.onboarding-guide__replay:active,
+.onboarding-guide__retry:active,
+.onboarding-guide__show:active {
+  transform: scale(var(--motion-press-scale));
+}
+
+.onboarding-guide__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.onboarding-guide__card {
+  background-color: var(--c-surface);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
+
+.onboarding-guide__card-heading {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.onboarding-guide__toggle {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  padding: 16px 44px 16px 16px;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+
+.onboarding-guide__toggle:focus-visible,
+.onboarding-guide__show:focus-visible,
+.onboarding-guide__replay:focus-visible,
+.onboarding-guide__retry:focus-visible {
+  outline: 2px solid var(--c-blue-300);
+  outline-offset: 2px;
+}
+
+.onboarding-guide__card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--c-slate-900);
+}
+
+.onboarding-guide__new {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--c-amber-100);
+  color: var(--c-amber-700);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.onboarding-guide__purpose {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--c-slate-600);
+}
+
+.onboarding-guide__caret {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--c-slate-400);
+  transition:
+    transform var(--motion-base) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease);
+}
+
+.onboarding-guide__card.is-open .onboarding-guide__caret {
+  color: var(--c-slate-600);
+  transform: rotate(90deg);
+}
+
+.onboarding-guide__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0 16px 16px;
+  border-top: 1px solid var(--c-slate-200);
+  /* 펼치면 안내가 제목 아래에서 살짝 올라온다. 접을 때는 바로 닫힌다. */
+  animation: motion-rise-in var(--motion-enter) var(--motion-ease) both;
+}
+
+.onboarding-guide__panel[hidden] {
+  display: none;
+}
+
+/* 전역 user-select: none을 풀어 안내 문구를 복사할 수 있게 한다. */
+.onboarding-guide__panel,
+.onboarding-guide__panel * {
+  user-select: text;
+}
+
+.onboarding-guide__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 14px;
+}
+
+.onboarding-guide__section h3 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--c-blue-600);
+}
+
+.onboarding-guide__group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.onboarding-guide__group-heading {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c-slate-900);
+}
+
+.onboarding-guide__group p,
+.onboarding-guide__group li {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--c-slate-700);
+}
+
+.onboarding-guide__group ul,
+.onboarding-guide__group ol {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 20px;
+}
+
+.onboarding-guide__show {
+  align-self: flex-start;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--c-blue-200);
+  background: var(--c-blue-50);
+  color: var(--c-blue-700);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onboarding-guide__caret {
+    transition: none;
+  }
+  .onboarding-guide__panel {
+    animation: none;
+  }
+}

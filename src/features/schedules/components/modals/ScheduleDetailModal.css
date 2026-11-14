@@ -1,0 +1,210 @@
+.schedule-detail-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  z-index: var(--z-modal-backdrop);
+  animation: motion-fade-in var(--motion-base) var(--motion-ease) both;
+}
+
+.schedule-detail-modal__content {
+  background-color: var(--c-surface);
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  border-radius: 24px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: modalSlideUp var(--motion-enter) var(--motion-ease) both;
+}
+
+.schedule-detail-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--c-slate-200);
+}
+
+.schedule-detail-modal__header h1 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.schedule-detail-modal__close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background-color: var(--c-slate-100);
+  color: var(--c-slate-500);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background-color var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease);
+}
+
+.schedule-detail-modal__close:hover {
+  background-color: var(--c-slate-200);
+  color: var(--c-slate-700);
+}
+
+.schedule-detail-modal__body {
+  padding: 24px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.schedule-detail-modal__section {
+  margin-bottom: 24px;
+}
+
+.schedule-detail-modal__section h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.schedule-detail-modal__section h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--c-slate-700);
+}
+
+.schedule-detail-modal__description {
+  font-size: 16px;
+  color: var(--c-slate-500);
+  line-height: 1.6;
+  margin-bottom: 16px;
+  white-space: pre-line;
+}
+
+.schedule-detail-modal__meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.schedule-detail-modal__badge {
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background-color: var(--c-slate-100);
+  color: var(--c-slate-500);
+  font-weight: 500;
+}
+
+.schedule-detail-modal__badge--state {
+  background-color: var(--c-blue-100);
+  color: var(--c-blue-800);
+  text-transform: uppercase;
+}
+
+.schedule-detail-modal__actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.schedule-detail-modal__action-btn {
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-ease);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.schedule-detail-modal__action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Hover is a color change (below); a press scales down a touch. Nothing lifts. */
+.schedule-detail-modal__action-btn:not(:disabled):active {
+  transform: scale(var(--motion-press-scale));
+}
+
+.schedule-detail-modal__action-btn--edit {
+  background-color: var(--c-indigo-100);
+  color: var(--c-indigo-700);
+}
+
+.schedule-detail-modal__action-btn--edit:hover:not(:disabled) {
+  background-color: var(--c-indigo-200);
+}
+
+.schedule-detail-modal__action-btn--delete {
+  background-color: var(--c-red-100);
+  color: var(--c-red-700);
+}
+
+.schedule-detail-modal__action-btn--delete:hover:not(:disabled) {
+  background-color: var(--c-red-200);
+}
+
+.schedule-detail-modal__action-btn--edit:hover:not(:disabled) {
+  background-color: var(--c-indigo-200);
+}
+
+.schedule-detail-modal__message {
+  margin-top: 16px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background-color: var(--c-green-50);
+  color: var(--c-green-700);
+  font-size: 14px;
+  text-align: center;
+}
+
+.schedule-detail-modal__loading {
+  padding: 40px;
+  text-align: center;
+  color: var(--c-slate-500);
+}
+
+
+/* A refresh failed while the schedule stays on screen. The server's message, as is. */
+.schedule-detail-modal__refresh-error {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background-color: var(--c-red-50);
+  color: var(--c-red-700);
+  font-size: 14px;
+  animation: motion-fade-in var(--motion-base) var(--motion-ease) both;
+}
+
+/* The state badge follows a change made elsewhere (the card, the mini player) with a color fade. */
+.schedule-detail-modal__badge {
+  transition:
+    background-color var(--motion-base) var(--motion-ease),
+    color var(--motion-base) var(--motion-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .schedule-detail-modal__refresh-error {
+    --motion-keep-animation: var(--motion-base);
+  }
+}

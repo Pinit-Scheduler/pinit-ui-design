@@ -1,0 +1,101 @@
+.toast-container {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: var(--z-toast);
+}
+
+.toast {
+  min-width: 240px;
+  max-width: 320px;
+  background: var(--c-surface-inverse);
+  color: #fff;
+  padding: 12px 14px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  font-size: 14px;
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toast__message {
+  flex: 1;
+}
+
+.toast__action {
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: transparent;
+  color: #fff;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toast--error {
+  background: var(--c-red-600);
+}
+
+.toast--success {
+  background: var(--c-green-600);
+}
+
+.toast--info {
+  background: var(--c-surface-inverse);
+}
+
+.toast-container {
+  top: calc(16px + env(safe-area-inset-top, 0px));
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 32px);
+}
+.toast {
+  background: var(--c-surface);
+  color: var(--c-slate-800);
+  border: 1px solid var(--c-slate-200);
+  box-shadow: 0 6px 22px #203b6514;
+  min-width: 260px;
+  max-width: 460px;
+  border-radius: 9px;
+  font-weight: 400;
+}
+.toast--success,
+.toast--info {
+  background: var(--c-surface);
+  color: var(--c-slate-800);
+}
+.toast--error {
+  background: var(--c-red-50);
+  border-color: var(--c-red-200);
+  color: var(--c-red-800);
+}
+.toast__action {
+  color: var(--c-blue-700);
+  border-color: var(--c-slate-300);
+  font-weight: 500;
+}
+.toast__dismiss {
+  color: inherit;
+  min-width: 32px;
+  min-height: 32px;
+  font-size: 23px;
+  cursor: pointer;
+}
+
+/* Toasts hang from the top edge: they drop in a few pixels and fade out in place. */
+.toast {
+  animation: motion-drop-in var(--motion-enter) var(--motion-ease) both;
+}
+.toast[data-state='closing'] {
+  animation: motion-fade-out var(--motion-exit) var(--motion-ease-exit) both;
+  pointer-events: none;
+}

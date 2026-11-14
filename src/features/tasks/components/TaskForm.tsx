@@ -1,0 +1,617 @@
+import type {
+  AllowedActions,
+  UnavailableReasons,
+} from '@features/spaces/types'
+import WorkspaceIcon from '@shared/components/common/WorkspaceIcon'
+import { useState, useId, useRef } from 'react'
+import {
+  useRouteSurfaceNavigation,
+  RouteSurfaceActions,
+} from '@shared/routing/RouteSurface'
+import type { CSSProperties } from 'react'
+import { getTodayWithOffset } from '@shared/utils/datetime'
+import { useTimePreferences } from '@contexts/TimePreferencesContext'
+import { FIBONACCI_DIFFICULTIES } from '@constants/difficulty'
+import type { DifficultyValue } from '@constants/difficulty'
+import { parseDurationInput } from '@shared/utils/isoDuration'
+import { DIFFICULTY_ESTIMATE_MINUTES } from '@shared/utils/taskEstimate'
+import { presenceProps, useListPresence } from '@shared/motion'
+import './TaskForm.css'
+import TaskDependencyModal from './modals/TaskDependencyModal'
+import AffiliationFields from '@features/spaces/AffiliationFields'
+import { needsRecordDisclosure } from '@features/spaces/affiliationImpact'
+import { useSpaces } from '@features/spaces/store'
+import RecurrenceRuleFields from '@features/recurrence/components/RecurrenceRuleFields'
+import {
+  defaultRuleDraft,
+  validateRuleDraft,
+  type RuleDraft,
+  type RuleDraftField,
+} from '@features/recurrence/utils/recurrenceRules'
+
+export type TaskFormValues = {
+  spaceId?: number
+  assigneeId?: number | null
+  expectedVersion?: number
+  recurrenceVersion?: number
+  affiliationChanged?: boolean
+  locationChanged?: boolean
+  assigneeChanged?: boolean
+  title: string
+  description: string
+  dueDate: string // YYYY-MM-DD
+  importance: number
+  difficulty: DifficultyValue
+  /** 예상 소요시간(분) 입력칸 값. 비우면 서버가 난이도 환산값을 쓴다 */
+  expectedDurationMinutes: string
+  previousTaskIds: number[]
+  nextTaskIds: number[]
+  /** 붙일 태그 ID(ADR-0023 §2) */
+  tagIds: number[]
+  categoryId: number | null
+  /** 폼을 열었을 때와 비교한 사용자 분류 변경 여부. 재조회된 초기값과 비교하지 않는다. */
+  categoryChanged?: boolean
+}
+
+type TaskFormProps = {
+  allowedActions?: AllowedActions
+  unavailableReasons?: UnavailableReasons
+  initialValues?: Partial<TaskFormValues>
+  /** rule은 "반복"을 켰을 때만 있다. 첫 회차 날짜는 마감 날짜다 */
+  onSubmit: (values: TaskFormValues, rule?: RuleDraft | null) => Promise<void>
+  submitLabel?: string
+  /** 새 작업에서 "반복"(ADR-0019 FLEXIBLE)을 켤 수 있게 한다 */
+  allowRecurrence?: boolean
+  /** 반복 회차는 이전·다음 작업을 연결할 수 없다 */
+  hideDependencies?: boolean
+  /** 서버가 돌려준 유효 예상 소요시간 라벨(수정 화면). 예: "45분 · 난이도 기준" */
+  effectiveExpectedDurationLabel?: string
+  /** 수정 중인 작업 ID. 이전·이후 작업 목록에서 자신을 뺀다 */
+  taskId?: number
+}
+
+const buildDefaultValues = (
+  initial: Partial<TaskFormValues> | undefined,
+  offsetMinutes: number,
+): TaskFormValues => {
+  const now = getTodayWithOffset(offsetMinutes).startOf('day')
+  return {
+    title: '',
+    description: '',
+    dueDate: initial?.dueDate ?? now.add(1, 'day').format('YYYY-MM-DD'),
+    importance: initial?.importance ?? 5,
+    difficulty: initial?.difficulty ?? 2,
+    expectedDurationMinutes: initial?.expectedDurationMinutes ?? '',
+    previousTaskIds: initial?.previousTaskIds ?? [],
+    nextTaskIds: initial?.nextTaskIds ?? [],
+    tagIds: initial?.tagIds ?? [],
+    categoryId: initial?.categoryId ?? null,
+    ...initial,
+  }
+}
+
+const TaskForm = ({
+  initialValues,
+  allowedActions,
+  unavailableReasons,
+  onSubmit,
+  submitLabel = '저장',
+  effectiveExpectedDurationLabel,
+  allowRecurrence,
+  hideDependencies,
+  taskId,
+}: TaskFormProps) => {
+  const { markDirty, close } = useRouteSurfaceNavigation()
+  const formId = useId()
+  const { offsetMinutes } = useTimePreferences()
+  const [values, setValues] = useState<TaskFormValues>(() =>
+    buildDefaultValues(initialValues, offsetMinutes),
+  )
+  const [initialAffiliation] = useState({
+    spaceId: initialValues?.spaceId,
+    assigneeId: initialValues?.assigneeId,
+  })
+  const [initialCategoryId] = useState(initialValues?.categoryId ?? null)
+  const [estimateMode, setEstimateMode] = useState<'automatic' | 'manual'>(
+    initialValues?.expectedDurationMinutes ? 'manual' : 'automatic',
+  )
+  const [rule, setRule] = useState<RuleDraft | null>(null)
+  const [ruleErrors, setRuleErrors] = useState<
+    Partial<Record<RuleDraftField, string>>
+  >({})
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [modalMode, setModalMode] = useState<null | 'previous' | 'next'>(null)
+  const [dependencyMeta, setDependencyMeta] = useState<
+    Record<number, { title: string }>
+  >({})
+  const [isSubmitting, setSubmitting] = useState(false)
+  const { spaces } = useSpaces()
+  const [recordsConfirmedFor, setRecordsConfirmedFor] = useState<number | null>(
+    null,
+  )
+  const submissionLock = useRef(false)
+  const importancePercent = ((values.importance - 1) / 8) * 100
+
+  const validate = () => {
+    const next: Record<string, string> = {}
+    if (!values.title.trim()) next.title = '제목을 입력하세요.'
+    if (!values.description.trim()) next.description = '설명을 입력하세요.'
+    if (!values.dueDate) next.dueDate = '마감 날짜를 선택하세요.'
+    if (values.importance < 1 || values.importance > 9)
+      next.importance = '중요도는 1~9'
+    const expectedDuration = parseDurationInput(
+      values.expectedDurationMinutes,
+      { zeroIsEmpty: true },
+    )
+    if (expectedDuration.kind === 'invalid')
+      next.expectedDurationMinutes = expectedDuration.message
+    if (estimateMode === 'manual' && expectedDuration.kind === 'empty')
+      next.expectedDurationMinutes = '직접 입력할 예상 시간을 입력하세요.'
+    const target = spaces.find((space) => space.id === values.spaceId)
+    if (
+      target &&
+      needsRecordDisclosure({
+        creating: taskId === undefined,
+        fromSpaceId: initialAffiliation.spaceId,
+        to: target,
+      }) &&
+      recordsConfirmedFor !== target.id
+    )
+      next.recordsConfirmed = '이동 전 기록의 공개 범위를 확인하세요.'
+    setErrors(next)
+    if (Object.keys(next).length && typeof requestAnimationFrame === 'function')
+      requestAnimationFrame(() =>
+        document.getElementById(`${formId}-${Object.keys(next)[0]}`)?.focus(),
+      )
+    return Object.keys(next).length === 0
+  }
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
+    const valid = validate()
+    const ruleWithStart = rule ? { ...rule, startDate: values.dueDate } : null
+    const nextRuleErrors = ruleWithStart
+      ? validateRuleDraft(
+          ruleWithStart,
+          getTodayWithOffset(offsetMinutes).format('YYYY-MM-DD'),
+        )
+      : {}
+    setRuleErrors(nextRuleErrors)
+    if (!valid || Object.keys(nextRuleErrors).length) return
+    if (submissionLock.current) return
+    submissionLock.current = true
+    setSubmitting(true)
+    try {
+      await onSubmit(
+        {
+          ...values,
+          locationChanged:
+            values.spaceId !== initialAffiliation.spaceId ||
+            values.categoryId !== initialCategoryId,
+          assigneeChanged: values.assigneeId !== initialAffiliation.assigneeId,
+          affiliationChanged:
+            values.spaceId !== initialAffiliation.spaceId ||
+            values.assigneeId !== initialAffiliation.assigneeId ||
+            values.categoryId !== initialCategoryId,
+          categoryChanged: values.categoryId !== initialCategoryId,
+        },
+        ruleWithStart,
+      )
+    } finally {
+      submissionLock.current = false
+      setSubmitting(false)
+    }
+  }
+
+  const showDependencies = !hideDependencies && rule === null
+
+  return (
+    <form id={formId} className="task-form" onSubmit={handleSubmit}>
+      <AffiliationFields
+        allowedActions={allowedActions}
+        unavailableReasons={unavailableReasons}
+        value={values}
+        onChange={(affiliation) =>
+          setValues((previous) => ({ ...previous, ...affiliation }))
+        }
+        disabled={isSubmitting || allowedActions?.edit === false}
+        creating={taskId === undefined}
+        fromSpaceId={initialAffiliation.spaceId}
+        dependencyCount={
+          values.previousTaskIds.length + values.nextTaskIds.length
+        }
+        recordsConfirmed={recordsConfirmedFor === values.spaceId}
+        onRecordsConfirmedChange={(confirmed) => {
+          setRecordsConfirmedFor(confirmed ? (values.spaceId ?? null) : null)
+          if (confirmed)
+            setErrors((previous) => ({ ...previous, recordsConfirmed: '' }))
+        }}
+        recordsError={errors.recordsConfirmed}
+        recordsInputId={`${formId}-recordsConfirmed`}
+      />
+      <label className="task-form__field">
+        <span>제목</span>
+        <input
+          id={`${formId}-title`}
+          aria-invalid={Boolean(errors.title)}
+          aria-describedby={errors.title ? `${formId}-title-error` : undefined}
+          value={values.title}
+          onChange={(e) =>
+            setValues((prev) => ({ ...prev, title: e.target.value }))
+          }
+          placeholder="예: 발표 준비"
+        />
+        {errors.title && (
+          <small id={`${formId}-title-error`}>{errors.title}</small>
+        )}
+      </label>
+
+      <label className="task-form__field">
+        <span>설명</span>
+        <textarea
+          id={`${formId}-description`}
+          aria-invalid={Boolean(errors.description)}
+          aria-describedby={
+            errors.description ? `${formId}-description-error` : undefined
+          }
+          value={values.description}
+          onChange={(e) =>
+            setValues((prev) => ({ ...prev, description: e.target.value }))
+          }
+          rows={3}
+          placeholder="무엇을 해야 하나요?"
+        />
+        {errors.description && (
+          <small id={`${formId}-description-error`}>{errors.description}</small>
+        )}
+      </label>
+
+      <label className="task-form__field">
+        <span>마감 날짜</span>
+        <input
+          type="date"
+          id={`${formId}-dueDate`}
+          aria-invalid={Boolean(errors.dueDate)}
+          aria-describedby={
+            errors.dueDate ? `${formId}-dueDate-error` : undefined
+          }
+          value={values.dueDate}
+          onChange={(e) =>
+            setValues((prev) => ({ ...prev, dueDate: e.target.value }))
+          }
+        />
+        {errors.dueDate && (
+          <small id={`${formId}-dueDate-error`}>{errors.dueDate}</small>
+        )}
+      </label>
+
+      <label className="task-form__field">
+        <div className="task-form__field-head">
+          <span>중요도 (1~9)</span>
+          <span className="task-form__field-value">{values.importance}</span>
+        </div>
+        <input
+          className="task-form__slider"
+          type="range"
+          min={1}
+          max={9}
+          step={1}
+          value={values.importance}
+          onChange={(e) =>
+            setValues((prev) => ({
+              ...prev,
+              importance: Number(e.target.value),
+            }))
+          }
+          style={
+            {
+              '--range-progress': `${importancePercent}%`,
+              '--range-color': '#2563eb',
+            } as CSSProperties
+          }
+        />
+        <div className="task-form__slider-scale">
+          {[1, 3, 5, 7, 9].map((mark) => (
+            <span key={mark}>{mark}</span>
+          ))}
+        </div>
+        {errors.importance && <small>{errors.importance}</small>}
+      </label>
+
+      <div className="task-form__field">
+        <span>난이도</span>
+        <div className="task-form__difficulty-row">
+          {FIBONACCI_DIFFICULTIES.map((diff) => (
+            <button
+              key={diff}
+              type="button"
+              className={[
+                'task-form__difficulty-pill',
+                values.difficulty === diff ? 'is-active' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              onClick={() => {
+                markDirty()
+                setValues((prev) => ({ ...prev, difficulty: diff }))
+              }}
+              aria-pressed={values.difficulty === diff}
+            >
+              {diff}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <fieldset className="task-form__estimate-mode">
+        <legend>예상 소요시간</legend>
+        <div className="task-form__estimate-options">
+          <label>
+            <input
+              type="radio"
+              name="estimateMode"
+              checked={estimateMode === 'automatic'}
+              onChange={() => {
+                setEstimateMode('automatic')
+                setValues((prev) => ({ ...prev, expectedDurationMinutes: '' }))
+              }}
+            />
+            난이도 기준
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="estimateMode"
+              checked={estimateMode === 'manual'}
+              onChange={() => setEstimateMode('manual')}
+            />
+            직접 입력
+          </label>
+        </div>
+        {estimateMode === 'automatic' ? (
+          <p className="task-form__note">
+            난이도 {values.difficulty} 기준 예상{' '}
+            {DIFFICULTY_ESTIMATE_MINUTES[values.difficulty]}분
+          </p>
+        ) : (
+          <label className="task-form__field">
+            <span>직접 입력 · 분</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={5}
+              max={1440}
+              id={`${formId}-expectedDurationMinutes`}
+              aria-invalid={Boolean(errors.expectedDurationMinutes)}
+              aria-describedby={
+                errors.expectedDurationMinutes
+                  ? `${formId}-expectedDurationMinutes-error`
+                  : undefined
+              }
+              value={values.expectedDurationMinutes}
+              onChange={(event) =>
+                setValues((prev) => ({
+                  ...prev,
+                  expectedDurationMinutes: event.target.value,
+                }))
+              }
+              placeholder="5~1,440분"
+            />
+            {errors.expectedDurationMinutes && (
+              <small role="alert">{errors.expectedDurationMinutes}</small>
+            )}
+          </label>
+        )}
+        {effectiveExpectedDurationLabel && (
+          <p className="task-form__note">
+            현재 적용: {effectiveExpectedDurationLabel}
+          </p>
+        )}
+      </fieldset>
+
+      {allowRecurrence && (
+        <div className="task-form__field">
+          <label className="recurrence-toggle">
+            <input
+              type="checkbox"
+              checked={rule !== null}
+              onChange={(e) => {
+                const checked = e.target.checked
+                setRule(checked ? defaultRuleDraft(values.dueDate) : null)
+                if (checked)
+                  setValues((prev) => ({
+                    ...prev,
+                    previousTaskIds: [],
+                    nextTaskIds: [],
+                  }))
+              }}
+            />
+            <span>
+              <WorkspaceIcon name="repeat" /> 반복
+            </span>
+          </label>
+          {rule && (
+            <>
+              <RecurrenceRuleFields
+                draft={rule}
+                onChange={setRule}
+                errors={ruleErrors}
+                hideStartDate
+              />
+              <p className="task-form__note">
+                마감 날짜가 첫 회차예요. 회차마다 그날이 마감인 작업이 생기고,
+                자동 계획이 그날 시간을 잡아요. 반복 작업에는 이전·다음 작업을
+                연결할 수 없어요.
+              </p>
+            </>
+          )}
+        </div>
+      )}
+
+      {showDependencies && (
+        <>
+          <div
+            className="task-form__dependency"
+            data-onboarding-anchor="task-form.dependencies"
+          >
+            <div className="task-form__dependency-row">
+              <h3>이전 작업</h3>
+              <button type="button" onClick={() => setModalMode('previous')}>
+                선택
+              </button>
+            </div>
+            <DependencyChips
+              ids={values.previousTaskIds}
+              titleOf={(id) => dependencyMeta[id]?.title ?? `작업 #${id}`}
+              emptyText="선택된 이전 작업이 없습니다."
+              removeLabel="이전 작업 제거"
+              onRemove={(id) => {
+                markDirty()
+                setValues((prev) => ({
+                  ...prev,
+                  previousTaskIds: prev.previousTaskIds.filter((v) => v !== id),
+                }))
+              }}
+            />
+          </div>
+
+          <div className="task-form__dependency">
+            <div className="task-form__dependency-row">
+              <h3>이후 작업</h3>
+              <button type="button" onClick={() => setModalMode('next')}>
+                선택
+              </button>
+            </div>
+            <DependencyChips
+              ids={values.nextTaskIds}
+              next
+              titleOf={(id) => dependencyMeta[id]?.title ?? `작업 #${id}`}
+              emptyText="선택된 이후 작업이 없습니다."
+              removeLabel="이후 작업 제거"
+              onRemove={(id) => {
+                markDirty()
+                setValues((prev) => ({
+                  ...prev,
+                  nextTaskIds: prev.nextTaskIds.filter((v) => v !== id),
+                }))
+              }}
+            />
+          </div>
+        </>
+      )}
+      <RouteSurfaceActions className="task-form__actions">
+        <button
+          type="button"
+          className="task-form__cancel"
+          disabled={isSubmitting || allowedActions?.edit === false}
+          onClick={() => close('/app/tasks')}
+        >
+          취소
+        </button>
+        <button
+          type="submit"
+          form={formId}
+          className="task-form__primary"
+          disabled={isSubmitting || allowedActions?.edit === false}
+        >
+          {submitLabel}
+        </button>
+      </RouteSurfaceActions>
+
+      <TaskDependencyModal
+        spaceId={values.spaceId}
+        isOpen={modalMode !== null}
+        onClose={() => setModalMode(null)}
+        selectedIds={
+          modalMode === 'previous' ? values.previousTaskIds : values.nextTaskIds
+        }
+        title={
+          modalMode === 'previous'
+            ? '이전에 해야 할 작업 선택'
+            : '이후에 해야 할 작업 선택'
+        }
+        excludeTaskId={taskId}
+        onApply={(tasks) => {
+          markDirty()
+          const ids = tasks.map((t) => t.id)
+          const metas = tasks.reduce<Record<number, { title: string }>>(
+            (acc, t) => {
+              acc[t.id] = { title: t.title }
+              return acc
+            },
+            {},
+          )
+          setDependencyMeta((prev) => ({ ...prev, ...metas }))
+          setValues((prev) => {
+            if (modalMode === 'previous') {
+              const nextPrev = Array.from(
+                new Set([...prev.previousTaskIds, ...ids]),
+              ).filter((id) => !prev.nextTaskIds.includes(id))
+              const nextNext = prev.nextTaskIds.filter(
+                (id) => !ids.includes(id),
+              )
+              return {
+                ...prev,
+                previousTaskIds: nextPrev,
+                nextTaskIds: nextNext,
+              }
+            }
+            const nextNext = Array.from(
+              new Set([...prev.nextTaskIds, ...ids]),
+            ).filter((id) => !prev.previousTaskIds.includes(id))
+            const nextPrev = prev.previousTaskIds.filter(
+              (id) => !ids.includes(id),
+            )
+            return { ...prev, previousTaskIds: nextPrev, nextTaskIds: nextNext }
+          })
+          setModalMode(null)
+        }}
+      />
+    </form>
+  )
+}
+
+/**
+ * Linked tasks as chips. A chip that is added rises in; a removed one fades out in place before
+ * it leaves, so the person sees which link went away.
+ */
+function DependencyChips({
+  ids,
+  next = false,
+  titleOf,
+  emptyText,
+  removeLabel,
+  onRemove,
+}: {
+  ids: number[]
+  next?: boolean
+  titleOf: (id: number) => string
+  emptyText: string
+  removeLabel: string
+  onRemove: (id: number) => void
+}) {
+  const chips = useListPresence(ids, (id) => id)
+  if (chips.length === 0) return <p className="task-form__note">{emptyText}</p>
+  return (
+    <div className="task-form__tags">
+      {chips.map(({ key, item: id, phase }) => (
+        <span
+          key={key}
+          className={'task-form__tag' + (next ? ' is-next' : '')}
+          {...presenceProps(phase)}
+        >
+          {titleOf(id)}
+          <button
+            type="button"
+            onClick={() => onRemove(id)}
+            aria-label={removeLabel}
+          >
+            <WorkspaceIcon name="close" />
+          </button>
+        </span>
+      ))}
+    </div>
+  )
+}
+
+export default TaskForm
