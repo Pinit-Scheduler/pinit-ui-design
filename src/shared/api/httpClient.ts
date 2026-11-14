@@ -1,0 +1,278 @@
+import { API_BASE_URL, AUTH_BASE_URL, buildUrl } from './config'
+import {
+  getAccessToken,
+  getTokenSubject,
+  isAccessTokenExpired,
+  setAuthTokens,
+} from './authTokens'
+import { debugLog } from './httpClientHelpers'
+import { refreshSession, type RefreshResult } from './authSession'
+import { getApiErrorMessage } from './errorMessage'
+
+// 앱 시작 시 설정 확인
+debugLog('🔌 API Configuration:', {
+  apiBaseUrl: API_BASE_URL,
+  authBaseUrl: AUTH_BASE_URL,
+  timestamp: new Date().toISOString(),
+})
+
+export class ApiError extends Error {
+  status: number
+  data: unknown
+  url: string
+  /**
+   * Only with status 0 when the request was stopped by a session refresh the server did answer
+   * (5xx, 429, another failure): that answer's HTTP status. The message is then the server's wording
+   * from that answer, or empty when it carried none, and readFailureMessage treats it as a server response.
+   */
+  responseStatus?: number
+
+  constructor(message: string, status: number, data: unknown, url: string) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+    this.data = data
+    this.url = url
+  }
+}
+
+export type HttpClientOptions = RequestInit & {
+  json?: unknown
+  /** 응답 본문에 비밀값(예: OAuth authorization code가 담긴 redirectUri)이 있어 성공 응답 데이터를 로그에 남기지 않는다. */
+  sensitiveResponse?: boolean
+  /** 초대 링크처럼 요청 경로/본문에 bearer 비밀값이 있을 때 로그에서 제외한다. */
+  sensitiveRequest?: boolean
+  /**
+   * 로그인·가입·코드 받기·비밀번호 재설정처럼 로그인 없이 부르는 요청. 저장된 토큰을 싣지 않고,
+   * 만료 토큰의 사전 갱신이나 401 뒤 갱신·토큰 삭제도 하지 않는다. 남은 토큰 상태와 관계없이 첫 요청이 서버에 닿는다.
+   */
+  anonymous?: boolean
+}
+
+export const httpClient = async <T>(
+  path: string,
+  options: HttpClientOptions = {},
+): Promise<T> => {
+  const {
+    json,
+    headers,
+    credentials,
+    sensitiveResponse: explicitSensitiveResponse,
+    sensitiveRequest: explicitSensitiveRequest,
+    anonymous = false,
+    ...rest
+  } = options
+  const url = path.startsWith('http') ? path : buildUrl(API_BASE_URL, path)
+  // Login/signup callers must not accidentally log passwords, OAuth codes or returned tokens.
+  const requestPath = url.split(/[?#]/, 1)[0].replace(/^https?:\/\/[^/]+/, '')
+  const authenticationFlow =
+    /^\/v0\/(?:login(?:\/.*)?|signup|refresh|password-reset|email-codes|me\/email(?:-codes)?)\/?$/.test(requestPath) ||
+    /^\/oauth\/(?:token|register|revoke|authorize\/decision)\/?$/.test(requestPath)
+  const sensitiveRequest = explicitSensitiveRequest || authenticationFlow
+  const sensitiveResponse = explicitSensitiveResponse || authenticationFlow
+  const logUrl = explicitSensitiveRequest
+    ? '[sensitive request]'
+    : authenticationFlow ? url.split(/[?#]/, 1)[0] : url
+  let accessToken = anonymous ? null : getAccessToken()
+  const body = json ? JSON.stringify(json) : undefined
+
+  let refreshAttempted = false
+  const sameActor = (next: string) =>
+    !accessToken ||
+    next === accessToken ||
+    (getTokenSubject(accessToken) !== null &&
+      getTokenSubject(accessToken) === getTokenSubject(next))
+  const assertCurrentActor = () => {
+    const current = getAccessToken()
+    if (accessToken && (!current || !sameActor(current)))
+      throw new ApiError(
+        '계정이 변경되었어요. 최신 화면에서 다시 시도해 주세요.',
+        401, null, logUrl,
+      )
+  }
+
+  const performFetch = async (token?: string) => {
+    const nextToken = token ?? accessToken
+    const nextAuth = nextToken
+      ? { Authorization: `Bearer ${nextToken}` }
+      : undefined
+    return fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...nextAuth,
+        ...headers,
+      },
+      body,
+      credentials: credentials || 'include',
+      ...rest,
+    })
+  }
+
+  // The refresh got no answer about the session, so the stored token stays and callers see a network
+  // failure (status 0). When the server did answer the refresh, its wording is kept, as for any response.
+  const refreshUnavailable = (result: RefreshResult) => {
+    const answered = result.kind === 'transient' && result.status >= 400
+    const error = new ApiError(
+      answered ? getApiErrorMessage(result.data) : '네트워크 오류',
+      0,
+      result,
+      logUrl,
+    )
+    if (answered) error.responseStatus = result.status
+    return error
+  }
+
+  const ensureValidAccessToken = async () => {
+    if (!accessToken) return null
+    if (!isAccessTokenExpired(accessToken)) return accessToken
+    debugLog('⌛ Access token expired, refreshing via cookie')
+    refreshAttempted = true
+    const result = await refreshSession()
+    if (result.kind === 'transient') throw refreshUnavailable(result)
+    const refreshed = result.kind === 'refreshed' ? result.token : null
+    if (!refreshed || !sameActor(refreshed)) {
+      if (getAccessToken() === accessToken) setAuthTokens({ accessToken: null })
+      throw new ApiError(
+        '로그인이 필요해요. 다시 로그인해 주세요.',
+        401,
+        null,
+        logUrl,
+      )
+    }
+    return refreshed
+  }
+
+  const ensuredToken = await ensureValidAccessToken()
+  if (ensuredToken) {
+    accessToken = ensuredToken
+  }
+
+  // 요청 로깅
+  debugLog(`📡 [${new Date().toISOString()}] API Request:`, {
+    method: options.method || 'GET',
+    url: logUrl,
+    body: sensitiveRequest ? '[redacted]' : json || undefined,
+    hasAuthHeader: !!accessToken,
+  })
+
+  try {
+    let response = await performFetch()
+
+    // 401일 때 refresh 토큰이 있으면 /refresh 요청 후 한 번만 재시도
+    if (response.status === 401 && !anonymous) {
+      const current = getAccessToken()
+      // A delayed 401 must not erase or refresh a token already renewed by another request.
+      let refreshed: string | null = null
+      if (
+        current &&
+        current !== accessToken &&
+        !isAccessTokenExpired(current)
+      ) {
+        if (sameActor(current)) refreshed = current
+      } else if (!refreshAttempted && current === accessToken) {
+        refreshAttempted = true
+        const result = await refreshSession()
+        if (result.kind === 'transient') {
+          await response.body?.cancel().catch(() => {})
+          throw refreshUnavailable(result)
+        }
+        if (result.kind === 'refreshed' && sameActor(result.token)) refreshed = result.token
+      }
+      if (refreshed) {
+        accessToken = refreshed
+        response = await performFetch(refreshed)
+      }
+      if (
+        response.status === 401 &&
+        accessToken &&
+        getAccessToken() === accessToken
+      ) {
+        setAuthTokens({ accessToken: null })
+      }
+    }
+
+    assertCurrentActor()
+
+    // 응답 로깅
+    debugLog(`📥 [${new Date().toISOString()}] API Response:`, {
+      status: response.status,
+      statusText: response.statusText,
+      url: logUrl,
+    })
+
+    if (!response.ok) {
+      let payload: unknown = null
+      try {
+        const rawPayload = await response.text()
+        try {
+          payload = JSON.parse(rawPayload)
+        } catch {
+          payload = rawPayload
+        }
+      } catch {
+        /* 응답 본문을 읽지 못하면 기본 오류 메시지를 사용 */
+      }
+      assertCurrentActor()
+      console.error(`❌ API Error:`, {
+        status: response.status,
+        url: logUrl,
+        payload: sensitiveRequest || sensitiveResponse ? '[redacted]' : payload,
+      })
+      throw new ApiError(
+        getApiErrorMessage(payload),
+        response.status,
+        payload,
+        logUrl,
+      )
+    }
+
+    if (response.status === 204) {
+      debugLog(`✅ Success (No Content):`, logUrl)
+      return undefined as T
+    }
+
+    const rawBody = await response.text()
+    assertCurrentActor()
+    if (!rawBody) {
+      debugLog(`✅ Success (Empty Body):`, logUrl)
+      return undefined as T
+    }
+
+    const contentType = response.headers.get('content-type') || ''
+    const data = contentType.includes('application/json')
+      ? (JSON.parse(rawBody) as T)
+      : (rawBody as unknown as T)
+
+    debugLog(`✅ Success:`, {
+      url: logUrl,
+      dataType: Array.isArray(data) ? `Array[${data.length}]` : typeof data,
+      sampleData:
+        sensitiveResponse || sensitiveRequest
+          ? '[redacted]'
+          : Array.isArray(data) && data.length > 0
+            ? data[0]
+            : data,
+    })
+    return data
+  } catch (error) {
+    if (error instanceof ApiError) {
+      console.error('🔥 API Error caught:', {
+        message: error.message,
+        status: error.status,
+        url: error.url,
+        data: sensitiveRequest || sensitiveResponse ? '[redacted]' : error.data,
+      })
+      throw error
+    }
+    console.error(`🔥 Network Error:`, {
+      url: logUrl,
+      error: sensitiveRequest ? '[redacted]' : error,
+    })
+    throw new ApiError(
+      error instanceof Error ? error.message : '네트워크 오류',
+      0,
+      error,
+      logUrl,
+    )
+  }
+}

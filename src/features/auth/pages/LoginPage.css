@@ -1,0 +1,496 @@
+.login {
+  position: relative;
+  min-height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 20% 20%, rgba(14, 165, 233, 0.12), transparent 42%),
+    radial-gradient(circle at 80% 10%, rgba(245, 158, 11, 0.12), transparent 38%),
+    var(--c-slate-50);
+  padding: 24px 16px 32px;
+}
+
+.login__glow {
+  position: absolute;
+  filter: blur(68px);
+  opacity: 0.55;
+  z-index: 0;
+}
+
+.login__glow--primary {
+  width: 260px;
+  height: 260px;
+  background: var(--c-sky-500);
+  top: -60px;
+  right: -40px;
+}
+
+.login__glow--accent {
+  width: 220px;
+  height: 220px;
+  background: var(--c-amber-500);
+  bottom: -90px;
+  left: -50px;
+}
+
+.login__card {
+  position: relative;
+  width: min(440px, 100%);
+  background: color-mix(in srgb, var(--c-surface) 90%, transparent);
+  border: 1px solid var(--c-slate-200);
+  border-radius: 22px;
+  padding: 26px 20px;
+  color: var(--c-slate-900);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(6px);
+  z-index: 1;
+  /* The one entrance on these screens: the card rises in when the page opens. */
+  animation: motion-rise-in var(--motion-enter) var(--motion-ease) both;
+}
+
+/* The callback usually finishes at once; its card only appears if the exchange is slow. */
+.login--callback .login__card {
+  animation-delay: calc(var(--motion-status-delay) * 2);
+}
+
+.login__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--c-sky-100);
+  color: var(--c-sky-900);
+  font-weight: 800;
+}
+
+.login__logo {
+  width: 26px;
+  height: 26px;
+}
+
+.login__brand-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.login__brand-name {
+  font-size: 16px;
+}
+
+.login__badge {
+  padding: 4px 8px;
+  border-radius: 10px;
+  background: var(--c-surface-inverse);
+  color: var(--c-slate-200);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.login__eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-sky-500);
+  margin: 14px 0 6px;
+  font-weight: 700;
+}
+
+.login h1 {
+  font-size: 26px;
+  line-height: 1.25;
+  margin-bottom: 10px;
+}
+
+.login__description {
+  color: var(--c-slate-700);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.login__status {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 12px;
+  margin: 18px 0 8px;
+  border-radius: 14px;
+  background: var(--c-slate-100);
+}
+
+.login__status-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.login__status-dot {
+  width: 12px;
+  height: 12px;
+  margin-top: 4px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, var(--c-sky-500), var(--c-sky-600));
+  box-shadow: 0 0 0 6px rgba(14, 165, 233, 0.12);
+}
+
+.login__status-dot--amber {
+  background: linear-gradient(135deg, var(--c-amber-500), var(--c-amber-600));
+  box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.12);
+}
+
+.login__status-label {
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--c-slate-600);
+  margin: 0 0 2px;
+}
+
+.login__status-value {
+  color: var(--c-slate-900);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.login__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.login__btn {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 12px;
+  border-radius: 16px;
+  border: none;
+  font-weight: 800;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    opacity var(--motion-base) var(--motion-ease);
+}
+
+/* Hover and press tint the button with its own text color; nothing lifts or grows. */
+.login__btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background-color: currentColor;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--motion-fast) var(--motion-ease);
+}
+
+.login__btn:hover:not(:disabled)::after {
+  opacity: 0.08;
+}
+
+.login__btn:active:not(:disabled) {
+  transform: scale(var(--motion-press-scale));
+}
+
+.login__btn:active:not(:disabled)::after {
+  opacity: 0.14;
+}
+
+.login__btn:focus-visible {
+  outline: 2px solid var(--c-sky-500);
+  outline-offset: 2px;
+}
+
+.login__btn:disabled {
+  opacity: 0.78;
+  cursor: not-allowed;
+}
+
+/* Waiting on the server: a hairline draws once under the label and holds near the end.
+ * Like any loading sign it waits --motion-status-delay, so a quick answer shows no line. */
+.login__btn[aria-busy='true'] {
+  cursor: progress;
+}
+
+.login__btn[aria-busy='true']::before {
+  content: '';
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 6px;
+  height: 2px;
+  border-radius: 1px;
+  background-color: currentColor;
+  opacity: 0.6;
+  transform-origin: left center;
+  transform: scaleX(0.92);
+  animation: login-pending 2400ms var(--motion-ease) var(--motion-status-delay) both;
+}
+
+@keyframes login-pending {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+}
+
+.login__btn--naver {
+  background: linear-gradient(135deg, #0dbf5a, var(--c-green-600));
+  color: var(--c-slate-50);
+  box-shadow: 0 12px 28px rgba(13, 191, 90, 0.22);
+}
+
+.login__btn--primary {
+  background: linear-gradient(135deg, var(--c-sky-500), var(--c-blue-600));
+  color: var(--c-slate-50);
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.18);
+  border: 1px solid rgba(37, 99, 235, 0.15);
+}
+
+.login__btn--secondary {
+  background: var(--c-slate-50);
+  color: var(--c-slate-900);
+  border: 1px solid var(--c-slate-200);
+  box-shadow: none;
+}
+
+.login__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  background: var(--c-slate-100);
+  color: inherit;
+  font-weight: 800;
+}
+
+.login__helper {
+  margin-top: 14px;
+  color: var(--c-slate-600);
+  font-size: 14px;
+  text-align: center;
+}
+
+.login__form,
+.signup__form {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.login__field,
+.signup__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 700;
+  color: var(--c-slate-900);
+}
+
+.login__field input,
+.signup__field input {
+  width: 100%;
+  padding: 12px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--c-slate-200);
+  background: color-mix(in srgb, var(--c-slate-50) 80%, transparent);
+  font-weight: 600;
+  color: var(--c-slate-900);
+  /* Fields are not dimmed while a submit is pending: a quick failure would flash them. */
+  transition:
+    border-color var(--motion-fast) var(--motion-ease),
+    background-color var(--motion-fast) var(--motion-ease);
+}
+
+.login__field input[aria-invalid='true'],
+.signup__field input[aria-invalid='true'] {
+  border-color: var(--c-red-600);
+}
+
+.login__field input:focus,
+.signup__field input:focus {
+  outline: 2px solid var(--c-sky-200);
+  border-color: var(--c-sky-500);
+  background: var(--c-surface);
+}
+
+.login__field small,
+.signup__field small {
+  color: var(--c-red-600);
+  font-weight: 600;
+}
+
+.login__form-error,
+.signup__form-error {
+  margin: 4px 0 0;
+  color: var(--c-red-600);
+  font-weight: 700;
+}
+
+.login__links {
+  margin: 0;
+  text-align: right;
+  font-size: 14px;
+}
+
+.login__links a {
+  color: var(--c-sky-700);
+  font-weight: 700;
+}
+
+.signup__inline {
+  display: flex;
+  gap: 8px;
+}
+
+.signup__inline input {
+  flex: 1;
+  min-width: 0;
+}
+
+.signup__inline-btn {
+  flex-shrink: 0;
+  padding: 0 14px;
+  min-height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--c-sky-200);
+  background: var(--c-sky-100);
+  color: var(--c-sky-900);
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.signup__inline-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.signup__notice,
+.signup__hint {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.signup__notice {
+  color: var(--c-sky-700);
+}
+
+.signup__hint {
+  color: var(--c-slate-600);
+}
+
+.signup__hint a {
+  color: var(--c-sky-700);
+  font-weight: 700;
+}
+
+.signup__sent {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 12px;
+  border-radius: 14px;
+  background: var(--c-slate-100);
+  color: var(--c-slate-700);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.signup__sent p {
+  margin: 0;
+}
+
+.signup__sent strong {
+  color: var(--c-slate-900);
+  overflow-wrap: anywhere;
+}
+
+.signup__sent-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Field and form messages (AuthMessage) drop out of the field and fade when cleared. */
+.auth-message {
+  animation: motion-drop-in var(--motion-base) var(--motion-ease) both;
+}
+
+.auth-message[data-state='closing'] {
+  animation: motion-fade-out var(--motion-exit) var(--motion-ease-exit) both;
+}
+
+.login__status-item--error {
+  animation: motion-rise-in var(--motion-enter) var(--motion-ease) both;
+}
+
+.login__divider {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 18px;
+  color: var(--c-slate-500);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.login__divider span {
+  display: block;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.1), rgba(148, 163, 184, 0.6), rgba(148, 163, 184, 0.1));
+}
+
+.signup__actions {
+  margin-top: 4px;
+}
+
+@media (max-width: 520px) {
+  .login__card {
+    padding: 22px 16px;
+  }
+
+  .login h1 {
+    font-size: 24px;
+  }
+
+  .login__description {
+    font-size: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The fades stay; the pending line appears whole instead of drawing. */
+  .login__card,
+  .auth-message,
+  .login__status-item--error {
+    --motion-keep-animation: var(--motion-base);
+  }
+  .auth-message[data-state='closing'] {
+    --motion-keep-animation: var(--motion-exit);
+  }
+  .login__btn[aria-busy='true']::before {
+    transform: scaleX(1);
+    animation-name: motion-fade-in;
+    --motion-keep-animation: var(--motion-base);
+  }
+}

@@ -1,0 +1,18 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+    <!-- 핀 바디 -->
+    <path
+            d="M128 16C88.7 16 56 48.7 56 88c0 56.6 60.5 119.2 72.9 131.7a8 8 0 0 0 11.2 0C139.5 207.2 200 144.6 200 88c0-39.3-32.7-72-72-72z"
+            fill="#4F46E5"
+    />
+    <!-- 안쪽 흰 원 -->
+    <circle cx="128" cy="96" r="32" fill="#FFFFFF"/>
+    <!-- 체크 표시 (기존보다 살짝 오른쪽 위로 이동, 외곽선만) -->
+    <path
+            d="M119 89l-10 10 16 16 24-24-10-10-14 14z"
+            fill="none"
+            stroke="#4F46E5"
+            stroke-width="6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+    />
+</svg>

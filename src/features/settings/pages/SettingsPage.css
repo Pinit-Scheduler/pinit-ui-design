@@ -1,0 +1,294 @@
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings__header {
+  padding: 8px 0 4px;
+}
+
+.settings__subheading {
+  font-size: 12px;
+  color: var(--c-slate-400);
+}
+
+.settings__title {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--c-slate-900);
+}
+
+.settings__card {
+  background-color: var(--c-surface);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.settings__card h2 {
+  font-size: 16px;
+  margin-bottom: 12px;
+}
+
+.settings__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--c-slate-200);
+}
+
+.settings__row:last-child {
+  border-bottom: none;
+}
+
+.settings__row--tight {
+  border-bottom: none;
+  padding: 0;
+}
+
+.settings__row--stack {
+  align-items: flex-start;
+}
+
+.settings__row--link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* 하위 화면으로 가는 줄: 가리키면 화살표가 가는 쪽으로 조금 비켜 선다. */
+.settings__row--link .settings__chevron {
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease);
+}
+
+@media (hover: hover) {
+  .settings__row--link:hover .settings__chevron {
+    transform: translateX(2px);
+    color: var(--c-slate-600);
+  }
+}
+
+.settings__row--link:focus-visible {
+  outline: 2px solid var(--c-blue-300);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.settings__chevron {
+  flex-shrink: 0;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--c-slate-400);
+}
+
+.settings__row--between {
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.settings__label {
+  font-weight: 600;
+  color: var(--c-slate-900);
+}
+
+.settings__description {
+  font-size: 13px;
+  color: var(--c-slate-600);
+}
+
+.settings__value {
+  font-size: 14px;
+  color: var(--c-slate-900);
+}
+
+.settings__list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings__toggle {
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  background-color: var(--c-indigo-200);
+  border: none;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.settings__toggle span {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: var(--c-surface);
+  /* 손잡이는 감속하며 미끄러지고, 바탕색은 같은 곡선으로 따라 바뀐다. */
+  transition: transform var(--motion-base) var(--motion-ease);
+}
+
+.settings__toggle.is-active {
+  background-color: var(--c-blue-600);
+}
+
+.settings__toggle.is-active span {
+  transform: translateX(18px);
+}
+
+.settings__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background-color: var(--c-slate-50);
+  color: var(--c-slate-900);
+  font-size: 12px;
+  border: 1px solid var(--c-slate-200);
+}
+
+.settings__badge--positive {
+  background-color: var(--c-emerald-50);
+  border-color: var(--c-green-300);
+  color: var(--c-green-800);
+}
+
+.settings__badge--warning {
+  background-color: var(--c-orange-50);
+  border-color: var(--c-orange-200);
+  color: var(--c-orange-700);
+}
+
+.settings__badge--muted {
+  background-color: var(--c-slate-100);
+  border-color: var(--c-slate-300);
+  color: var(--c-slate-600);
+}
+
+.settings__badge--error {
+  background-color: var(--c-red-50);
+  border-color: var(--c-rose-200);
+  color: var(--c-red-700);
+}
+
+.settings__action-btn {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--c-surface-inverse);
+  background: var(--c-surface-inverse);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    opacity var(--motion-base) var(--motion-ease);
+}
+
+/* 누르면 아주 살짝 눌린다. 가리킬 때 떠오르거나 그림자를 키우지 않는다. */
+.settings__action-btn:not(:disabled):active {
+  transform: scale(var(--motion-press-scale));
+}
+
+.settings__action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.settings__card--danger {
+  border: 1px solid var(--c-red-100);
+  background-color: var(--c-red-50);
+}
+
+.settings__logout-btn {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--c-red-500);
+  background: var(--c-red-500);
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    background-color var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-ease),
+    opacity var(--motion-base) var(--motion-ease);
+}
+
+@media (hover: hover) {
+  .settings__logout-btn:not(:disabled):hover {
+    background-color: var(--c-red-600);
+    border-color: var(--c-red-600);
+  }
+}
+
+.settings__logout-btn:not(:disabled):active {
+  transform: scale(var(--motion-press-scale));
+}
+
+.settings__badge--new {
+  margin-left: 6px;
+  padding: 2px 8px;
+  background-color: var(--c-blue-50);
+  border-color: var(--c-blue-300);
+  color: var(--c-blue-700);
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+/* ADR-0021 알림 설정: 사전 알림 선택과 마감일 알림 시각 */
+.settings__select,
+.settings__time {
+  flex-shrink: 0;
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background-color: #fff;
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.settings__select:disabled,
+.settings__time:disabled,
+.settings__toggle:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 불러오기를 마쳐 쓸 수 있게 되면 흐림이 걷히듯 풀린다. */
+.settings__select,
+.settings__time {
+  transition:
+    opacity var(--motion-base) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease);
+}
+
+.settings__toggle {
+  transition:
+    background-color var(--motion-base) var(--motion-ease),
+    opacity var(--motion-base) var(--motion-ease);
+}
+
+/* 마감일 알림을 켜면 시각 입력이 옆에서 스며든다. 화면을 열 때 이미 켜져 있으면 움직이지 않는다. */
+.settings__time--reveal {
+  animation: motion-fade-in var(--motion-base) var(--motion-ease) both;
+}
+
+.settings__description--error {
+  color: #b91c1c;
+  margin-bottom: 8px;
+}

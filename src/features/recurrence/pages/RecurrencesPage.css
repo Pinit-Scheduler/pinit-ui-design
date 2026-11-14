@@ -1,0 +1,177 @@
+.recurrences {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.recurrences__eyebrow {
+  margin: 0;
+  font-size: 12px;
+  color: var(--c-slate-500);
+}
+
+.recurrences__title {
+  margin: 4px 0;
+  font-size: 22px;
+}
+
+.recurrences__description,
+.recurrences__note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--c-slate-600);
+  line-height: 1.5;
+}
+
+.recurrences__tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.recurrences__tab {
+  border: 1px solid var(--c-slate-200);
+  background: var(--c-surface);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  transition:
+    background-color var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease);
+}
+
+.recurrences__tab.is-active {
+  background: var(--c-surface-inverse-soft);
+  border-color: var(--c-surface-inverse-soft);
+  color: #fff;
+}
+
+.recurrences__placeholder {
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--c-slate-50);
+  color: var(--c-slate-600);
+  font-size: 14px;
+}
+
+/* 첫 로딩 문구는 잠깐 기다렸다가 나타나, 빠른 로딩에는 아무것도 보이지 않는다. */
+.recurrences__placeholder--loading {
+  animation: motion-fade-in var(--motion-base) var(--motion-ease) var(--motion-status-delay) both;
+}
+
+.recurrences__placeholder--notice {
+  animation: motion-fade-in var(--motion-base) var(--motion-ease) both;
+}
+
+.recurrences__link {
+  border: none;
+  background: transparent;
+  color: var(--c-blue-600);
+  cursor: pointer;
+  padding: 0;
+}
+
+.recurrences__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recurrences__item {
+  border: 1px solid var(--c-slate-200);
+  border-radius: 14px;
+  background: var(--c-surface);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition:
+    background-color var(--motion-base) var(--motion-ease),
+    border-color var(--motion-base) var(--motion-ease);
+}
+
+/* 저장·끝내기를 보내는 동안 그 반복만 살짝 가라앉는다. 버튼은 막지 않고 ref 잠금으로 한 번만 보낸다. */
+.recurrences__item[aria-busy='true'] {
+  background-color: var(--c-slate-50);
+  border-color: var(--c-slate-300);
+}
+
+.recurrences__item-title {
+  margin: 0;
+  font-weight: 600;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.recurrences__mode {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--c-blue-700);
+  background: var(--c-blue-50);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.recurrences__item-rule {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: var(--c-slate-800);
+}
+
+.recurrences__item-meta {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--c-slate-500);
+}
+
+.recurrences__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.recurrences__actions button {
+  border: 1px solid var(--c-slate-300);
+  background: var(--c-surface);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    background-color var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-ease);
+}
+
+.recurrences__actions button:not(:disabled):active {
+  transform: scale(var(--motion-press-scale));
+}
+
+.recurrences__actions button.is-primary {
+  background: var(--c-blue-600);
+  border-color: var(--c-blue-600);
+  color: #fff;
+}
+
+.recurrences__actions button.is-danger {
+  color: var(--c-red-700);
+  border-color: var(--c-red-200);
+}
+
+.recurrences__editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* 제목·규칙 편집을 열면 버튼 줄 아래에서 살짝 올라온다. */
+  animation: motion-rise-in var(--motion-enter) var(--motion-ease) both;
+}

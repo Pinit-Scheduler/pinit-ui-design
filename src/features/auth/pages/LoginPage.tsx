@@ -1,0 +1,167 @@
+import { useCallback, useState } from 'react'
+import type { FormEvent } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { buildAuthorizeUrl, login, type AuthProvider } from '../api/auth'
+import { clearLogoutMarker } from '@shared/api/authTokens'
+import { getRequestFailureMessage } from '@shared/api/errorMessage'
+import { useToast } from '@contexts/ToastContext'
+import useNavigateAfterLogin from '../hooks/useNavigateAfterLogin'
+import { standaloneFocusProps, useAuthPageScroll } from '../hooks/useAuthPageLayout'
+import { FORGOT_PASSWORD_PATH } from '../utils/authPaths'
+import AuthMessage from '../components/AuthMessage'
+import './LoginPage.css'
+
+const LoginPage = () => {
+  const [activeProvider, setActiveProvider] = useState<AuthProvider | null>(null)
+  const [credentials, setCredentials] = useState({ username: '', password: '' })
+  const [errors, setErrors] = useState<Partial<Record<'username' | 'password' | 'form', string>>>({})
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const navigate = useNavigate()
+  const { addToast } = useToast()
+  const navigateAfterLogin = useNavigateAfterLogin()
+  useAuthPageScroll()
+
+  const validate = () => {
+    const nextErrors: Partial<Record<'username' | 'password', string>> = {}
+    if (!credentials.username.trim()) nextErrors.username = '아이디를 입력해 주세요.'
+    if (!credentials.password) nextErrors.password = '비밀번호를 입력해 주세요.'
+    setErrors(nextErrors)
+    return Object.keys(nextErrors).length === 0
+  }
+
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault()
+    if (!validate()) return
+    setIsSubmitting(true)
+    setErrors({})
+    try {
+      const response = await login({
+        username: credentials.username.trim(),
+        password: credentials.password,
+      })
+      clearLogoutMarker()
+      addToast('로그인에 성공했어요.', 'success')
+      navigateAfterLogin(response)
+    } catch (error) {
+      const message = getRequestFailureMessage(error, '로그인하지 못했어요.')
+      setErrors({ form: message })
+      addToast(message, 'error')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleProviderLogin = useCallback(
+    (provider: AuthProvider) => {
+      setActiveProvider(provider)
+
+      // 실제 백엔드 소셜 로그인 인가 엔드포인트로 이동
+      window.location.href = buildAuthorizeUrl(provider)
+    },
+    []
+  )
+
+  return (
+    <div className="login">
+      <div className="login__glow login__glow--primary" />
+      <div className="login__glow login__glow--accent" />
+
+      <div className="login__card">
+        <div className="login__brand">
+          <img src="/icons/icon.svg" alt="Pinit 로고" className="login__logo" />
+          <div className="login__brand-text">
+            <span className="login__brand-name">Pinit</span>
+            <span className="login__badge">Auth</span>
+          </div>
+        </div>
+
+        <p className="login__eyebrow">계정 로그인</p>
+        <h1>아이디와 비밀번호로 바로 시작</h1>
+        <p className="login__description">
+          Pinit 계정으로 로그인하거나, 아래에서 소셜 로그인으로 연결할 수 있어요.
+        </p>
+
+        <form className="login__form" onSubmit={handleSubmit}>
+          <label className="login__field">
+            <span>아이디</span>
+            <input
+              value={credentials.username}
+              onChange={(event) => setCredentials((prev) => ({ ...prev, username: event.target.value }))}
+              placeholder="아이디를 입력하세요"
+              autoComplete="username"
+              {...standaloneFocusProps}
+              disabled={isSubmitting || !!activeProvider}
+              aria-invalid={errors.username ? true : undefined}
+            />
+            <AuthMessage message={errors.username} />
+          </label>
+
+          <label className="login__field">
+            <span>비밀번호</span>
+            <input
+              type="password"
+              value={credentials.password}
+              onChange={(event) => setCredentials((prev) => ({ ...prev, password: event.target.value }))}
+              placeholder="비밀번호를 입력하세요"
+              autoComplete="current-password"
+              {...standaloneFocusProps}
+              disabled={isSubmitting || !!activeProvider}
+              aria-invalid={errors.password ? true : undefined}
+            />
+            <AuthMessage message={errors.password} />
+          </label>
+
+          <AuthMessage as="p" className="login__form-error" message={errors.form} />
+
+          <p className="login__links">
+            <Link to={FORGOT_PASSWORD_PATH}>비밀번호를 잊으셨나요? 비밀번호 찾기</Link>
+          </p>
+
+          <div className="login__actions">
+            <button
+              type="submit"
+              className="login__btn login__btn--primary"
+              disabled={isSubmitting || !!activeProvider}
+              aria-busy={isSubmitting || undefined}
+            >
+              {isSubmitting ? '로그인 중...' : '로그인'}
+            </button>
+            <button
+              type="button"
+              className="login__btn login__btn--secondary"
+              onClick={() => navigate('/signup')}
+              disabled={isSubmitting || !!activeProvider}
+            >
+              계정이 없으신가요? 회원가입
+            </button>
+          </div>
+        </form>
+
+        <div className="login__divider">
+          <span />
+          <p>또는 소셜 로그인</p>
+          <span />
+        </div>
+
+        <div className="login__actions">
+          <button
+            type="button"
+            className="login__btn login__btn--naver"
+            onClick={() => handleProviderLogin('naver')}
+            disabled={!!activeProvider}
+            aria-busy={activeProvider === 'naver' || undefined}
+          >
+            <span className="login__icon">N</span>
+            {activeProvider === 'naver' ? '네이버로 이동 중...' : '네이버로 계속하기'}
+          </button>
+        </div>
+
+        <p className="login__helper">
+          로그인하면 곧장 대시보드로 이동해 오늘의 우선순위를 확인할 수 있어요.
+        </p>
+      </div>
+    </div>
+  )
+}
+
+export default LoginPage

@@ -1,0 +1,40 @@
+.schedule-form-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 0 24px;
+  /* Nothing plays on mount: the route surface already brings the form in, and moving from the
+     detail to the edit form crossfades inside the same surface. */
+}
+
+.schedule-form-page__header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.schedule-form-page__eyebrow {
+  font-size: 13px;
+  color: var(--c-slate-500);
+  letter-spacing: 0.02em;
+}
+
+.schedule-form-page__title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--c-slate-900);
+}
+
+.schedule-form-page__description {
+  font-size: 14px;
+  color: var(--c-slate-600);
+  line-height: 1.6;
+}
+
+.schedule-form-page__status {
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--c-slate-200);
+  color: var(--c-slate-700);
+  font-weight: 600;
+}

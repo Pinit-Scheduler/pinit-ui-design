@@ -1,0 +1,162 @@
+.task-sched-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: calc(var(--z-modal-backdrop) + 1);
+  padding: 16px;
+  animation: motion-fade-in var(--motion-base) var(--motion-ease) both;
+}
+
+.task-sched-modal__content {
+  width: min(560px, 96vw);
+  background: linear-gradient(145deg, var(--c-surface), var(--c-slate-50));
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.2);
+  border: 1px solid var(--c-slate-200);
+  animation: modalSlideUp var(--motion-enter) var(--motion-ease) both;
+}
+
+.task-sched-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.task-sched-modal__eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+  color: var(--c-slate-600);
+  margin: 0;
+}
+
+.task-sched-modal__header h1 {
+  margin: 4px 0 2px;
+  font-size: 20px;
+}
+
+.task-sched-modal__hint {
+  margin: 0;
+  color: var(--c-slate-500);
+  font-size: 13px;
+}
+
+.task-sched-modal__close {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: none;
+  background: var(--c-slate-200);
+  color: var(--c-slate-600);
+  cursor: pointer;
+}
+
+.task-sched-modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.task-sched-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.task-sched-modal__field-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.task-sched-modal__field-head button {
+  border: none;
+  background: none;
+  color: var(--c-blue-600);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.task-sched-modal__body input,
+.task-sched-modal__body textarea {
+  border: 1px solid var(--c-slate-200);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--c-surface);
+}
+
+.task-sched-modal__chips {
+  display: flex;
+  gap: 8px;
+}
+
+.task-sched-modal__chip {
+  border: 1px solid var(--c-slate-200);
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: var(--c-surface);
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--c-slate-600);
+}
+
+.task-sched-modal__chip.is-active {
+  background: var(--c-blue-600);
+  color: #fff;
+  border-color: var(--c-blue-600);
+}
+
+.task-sched-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.task-sched-modal__ghost {
+  border: 1px solid var(--c-slate-200);
+  background: var(--c-surface);
+  padding: 10px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--c-slate-600);
+}
+
+.task-sched-modal__primary {
+  background: linear-gradient(120deg, var(--c-blue-600), var(--c-indigo-600));
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+  box-shadow: 0 10px 24px rgba(79, 70, 229, 0.25);
+}
+
+/* Selection and hover feedback. Colors only; nothing moves. */
+.task-sched-modal__chip,
+.task-sched-modal__ghost,
+.task-sched-modal__close {
+  transition:
+    background-color var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease);
+}
+.task-sched-modal__chip:not(.is-active):hover,
+.task-sched-modal__ghost:not(:disabled):hover {
+  border-color: var(--c-slate-300);
+  color: var(--c-slate-800);
+}
+.task-sched-modal__close:not(:disabled):hover {
+  background: var(--c-slate-300);
+}
+.task-sched-modal__body [role='alert'] {
+  animation: motion-rise-in var(--motion-enter) var(--motion-ease) both;
+}
