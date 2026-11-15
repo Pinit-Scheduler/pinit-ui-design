@@ -20,7 +20,7 @@ const monthDay = (date: string): string => {
 }
 
 /** 성과를 그 자리에서 적고 고친다. 저장 규칙과 충돌 판단은 서버가 한다. */
-function OutcomeEditor({
+export function OutcomeEditor({
   project,
   close,
 }: {
