@@ -22,6 +22,7 @@ import { routeScope, scopeCrumb } from '@features/spaces/scope'
 import { prefersReducedMotion } from '@shared/motion/tokens'
 import { playRise } from '@shared/motion/playRise'
 import { NoticeButton, SplitNotifier } from '@features/task-split/SplitInbox'
+import { SplitConfirmHost } from '@features/task-split/SplitConfirmHost'
 
 const TAB_TITLES: Record<string, string> = {
   '/app/today': '오늘의 내 작업',
@@ -194,6 +195,7 @@ const AppShell = () => {
     >
       <OnboardingTourProvider>
         <SplitNotifier />
+        <SplitConfirmHost />
         <WorkspaceSidebar />
         <TopBar
           title={title}

@@ -6,6 +6,7 @@ import { useToast } from '@contexts/ToastContext'
 import { parseIsoDurationMinutes } from '@shared/utils/isoDuration'
 import type { Task } from '@features/tasks/types/task'
 import { isOpen, splitActions, useSplit } from './store'
+import { askSplitConfirm } from './splitConfirm'
 import './task-split.css'
 
 export const SPLIT_RECOMMEND_MINUTES = 240
@@ -31,7 +32,7 @@ export const useSplitStart = () => {
       minutes: taskMinutes(task),
       due: task.dueDate.date,
     })
-    // 맡기는 순간 오늘 횟수를 쓴다. 실패하면 서버가 돌려준다. 되돌리기로 횟수가 돌아오지는 않으므로 여기에는 두지 않는다.
+    // 맡기는 순간 오늘 횟수를 쓴다. 실패하면 서버가 돌려준다. 되돌리기는 두지 않는다.
     addToast('쪼개기를 맡겼어요. 준비되면 알려 드릴게요.', 'success')
   }
   const start = (task: Task) => {
@@ -40,8 +41,15 @@ export const useSplitStart = () => {
       navigate(open.status === 'READY' ? `/app/tasks/splits/${open.id}` : '/app/tasks/splits')
       return
     }
-    if (!consented) setPending(task)
-    else send(task)
+    if (quota.used >= quota.limit) return send(task)
+    // 처음이면 동의 창이 확인을 겸한다. 그 뒤로는 맡길 때마다 쓰는 횟수를 확인받는다.
+    if (!consented) return setPending(task)
+    void askSplitConfirm({
+      title: '쪼개기를 맡길까요?',
+      body: `오늘 ${quota.limit}번 중 1번을 써요. 맡기고 나면 ${quota.limit - quota.used - 1}번 남아요.`,
+      confirmLabel: '쪼개기 맡기기',
+      cancelLabel: '나중에',
+    }).then((ok) => ok && send(task))
   }
 
   // 작업 상세(route-surface)는 안쪽을 잘라 낸다. 그 밖에 그려야 창이 잘리지 않는다.
@@ -72,7 +80,10 @@ export const useSplitStart = () => {
           </div>
           <div>
             <dt>결과</dt>
-            <dd>제안은 보관함에 7일 동안 있어요. 하루 {quota.limit}번까지 요청할 수 있어요.</dd>
+            <dd>
+              제안은 보관함에 7일 동안 있어요. 오늘 {quota.limit}번 중 1번을 써요. 맡기고 나면{' '}
+              {quota.limit - quota.used - 1}번 남아요.
+            </dd>
           </div>
         </dl>
         <div className="split-dialog__actions">
