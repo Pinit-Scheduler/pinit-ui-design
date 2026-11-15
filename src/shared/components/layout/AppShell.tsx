@@ -21,6 +21,7 @@ import { useSpaces } from '@features/spaces/store'
 import { routeScope, scopeCrumb } from '@features/spaces/scope'
 import { prefersReducedMotion } from '@shared/motion/tokens'
 import { playRise } from '@shared/motion/playRise'
+import { NoticeButton, SplitNotifier } from '@features/task-split/SplitInbox'
 
 const TAB_TITLES: Record<string, string> = {
   '/app/today': '오늘의 내 작업',
@@ -48,6 +49,8 @@ const getPageTitle = (pathname: string): string => {
   if (pathname.startsWith('/app/schedules/')) {
     return '일정 상세'
   }
+  if (pathname === '/app/tasks/splits') return '쪼개기 보관함'
+  if (pathname.startsWith('/app/tasks/splits/')) return '쪼개기 제안'
   if (pathname.startsWith('/app/tasks/')) {
     return '작업 상세'
   }
@@ -190,6 +193,7 @@ const AppShell = () => {
       className={`app-shell${isNewPage || /\/edit$/.test(pathname) ? ' app-shell--editing' : ''}`}
     >
       <OnboardingTourProvider>
+        <SplitNotifier />
         <WorkspaceSidebar />
         <TopBar
           title={title}
@@ -199,6 +203,7 @@ const AppShell = () => {
           onBack={handleBack}
           onSettings={() => navigate('/app/settings')}
           showSettingsButton={showSettingsButton}
+          tools={<NoticeButton />}
         />
         {/*  리액트 라우터 호출: app-shell__content */}
         <main className="app-shell__content" ref={contentRef}>

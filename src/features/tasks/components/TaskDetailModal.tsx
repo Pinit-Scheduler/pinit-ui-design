@@ -42,12 +42,19 @@ import {
   previewSeriesDelete,
 } from '@features/recurrence/utils/seriesMutations'
 import { useTrashUndo } from '@features/trash'
+import { UNDO_TOAST_MS } from '@features/trash/hooks/useTrashUndo'
 import { isResourceUnavailable } from '@features/spaces/metadata'
 import { useSpaces } from '@features/spaces/store'
 import UnavailableNote from '@features/spaces/UnavailableNote'
 import { adminNames, unavailableLines } from '@features/spaces/unavailable'
 import { useArrival } from '@shared/motion'
 import { detailRefreshNeeded } from '../utils/taskDetailRefresh'
+import { splitActions, useSplitLock } from '@features/task-split/store'
+import {
+  SPLIT_RECOMMEND_MINUTES,
+  taskMinutes,
+  useSplitStart,
+} from '@features/task-split/SplitStart'
 
 type TaskDetailModalProps = {
   taskId: number
@@ -94,6 +101,10 @@ const TaskDetailModal = ({
     ]
   })
   const recurrenceScope = useRecurrenceScope()
+  // 시안: 잠금을 화면이 판단한다. 실제로는 서버가 allowedActions와 이유를 내려 준다.
+  const splitLock = useSplitLock(taskId)
+  const split = useSplitStart()
+  const locked = splitLock !== null
 
   useEffect(
     () =>
@@ -312,6 +323,20 @@ const TaskDetailModal = ({
                   {error}
                 </p>
               )}
+              {splitLock && (
+                <div className="split-lock" role="status">
+                  <p>
+                    <strong>
+                      {splitLock.status === 'READY'
+                        ? '쪼개기 제안이 준비됐어요'
+                        : '쪼개는 중이에요'}
+                    </strong>
+                    {splitLock.status === 'READY'
+                      ? '제안을 보고 조각을 만들어 보세요.'
+                      : '준비되면 알려 드릴게요.'}
+                  </p>
+                </div>
+              )}
               <section
                 className="task-detail-modal__section"
                 style={{ '--arrive-index': 0 } as CSSProperties}
@@ -321,6 +346,7 @@ const TaskDetailModal = ({
                     className="task-detail-modal__check"
                     checked={shownDone}
                     disabled={
+                      locked ||
                       !(savedDone
                         ? task.allowedActions?.reopen
                         : task.allowedActions?.complete)
@@ -429,6 +455,56 @@ const TaskDetailModal = ({
                 className="task-detail-modal__actions"
                 style={{ '--arrive-index': 2 } as CSSProperties}
               >
+                {splitLock ? (
+                  // 잠긴 동안에는 지금 할 수 있는 것만 둔다. 꺼진 버튼을 늘어놓지 않는다.
+                  splitLock.status === 'READY' ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => split.start(task)}
+                        className="task-detail-modal__action-btn task-detail-modal__action-btn--edit"
+                      >
+                        <WorkspaceIcon name="split" /> 제안 보기
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const requestId = splitLock.id
+                          splitActions.discard(requestId)
+                          addToast('제안을 버렸어요.', 'success', {
+                            durationMs: UNDO_TOAST_MS,
+                            action: {
+                              label: '되돌리기',
+                              onAction: () => splitActions.revive(requestId, 'READY'),
+                            },
+                          })
+                        }}
+                        className="task-detail-modal__action-btn"
+                      >
+                        제안 버리기
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const requestId = splitLock.id
+                        splitActions.cancel(requestId)
+                        addToast('쪼개기 요청을 취소했어요.', 'success', {
+                          durationMs: UNDO_TOAST_MS,
+                          action: {
+                            label: '되돌리기',
+                            onAction: () => splitActions.revive(requestId, 'PROCESSING'),
+                          },
+                        })
+                      }}
+                      className="task-detail-modal__action-btn"
+                    >
+                      요청 취소
+                    </button>
+                  )
+                ) : (
+                  <>
                 <button
                   type="button"
                   disabled={!task.allowedActions?.edit}
@@ -468,6 +544,24 @@ const TaskDetailModal = ({
                 >
                   <WorkspaceIcon name="trash" /> 삭제
                 </button>
+                {!shownDone && !task.recurrence && (
+                  // 동작 버튼 줄에 끼우면 혼자 다음 줄로 밀린다. 한 줄을 통째로 쓴다.
+                  <div className="split-offer">
+                    <button
+                      type="button"
+                      onClick={() => split.start(task)}
+                      className="workspace-button"
+                    >
+                      <WorkspaceIcon name="split" /> 쪼개기
+                    </button>
+                    {taskMinutes(task) >= SPLIT_RECOMMEND_MINUTES && (
+                      <p>
+                        예상 시간이 4시간 이상이에요. 4시간보다 작은 조각으로 쪼개면
+                        하루 계획에 넣기 쉬워요.
+                      </p>
+                    )}
+                  </div>
+                )}
                 {unavailableLines(
                   [
                     {
@@ -498,12 +592,15 @@ const TaskDetailModal = ({
                 ).map((line) => (
                   <UnavailableNote key={line} text={line} />
                 ))}
+                  </>
+                )}
               </footer>
             </div>
           </>
         )}
       </Modal>
       {recurrenceScope.dialog}
+      {split.dialog}
       <TaskScheduleModal
         isOpen={showScheduleModal}
         expectedVersion={task?.version}

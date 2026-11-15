@@ -39,6 +39,7 @@ import {
 import { isCompletionOnly, readShownPages } from '../utils/taskListRefresh'
 import { getRequestFailureMessage } from '@shared/api/errorMessage'
 import './TaskPages.css'
+import { SplitInboxLink } from '@features/task-split/SplitInbox'
 
 const PAGE_SIZE = 20
 const FILTER_KEY = 'task-list-filters'
@@ -299,6 +300,7 @@ export default function TaskListPage() {
           <h1 className="task-page__title">작업 목록</h1>
         </div>
         <div className="task-page__actions">
+          <SplitInboxLink />
           <button
             className="workspace-button"
             onClick={() => setArchiveOpen(true)}

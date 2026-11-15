@@ -8,6 +8,7 @@ type Props = {
   showBackButton?: boolean
   onBack?: () => void
   showSettingsButton?: boolean
+  tools?: ReactNode
   onSettings?: () => void
 }
 export default function TopBar({
@@ -17,6 +18,7 @@ export default function TopBar({
   showBackButton,
   onBack,
   showSettingsButton = true,
+  tools,
   onSettings,
 }: Props) {
   return (
@@ -43,6 +45,7 @@ export default function TopBar({
         </span>
       </div>
       <div className="top-bar__tools">
+        {tools}
         {showSettingsButton && (
           <button
             className="top-bar__icon-button"
