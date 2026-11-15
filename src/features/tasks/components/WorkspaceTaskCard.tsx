@@ -24,6 +24,12 @@ import CompletionCheck from '@shared/components/motion/CompletionCheck'
 import './WorkspaceTaskCard.css'
 import { saveTaskCompletion } from '../utils/taskCompletion'
 import { getRequestFailureMessage } from '@shared/api/errorMessage'
+import { useSplitLock } from '@features/task-split/store'
+import {
+  SPLIT_RECOMMEND_MINUTES,
+  taskMinutes,
+  useSplitStart,
+} from '@features/task-split/SplitStart'
 export default function WorkspaceTaskCard({
   task,
   onOpen,
@@ -46,6 +52,8 @@ export default function WorkspaceTaskCard({
   const [optimisticDone, setOptimisticDone] = useState<boolean | null>(null)
   const shownDone = optimisticDone ?? done
   const lock = useRef(false)
+  const splitLock = useSplitLock(item.id)
+  const split = useSplitStart()
   const toggle = async () => {
     if (lock.current) return
     lock.current = true
@@ -115,6 +123,7 @@ export default function WorkspaceTaskCard({
         className="workspace-task__check"
         checked={shownDone}
         disabled={
+          splitLock !== null ||
           !(done ? item.allowedActions?.reopen : item.allowedActions?.complete)
         }
         onChange={() => void toggle()}
@@ -138,6 +147,25 @@ export default function WorkspaceTaskCard({
           />
           <span>{item.assigneeNickname ?? '담당자 미정'}</span>
           {item.recurrence && <span>반복</span>}
+          {splitLock ? (
+            <button
+              className="split-chip"
+              data-status={splitLock.status}
+              onClick={() => split.start(item)}
+            >
+              <WorkspaceIcon name="split" />
+              {splitLock.status === 'READY' ? '쪼개기 제안 준비됨' : '쪼개는 중'}
+            </button>
+          ) : (
+            !shownDone &&
+            !item.recurrence &&
+            taskMinutes(item) >= SPLIT_RECOMMEND_MINUTES && (
+              <button className="split-chip" onClick={() => split.start(item)}>
+                <WorkspaceIcon name="split" />
+                4시간 이상 · 쪼개기
+              </button>
+            )
+          )}
           {!shownDone && (item.inboundDependencyCount ?? 0) > 0 && (
             <span>이전 작업 {item.inboundDependencyCount}개 남음</span>
           )}
@@ -189,6 +217,7 @@ export default function WorkspaceTaskCard({
           ))}
         </div>
       </div>
+      {split.dialog}
       {error && (
         <div
           className="workspace-inline-error workspace-task__error"

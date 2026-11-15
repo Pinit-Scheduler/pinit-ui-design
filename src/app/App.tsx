@@ -69,6 +69,8 @@ import { RoutinesPage } from '@features/routines'
 import { RecurrencesPage } from '@features/recurrence'
 import { OAuthConsentPage } from '@features/oauth'
 import { OnboardingGuidePage } from '@features/onboarding'
+import SplitInboxPage from '@features/task-split/SplitInbox'
+import SplitProposalPage from '@features/task-split/SplitProposalPage'
 
 const WorkspaceRoutes = () => {
   useWorkspaceEvents()
@@ -124,6 +126,8 @@ const WorkspaceRoutes = () => {
           <Route path="deadline-risk" element={<DeadlineRiskPage />} />
           <Route path="schedules" element={<SchedulesTabPage />} />
           <Route path="tasks" element={<TaskListPage />} />
+          <Route path="tasks/splits" element={<SplitInboxPage />} />
+          <Route path="tasks/splits/:requestId" element={<SplitProposalPage />} />
           <Route path="spaces" element={<SpacesPage />} />
           <Route path="task-map" element={<TaskMapPage />} />
           <Route path="statistics" element={<StatisticsTabPage />} />

@@ -60,7 +60,7 @@ const makeDateWithOffset = (
   }
 }
 
-let taskSeq = 6
+let taskSeq = 9
 let scheduleSeq = 4
 
 export const mockUsers: MockUser[] = [
@@ -133,10 +133,10 @@ export const mockTasks: Task[] = [
     id: 5,
     title: '분기 보고서 초안',
     description: '지표 정리와 초안 작성',
-    dueDate: makeDateWithOffset(0, 'Asia/Seoul'),
+    dueDate: makeDateWithOffset(4, 'Asia/Seoul'),
     importance: 6,
     difficulty: 13,
-    expectedDuration: null,
+    expectedDuration: 'PT6H',
     isCompleted: false,
     completed: false,
     inboundDependencyCount: 0,
@@ -149,6 +149,43 @@ export const mockTasks: Task[] = [
     importance: 3,
     difficulty: 2,
     expectedDuration: 'PT20M',
+    isCompleted: false,
+    completed: false,
+    inboundDependencyCount: 0,
+  },
+  // 작업 쪼개기 시안용: 7은 제안이 준비된 원본, 8은 처리 중인 원본, 9는 실패한 요청의 원본
+  {
+    id: 7,
+    title: '온보딩 개편 설계',
+    description: '첫 주 이탈을 줄이는 새 온보딩 흐름을 설계한다',
+    dueDate: makeDateWithOffset(6, 'Asia/Seoul'),
+    importance: 8,
+    difficulty: 13,
+    expectedDuration: 'PT8H',
+    isCompleted: false,
+    completed: false,
+    inboundDependencyCount: 0,
+  },
+  {
+    id: 8,
+    title: '결제 모듈 이관',
+    description: '구 결제 모듈을 새 모듈로 옮긴다',
+    dueDate: makeDateWithOffset(9, 'Asia/Seoul'),
+    importance: 7,
+    difficulty: 13,
+    expectedDuration: 'PT5H',
+    isCompleted: false,
+    completed: false,
+    inboundDependencyCount: 0,
+  },
+  {
+    id: 9,
+    title: '연말 회고 자료',
+    description: '올해 지표와 배운 점을 정리한다',
+    dueDate: makeDateWithOffset(12, 'Asia/Seoul'),
+    importance: 4,
+    difficulty: 8,
+    expectedDuration: 'PT4H30M',
     isCompleted: false,
     completed: false,
     inboundDependencyCount: 0,
