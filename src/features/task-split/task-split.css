@@ -1113,3 +1113,8 @@
   opacity: 0.45;
   cursor: default;
 }
+
+/* 비용이 걸린 동작의 확인 창 */
+.split-dialog--confirm {
+  width: min(400px, 100%);
+}

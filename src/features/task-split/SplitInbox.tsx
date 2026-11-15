@@ -6,7 +6,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import WorkspaceIcon from '@shared/components/common/WorkspaceIcon'
 import { useToast } from '@contexts/ToastContext'
 import { inInbox, splitActions, useNoticeUnread, useSplit, type SplitRequest } from './store'
-import { UNDO_TOAST_MS } from '@features/trash/hooks/useTrashUndo'
+import { useSplitCommands } from './splitConfirm'
 import './task-split.css'
 
 const ago = (at: number) => {
@@ -143,7 +143,7 @@ export const SplitInboxLink = () => {
 
 const Row = ({ request, onGo }: { request: SplitRequest; onGo?: () => void }) => {
   const navigate = useNavigate()
-  const { addToast } = useToast()
+  const commands = useSplitCommands()
   const pieces = request.proposal?.pieces ?? []
   const kept = pieces.filter((p) => !p.excluded).length
   const dropped = pieces.length - kept
@@ -185,36 +185,19 @@ const Row = ({ request, onGo }: { request: SplitRequest; onGo?: () => void }) =>
           </button>
         )}
         {request.status === 'PROCESSING' && (
-          <button
-            className="workspace-button"
-            onClick={() => {
-              splitActions.cancel(request.id)
-              addToast('쪼개기 요청을 취소했어요.', 'success', {
-                durationMs: UNDO_TOAST_MS,
-                action: {
-                  label: '되돌리기',
-                  onAction: () => splitActions.revive(request.id, 'PROCESSING'),
-                },
-              })
-            }}
-          >
+          <button className="workspace-button" onClick={() => void commands.cancel(request.id)}>
             취소
           </button>
         )}
         {request.status !== 'PROCESSING' && (
           <button
             className="workspace-button"
-            onClick={() => {
-              splitActions.discard(request.id)
-              if (request.status === 'READY')
-                addToast('제안을 버렸어요.', 'success', {
-                  durationMs: UNDO_TOAST_MS,
-                  action: {
-                    label: '되돌리기',
-                    onAction: () => splitActions.revive(request.id, 'READY'),
-                  },
-                })
-            }}
+            onClick={() =>
+              // 실패 항목은 잃을 것이 없으므로 묻지 않고 치운다.
+              request.status === 'READY'
+                ? void commands.discard(request.id)
+                : splitActions.discard(request.id)
+            }
           >
             버리기
           </button>
@@ -228,6 +211,8 @@ export default function SplitInboxPage() {
   const { requests, quota } = useSplit()
   const shown = requests.filter(inInbox)
   useEffect(() => {
+    // 보관함을 열면 실패 알림도 읽음이 된다.
+    splitActions.readFailedNotices()
     // 실패 항목은 목록에서 읽은 것으로 본다. 준비된 제안은 열어야 읽음이 된다.
     shown.filter((r) => r.status === 'FAILED').forEach((r) => splitActions.read(r.id))
   })

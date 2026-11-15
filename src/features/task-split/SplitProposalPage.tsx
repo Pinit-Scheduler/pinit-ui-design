@@ -22,6 +22,7 @@ import {
   type SplitFieldError,
 } from './mockSplitCheck'
 import SplitMap from './SplitMap'
+import { useSplitCommands } from './splitConfirm'
 import { CYCLE, CycleHelp, TermHelp } from './TermHelp'
 import { restoreTask } from '@features/trash/api/trash'
 import { UNDO_TOAST_MS } from '@features/trash/hooks/useTrashUndo'
@@ -298,6 +299,7 @@ export default function SplitProposalPage() {
   const navigate = useNavigate()
   const { addToast } = useToast()
   const { removeTask, setTask } = useTaskCache()
+  const commands = useSplitCommands()
   const [pieces, setPieces] = useState<DraftPiece[]>(
     () =>
       // 만들기를 되돌리고 돌아온 제안은 고치던 그대로 연다.
@@ -320,7 +322,11 @@ export default function SplitProposalPage() {
     if (rejected) rejectRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
   }, [rejected])
   useEffect(() => {
-    if (request?.status === 'READY') splitActions.read(id)
+    if (request?.status === 'READY') {
+      splitActions.read(id)
+      // 어느 길로 들어왔든 제안을 열면 그 알림은 읽은 것이다.
+      splitActions.readNoticesOf(id)
+    }
   }, [id, request?.status])
   useEffect(() => {
     // 실제로는 제안을 여는 응답에 첫 검사 결과가 같이 온다.
@@ -575,14 +581,9 @@ export default function SplitProposalPage() {
         <button
           className="workspace-button split-page__discard"
           disabled={applying}
-          onClick={() => {
-            splitActions.discard(id)
-            navigate('/app/tasks/splits')
-            addToast('제안을 버렸어요.', 'success', {
-              durationMs: UNDO_TOAST_MS,
-              action: { label: '되돌리기', onAction: () => splitActions.revive(id, 'READY') },
-            })
-          }}
+          onClick={() =>
+            void commands.discard(id).then((done) => done && navigate('/app/tasks/splits'))
+          }
         >
           제안 버리기
         </button>

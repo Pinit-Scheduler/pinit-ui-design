@@ -42,14 +42,14 @@ import {
   previewSeriesDelete,
 } from '@features/recurrence/utils/seriesMutations'
 import { useTrashUndo } from '@features/trash'
-import { UNDO_TOAST_MS } from '@features/trash/hooks/useTrashUndo'
 import { isResourceUnavailable } from '@features/spaces/metadata'
 import { useSpaces } from '@features/spaces/store'
 import UnavailableNote from '@features/spaces/UnavailableNote'
 import { adminNames, unavailableLines } from '@features/spaces/unavailable'
 import { useArrival } from '@shared/motion'
 import { detailRefreshNeeded } from '../utils/taskDetailRefresh'
-import { splitActions, useSplitLock } from '@features/task-split/store'
+import { useSplitLock } from '@features/task-split/store'
+import { useSplitCommands } from '@features/task-split/splitConfirm'
 import {
   SPLIT_RECOMMEND_MINUTES,
   taskMinutes,
@@ -104,6 +104,7 @@ const TaskDetailModal = ({
   // 시안: 잠금을 화면이 판단한다. 실제로는 서버가 allowedActions와 이유를 내려 준다.
   const splitLock = useSplitLock(taskId)
   const split = useSplitStart()
+  const splitCommands = useSplitCommands()
   const locked = splitLock !== null
 
   useEffect(
@@ -468,17 +469,7 @@ const TaskDetailModal = ({
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          const requestId = splitLock.id
-                          splitActions.discard(requestId)
-                          addToast('제안을 버렸어요.', 'success', {
-                            durationMs: UNDO_TOAST_MS,
-                            action: {
-                              label: '되돌리기',
-                              onAction: () => splitActions.revive(requestId, 'READY'),
-                            },
-                          })
-                        }}
+                        onClick={() => void splitCommands.discard(splitLock.id)}
                         className="task-detail-modal__action-btn"
                       >
                         제안 버리기
@@ -487,17 +478,7 @@ const TaskDetailModal = ({
                   ) : (
                     <button
                       type="button"
-                      onClick={() => {
-                        const requestId = splitLock.id
-                        splitActions.cancel(requestId)
-                        addToast('쪼개기 요청을 취소했어요.', 'success', {
-                          durationMs: UNDO_TOAST_MS,
-                          action: {
-                            label: '되돌리기',
-                            onAction: () => splitActions.revive(requestId, 'PROCESSING'),
-                          },
-                        })
-                      }}
+                      onClick={() => void splitCommands.cancel(splitLock.id)}
                       className="task-detail-modal__action-btn"
                     >
                       요청 취소

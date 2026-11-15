@@ -303,6 +303,24 @@ export const inInbox = (request: SplitRequest) => isOpen(request) || request.sta
 export const splitActions = {
   readNotice: (id: number) =>
     set({ ...state, notices: state.notices.map((n) => (n.id === id ? { ...n, read: true } : n)) }),
+  /** 어느 길로든 제안을 열면 그 요청의 준비 알림이 읽음이 된다. */
+  readNoticesOf: (requestId: number) => {
+    if (state.notices.some((n) => n.requestId === requestId && n.kind === 'READY' && !n.read))
+      set({
+        ...state,
+        notices: state.notices.map((n) =>
+          n.requestId === requestId && n.kind === 'READY' ? { ...n, read: true } : n,
+        ),
+      })
+  },
+  /** 보관함을 열면 실패 알림이 읽음이 된다. */
+  readFailedNotices: () => {
+    if (state.notices.some((n) => n.kind === 'FAILED' && !n.read))
+      set({
+        ...state,
+        notices: state.notices.map((n) => (n.kind === 'FAILED' ? { ...n, read: true } : n)),
+      })
+  },
   readAllNotices: () =>
     set({ ...state, notices: state.notices.map((n) => ({ ...n, read: true })) }),
   consent: () => set({ ...state, consented: true }),
