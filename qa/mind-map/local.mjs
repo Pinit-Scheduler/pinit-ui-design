@@ -31,6 +31,19 @@ if (!process.env.QA_ORIGIN) {
 }
 
 const errors = []
+/**
+ * 일부러 실패시킨 맵 읽기(`failNextLoad`)의 500은 앱의 HTTP 도우미가 console.error로 남긴다.
+ * 그 창 안에서 `pattern`에 맞는 오류 기록만 기대한 것으로 따로 세고, 그 밖의 console error는 모두 실패로 본다.
+ */
+let expectingRejection = null
+const MIND_MAP_LOAD_ERROR = /API Error.*status: 500.*\/v2\/mind-map\b/
+/**
+ * mock의 진행 중인 일정(1번)은 demo의 것이라, pinit 계정에서는 미니 플레이어가 그 일정을 읽다 404를 받는다.
+ * 마인드맵과 관계없는 mock의 기존 동작이다.
+ */
+const PINIT_ACTIVE_SCHEDULE_ERROR =
+  /API Error.*status: 404.*\/v2\/workspace\/schedules\/1\b|^Failed to load active schedule: ApiError: 일정을 찾을 수 없습니다\./
+const expectedRejections = []
 const counters = {}
 
 /** 열리고 닫히는 움직임이 끝날 때까지 기다린다. 끝없는 움직임은 기다리지 않는다. */
@@ -83,12 +96,33 @@ const counts = (page) => page.locator('.mind-map-page__counts')
 const saveLabel = (page) => page.locator('.mind-map-save__label')
 const editingLabel = (page) => page.locator('.mind-map-node.is-editing .mind-map-node__label')
 
-const login = async (page) => {
-  await page.goto(`${origin}/login`)
-  await page.getByPlaceholder('아이디를 입력하세요').fill('demo')
-  await page.getByPlaceholder('비밀번호를 입력하세요').fill('demo1234')
-  await button(page, '로그인').click()
+/** 이메일이 없는 mock 계정(pinit)은 로그인 뒤 이메일 등록을 거친다. mock은 인증 코드를 console.info로 알린다. */
+const registerEmail = async (page) => {
+  const code = new Promise((resolve) => {
+    const listen = (message) => {
+      const match = /인증 코드: (\d{6})/.exec(message.text())
+      if (!match) return
+      page.off('console', listen)
+      resolve(match[1])
+    }
+    page.on('console', listen)
+  })
+  await page.getByPlaceholder('you@example.com').fill('qa@example.com')
+  await button(page, '코드 받기').click()
+  await page.getByPlaceholder('6자리 숫자').fill(await code)
+  await button(page, '이메일 등록').click()
   await page.waitForURL(/\/app\//)
+}
+
+/** `beforeSubmit`은 로그인 화면에서(앱이 오늘 화면을 열기 전에) 부른다. */
+const login = async (page, { username = 'demo', password = 'demo1234', beforeSubmit = async () => {} } = {}) => {
+  await page.goto(`${origin}/login`)
+  await beforeSubmit()
+  await page.getByPlaceholder('아이디를 입력하세요').fill(username)
+  await page.getByPlaceholder('비밀번호를 입력하세요').fill(password)
+  await button(page, '로그인').click()
+  await page.waitForURL(/\/(app\/|email-registration$)/)
+  if (page.url().endsWith('/email-registration')) await registerEmail(page)
   // 처음 들어오면 뜨는 둘러보기를 닫는다.
   const skip = page.getByRole('button', { name: '건너뛰기', exact: true })
   await skip.waitFor({ timeout: 5000 }).then(() => skip.click(), () => {})
@@ -608,13 +642,370 @@ const walk = async (page, viewport) => {
   )
 }
 
+// ---- 오늘 화면(`/app/today`)의 홈 카드 ----
+
+/** 설계 §7.2 "실제 화면에서 확인한 것"의 패널 시작 위치(px, 맨 위로 올린 화면에서). */
+const DESIGN_TOPS = {
+  desktop: { tasks: 296, schedules: 612 },
+  mobile: { tasks: 375, schedules: 2792 },
+}
+
+const menu = (page, viewport) =>
+  page.getByRole('navigation', { name: viewport === 'mobile' ? '모바일 주 메뉴' : '주 메뉴', exact: true })
+/** 메뉴(PC 왼쪽 메뉴, 폰 아래 탭)로 옮긴다. 새로 읽지 않는다. */
+const goMenu = async (page, viewport, name, pathname) => {
+  await press(page, viewport, menu(page, viewport).getByRole('link', { name, exact: true }))
+  await page.waitForURL(new RegExp(`${pathname}$`))
+}
+const homeCard = (page) => page.locator('section.mind-map-card')
+const cardPreview = (page) => homeCard(page).locator('.mind-map-card__preview')
+const cardAbout = (page) => homeCard(page).locator('.mind-map-card__about')
+const cardSelected = (page) => cardPreview(page).locator('.mind-map-node.is-selected .mind-map-node__label').innerText()
+const foldButton = (page) => homeCard(page).locator('.workspace-panel__head button')
+
+/** 두 패널이 다 그려지고 카드의 그림이 자리를 잡을 때까지 기다린다. */
+const todayReady = async (page, { picture = true } = {}) => {
+  await page.locator('.today-workspace').waitFor()
+  await page.waitForFunction(() => !document.querySelector('.today-workspace .today-page__loading'))
+  if (picture)
+    await page.waitForFunction(() => {
+      const world = document.querySelector('.mind-map-card__preview .mind-map-world')
+      return world && world.style.visibility !== 'hidden'
+    })
+  await settle(page)
+}
+
+/** 페이지를 맨 위(또는 맨 아래)로 올린다. 오늘 화면은 본문 상자가 스크롤한다. */
+const scrollTodayTo = (page, where) =>
+  page.evaluate((end) => {
+    const scrollers = [document.scrollingElement]
+    for (let el = document.querySelector('.today-workspace'); el; el = el.parentElement)
+      if (el.scrollHeight > el.clientHeight) scrollers.push(el)
+    for (const el of scrollers) el.scrollTop = end ? el.scrollHeight : 0
+  }, where === 'bottom')
+
+/**
+ * "오늘의 작업"·"오늘의 일정"·카드의 상자를 맨 위로 올린 화면에서 잰다. `hideCard`면 카드를 `display: none`으로 숨기고 잰 뒤 되돌린다.
+ */
+const todayBoxes = async (page, hideCard = false) => {
+  await scrollTodayTo(page, 'top')
+  return page.evaluate((hide) => {
+    const card = document.querySelector('.mind-map-card')
+    if (hide) card.style.display = 'none'
+    const panel = (title) =>
+      [...document.querySelectorAll('.today-workspace .workspace-panel h2')]
+        .find((h) => h.textContent === title)
+        .closest('.workspace-panel')
+    const rect = (el) => {
+      const r = el.getBoundingClientRect()
+      return { top: r.top, bottom: r.bottom, left: r.left, right: r.right, height: r.height }
+    }
+    const out = {
+      tasks: rect(panel('오늘의 작업')),
+      schedules: rect(panel('오늘의 일정')),
+      card: hide ? null : rect(card),
+      rowGap: parseFloat(getComputedStyle(document.querySelector('.today-workspace')).rowGap),
+    }
+    card.style.display = ''
+    return out
+  }, hideCard)
+}
+
+/** mock은 화면 안에서 답해 네트워크 응답 이벤트가 없다. 앱의 HTTP 도우미가 남기는 console 기록으로 응답을 기다린다. */
+const consoleSeen = (page, pattern) =>
+  new Promise((resolve) => {
+    const listen = (message) => {
+      if (!pattern.test(message.text())) return
+      page.off('console', listen)
+      resolve()
+    }
+    page.on('console', listen)
+  })
+
+const near = (actual, expected, tolerance = 0.5) => Math.abs(actual - expected) <= tolerance
+
+/** 카드가 있는 자리: 두 칸이면 오른쪽 칸 맨 위("오늘의 일정" 위), 한 칸이면 "오늘의 일정" 다음 맨 아래. */
+const assertCardPlace = (boxes, columns, label) => {
+  const { tasks, schedules, card, rowGap } = boxes
+  const where = `${label}: ${JSON.stringify(boxes)}`
+  if (columns === 2) {
+    assert.ok(card.left > tasks.right, `카드가 오른쪽 칸이 아니다 ${where}`)
+    assert.ok(near(card.left, schedules.left) && near(card.right, schedules.right), `카드와 일정의 칸이 다르다 ${where}`)
+    assert.ok(near(card.top, tasks.top), `카드가 오른쪽 칸 맨 위가 아니다 ${where}`)
+    assert.ok(near(schedules.top, card.bottom + rowGap), `일정이 카드 바로 아래가 아니다 ${where}`)
+  } else {
+    assert.ok(near(card.left, tasks.left) && near(card.right, tasks.right), `카드가 한 칸 전체 폭이 아니다 ${where}`)
+    assert.ok(near(card.top, schedules.bottom + rowGap), `카드가 일정 바로 다음이 아니다 ${where}`)
+  }
+}
+
+/** 고른 가지에 선택 테두리가 있고 그림 상자 안에 보인다. 배율은 PC 90%, 폰 80%. */
+const assertCardPicture = async (page, viewport, text, height) => {
+  assert.equal((await cardAbout(page).innerText()).trim(), `${text} 주변`)
+  assert.equal(await cardSelected(page), text)
+  const look = await cardPreview(page).evaluate((preview) => {
+    const frame = preview.getBoundingClientRect()
+    const world = preview.querySelector('.mind-map-world')
+    const selected = preview.querySelector('.mind-map-node.is-selected')
+    const r = selected.getBoundingClientRect()
+    return {
+      height: frame.height,
+      k: new DOMMatrix(getComputedStyle(world).transform).a,
+      inside: r.left >= frame.left && r.right <= frame.right && r.top >= frame.top && r.bottom <= frame.bottom,
+      outline: getComputedStyle(selected).outlineStyle,
+      worldEvents: getComputedStyle(world).pointerEvents,
+      href: preview.getAttribute('href'),
+      label: preview.getAttribute('aria-label'),
+      readonly: world.classList.contains('mind-map-world--readonly'),
+    }
+  })
+  assert.equal(look.height, height)
+  assert.equal(look.k, viewport === 'mobile' ? 0.8 : 0.9)
+  assert.ok(look.inside, `${text}가 그림 상자 밖이다`)
+  assert.equal(look.outline, 'solid')
+  assert.equal(look.worldEvents, 'none')
+  assert.equal(look.href, '/app/mind-map')
+  assert.equal(look.label, '마인드맵 크게 보기')
+  assert.equal(look.readonly, true)
+}
+
+const checkOverflow = async (page, width, label) => {
+  const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth)
+  assert.ok(scrollWidth <= width, `${label}: 가로로 넘친다(${scrollWidth}px)`)
+}
+
+/** 홈 카드. 맵을 바꾸는 단계가 있어 새 창(처음 상태의 mock)에서 걷는다. */
+const walkToday = async (viewport, openContext) => {
+  {
+    const { context, page } = await openContext()
+    await login(page)
+    await page.waitForURL(/\/app\/today$/)
+    await todayReady(page)
+
+    await step(
+      page,
+      viewport,
+      viewport === 'mobile' ? 'today-mobile' : 'today-desktop',
+      async () => {
+        const columns = viewport === 'mobile' ? 1 : 2
+        const shown = await todayBoxes(page)
+        const hidden = await todayBoxes(page, true)
+        const design = DESIGN_TOPS[viewport]
+        console.log(`${viewport} 위치: 카드 있음 ${JSON.stringify({ tasks: shown.tasks.top, schedules: shown.schedules.top, card: shown.card })}, 카드 없음 ${JSON.stringify({ tasks: hidden.tasks.top, schedules: hidden.schedules.top })}, 설계 ${JSON.stringify(design)}`)
+        // "오늘의 작업"은 카드가 있어도 제자리다.
+        assert.equal(shown.tasks.top, hidden.tasks.top)
+        assert.ok(near(shown.tasks.top, design.tasks, 4), `오늘의 작업 ${shown.tasks.top} ≠ 설계 ${design.tasks}`)
+        if (columns === 2) {
+          // "오늘의 일정"은 카드 높이 + 간격만큼만 내려간다(카드가 없던 때는 "오늘의 작업"과 같은 높이에서 시작했다).
+          // display: none으로 숨겨도 카드 줄의 간격은 남으므로, 숨겼을 때와의 차이는 카드 높이다.
+          assert.ok(near(shown.schedules.top - shown.tasks.top, shown.card.height + shown.rowGap), '일정이 카드 높이 + 간격과 다르게 내려갔다')
+          assert.ok(near(shown.schedules.top - hidden.schedules.top, shown.card.height), '카드를 숨겼을 때와의 차이가 카드 높이가 아니다')
+        } else {
+          assert.equal(shown.schedules.top, hidden.schedules.top)
+        }
+        assert.ok(near(shown.schedules.top, design.schedules, 4), `오늘의 일정 ${shown.schedules.top} ≠ 설계 ${design.schedules}`)
+        assertCardPlace(shown, columns, viewport)
+        // 머리: 제목(초점을 받지 않는다), 고른 가지 주변, 크게 보기, 접기.
+        const head = homeCard(page).locator('.workspace-panel__head')
+        assert.equal(await head.locator('h2').innerText(), '마인드맵')
+        assert.equal(await head.locator('h2').getAttribute('tabindex'), null)
+        assert.equal(await homeCard(page).getAttribute('aria-label'), '마인드맵')
+        assert.equal(await head.getByRole('link', { name: '크게 보기 →', exact: true }).getAttribute('href'), '/app/mind-map')
+        assert.equal(await foldButton(page).innerText(), '접기')
+        assert.equal(await foldButton(page).getAttribute('aria-expanded'), 'true')
+        await assertCardPicture(page, viewport, '짐 정리', viewport === 'mobile' ? 200 : 220)
+        // 체크박스와 체크된 가지의 취소선이 페이지와 같게 보인다.
+        const done = await cardPreview(page).locator('.mind-map-node[data-check="DONE"] .mind-map-node__label').first()
+        if (await done.count()) assert.equal(await done.evaluate((el) => getComputedStyle(el).textDecorationLine), 'line-through')
+        if (viewport === 'mobile') {
+          // 끝까지 내린 화면을 찍는다.
+          await scrollTodayTo(page, 'bottom')
+          await settle(page)
+          const card = await homeCard(page).boundingBox()
+          assert.ok(card.y + card.height <= viewports.mobile.height, '끝까지 내려도 카드가 화면 아래로 잘린다')
+        }
+      },
+      { dark: true },
+    )
+
+    if (viewport === 'desktop') {
+      // 1100px은 두 칸(오른쪽 위), 1000px은 한 칸(맨 아래).
+      await step(page, viewport, 'today-1000-1100', async () => {
+        for (const [width, columns, height] of [[1100, 2, 220], [1000, 1, 200]]) {
+          await page.setViewportSize({ width, height: 860 })
+          await page.waitForTimeout(150)
+          await settle(page)
+          const boxes = await todayBoxes(page)
+          console.log(`${width}px 위치: ${JSON.stringify(boxes)}`)
+          assertCardPlace(boxes, columns, `${width}px`)
+          await assertCardPicture(page, viewport, '짐 정리', height)
+          await checkOverflow(page, width, `${width}px`)
+          if (columns === 1) {
+            await homeCard(page).scrollIntoViewIfNeeded()
+            await settle(page)
+          }
+          await page.screenshot({ path: path.join(output, `${viewport}-today-${width}.png`) })
+          await page.evaluate(() => {
+            document.documentElement.dataset.theme = 'dark'
+          })
+          await settle(page)
+          await page.screenshot({ path: path.join(output, `${viewport}-today-${width}-dark.png`) })
+          await page.evaluate(() => {
+            delete document.documentElement.dataset.theme
+          })
+        }
+        await page.setViewportSize(viewports.desktop)
+        await page.waitForTimeout(150)
+        await scrollTodayTo(page, 'top')
+      })
+    }
+
+    await step(page, viewport, 'card-fold', async () => {
+      await scrollTodayTo(page, 'top')
+      const open = await homeCard(page).boundingBox()
+      await homeCard(page).scrollIntoViewIfNeeded()
+      await press(page, viewport, foldButton(page))
+      assert.equal(await foldButton(page).innerText(), '펴기')
+      assert.equal(await foldButton(page).getAttribute('aria-expanded'), 'false')
+      const controls = await foldButton(page).getAttribute('aria-controls')
+      assert.equal(await page.locator(`[id="${controls}"]`).isHidden(), true)
+      assert.equal(await cardPreview(page).isVisible(), false)
+      assert.equal(await homeCard(page).getByRole('link', { name: '크게 보기 →', exact: true }).isVisible(), true)
+      const head = await homeCard(page).locator('.workspace-panel__head').boundingBox()
+      const folded = await homeCard(page).boundingBox()
+      assert.ok(near(folded.height, head.height + 2, 1), `접은 카드에 머리 줄 밖의 것이 남았다(${folded.height}, ${head.height})`)
+      assert.ok(folded.height < open.height)
+      assert.equal(await page.evaluate(() => localStorage.getItem('pinit.mindMap.cardCollapsed')), '1')
+      // 새로 읽지 않고 메뉴로 다른 화면에 갔다가 돌아와도 접혀 있다.
+      await goMenu(page, viewport, '일정', '/app/schedules')
+      await goMenu(page, viewport, '오늘', '/app/today')
+      await todayReady(page, { picture: false })
+      assert.equal(await foldButton(page).innerText(), '펴기')
+      assert.equal(await cardPreview(page).isVisible(), false)
+      if (viewport === 'mobile') {
+        await homeCard(page).scrollIntoViewIfNeeded()
+        await settle(page)
+      }
+    }, { dark: true })
+
+    await step(page, viewport, 'card-unfold', async () => {
+      await press(page, viewport, foldButton(page))
+      assert.equal(await foldButton(page).innerText(), '접기')
+      assert.equal(await foldButton(page).getAttribute('aria-expanded'), 'true')
+      await todayReady(page)
+      assert.equal(await page.evaluate(() => localStorage.getItem('pinit.mindMap.cardCollapsed')), '0')
+      await assertCardPicture(page, viewport, '짐 정리', viewport === 'mobile' ? 200 : 220)
+      await homeCard(page).scrollIntoViewIfNeeded()
+      await settle(page)
+    })
+
+    await step(page, viewport, 'card-open', async () => {
+      // 그림을 누르면 페이지로 가고, 같은 가지가 골라져 있다.
+      await press(page, viewport, cardPreview(page))
+      await page.waitForURL(/\/app\/mind-map$/)
+      await canvas(page).waitFor()
+      await page.waitForFunction(() => document.querySelector('.mind-map-canvas .mind-map-world')?.style.visibility !== 'hidden')
+      assert.equal(await selectedLabel(page), '짐 정리')
+      // 페이지에서 이사 준비를 고르고, 기억한 가지 저장(800ms 뒤)을 기다린 뒤 메뉴의 오늘로 돌아온다.
+      const cursorSaved = consoleSeen(page, /API Response.*status: 204.*\/v2\/mind-map\/cursor\b/)
+      await press(page, viewport, nodeByText(page, '이사 준비').locator('.mind-map-node__label'))
+      assert.equal(await selectedLabel(page), '이사 준비')
+      await cursorSaved
+      await goMenu(page, viewport, '오늘', '/app/today')
+      await todayReady(page)
+      await assertCardPicture(page, viewport, '이사 준비', viewport === 'mobile' ? 200 : 220)
+      await homeCard(page).scrollIntoViewIfNeeded()
+      await settle(page)
+    }, { dark: true })
+    await context.close()
+  }
+
+  {
+    // 주제만 있는 맵(pinit 계정은 저장한 맵이 없다).
+    const { context, page } = await openContext()
+    expectingRejection = { label: 'pinit active schedule', pattern: PINIT_ACTIVE_SCHEDULE_ERROR }
+    await login(page, { username: 'pinit', password: 'pinit' })
+    await page.waitForURL(/\/app\/today$/)
+    await step(page, viewport, 'card-empty', async () => {
+      await todayReady(page, { picture: false })
+      await homeCard(page).getByText('큰 일을 가지로 쪼개 보세요.', { exact: true }).waitFor()
+      const open = homeCard(page).getByRole('link', { name: '마인드맵 열기', exact: true })
+      assert.equal(await open.getAttribute('href'), '/app/mind-map')
+      assert.match(await open.getAttribute('class'), /workspace-button/)
+      assert.equal(await cardPreview(page).count(), 0)
+      await homeCard(page).scrollIntoViewIfNeeded()
+      await settle(page)
+    }, { dark: true })
+    await context.close()
+    expectingRejection = null
+  }
+
+  {
+    // 처음 읽기가 실패해도 오늘 화면의 다른 부분은 그려지고, 카드 안에서 다시 시도할 수 있다.
+    // 로그인하면 앱이 곧바로 오늘 화면을 열어 맵을 읽으므로, 실패는 로그인 화면에서 미리 건다.
+    const { context, page } = await openContext()
+    await step(page, viewport, 'card-error', async () => {
+      expectingRejection = { label: 'mind-map first load', pattern: MIND_MAP_LOAD_ERROR }
+      try {
+        await login(page, {
+          beforeSubmit: async () => {
+            await page.waitForFunction(() => window.__pinitMock?.mindMap)
+            await page.evaluate(() => window.__pinitMock.mindMap.failNextLoad(true))
+          },
+        })
+        await page.waitForURL(/\/app\/today$/)
+        const failure = homeCard(page).locator('.workspace-inline-error')
+        await failure.waitFor()
+        assert.match(await failure.innerText(), /마인드맵을 불러오지 못했어요\./)
+      } finally {
+        expectingRejection = null
+      }
+      await todayReady(page, { picture: false })
+      assert.ok((await page.locator('.today-workspace__tasks .workspace-task').count()) > 0, '오늘의 작업이 그려지지 않았다')
+      assert.ok((await page.locator('.today-workspace__schedules .today-page__schedule-row').count()) > 0, '오늘의 일정이 그려지지 않았다')
+      assert.equal(await cardPreview(page).count(), 0)
+      await homeCard(page).scrollIntoViewIfNeeded()
+      await settle(page)
+    }, { dark: true })
+    await step(page, viewport, 'card-retry', async () => {
+      await press(page, viewport, homeCard(page).getByRole('button', { name: '다시 시도', exact: true }))
+      await todayReady(page)
+      assert.equal(await homeCard(page).locator('.workspace-inline-error').count(), 0)
+      await assertCardPicture(page, viewport, '짐 정리', viewport === 'mobile' ? 200 : 220)
+      await homeCard(page).scrollIntoViewIfNeeded()
+      await settle(page)
+    })
+    await step(page, viewport, 'card-refetch-error', async () => {
+      // 맵을 가진 뒤 다시 읽기가 실패하면(메뉴로 오늘 화면을 다시 연다) 그림은 그대로다.
+      await goMenu(page, viewport, '일정', '/app/schedules')
+      await page.evaluate(() => window.__pinitMock.mindMap.failNextLoad(true))
+      expectingRejection = { label: 'mind-map reload', pattern: MIND_MAP_LOAD_ERROR }
+      try {
+        const failed = consoleSeen(page, /API Error.*status: 500.*\/v2\/mind-map\b/)
+        await goMenu(page, viewport, '오늘', '/app/today')
+        await failed
+        await page.waitForTimeout(100)
+      } finally {
+        expectingRejection = null
+      }
+      await todayReady(page)
+      assert.equal(await homeCard(page).locator('.workspace-inline-error').count(), 0)
+      await assertCardPicture(page, viewport, '짐 정리', viewport === 'mobile' ? 200 : 220)
+      await homeCard(page).scrollIntoViewIfNeeded()
+      await settle(page)
+    })
+    await context.close()
+  }
+}
+
 let browser
 try {
   await mkdir(output, { recursive: true })
   browser = await chromium.launch()
   const only = process.env.QA_VIEWPORT
-  for (const [viewport, size] of Object.entries(viewports)) {
-    if (only && only !== viewport) continue
+  /** `QA_TODAY=1`이면 오늘 화면의 홈 카드 단계만 걷는다. */
+  const onlyToday = process.env.QA_TODAY === '1'
+  const open = async (viewport, size) => {
     const context = await browser.newContext({
       viewport: size,
       deviceScaleFactor: 1,
@@ -627,12 +1018,25 @@ try {
     const page = await context.newPage()
     page.on('pageerror', (error) => errors.push(`${viewport} pageerror: ${error.message}`))
     page.on('console', (message) => {
-      if (message.type() === 'error') errors.push(`${viewport} console: ${message.text()}`)
+      if (message.type() !== 'error') return
+      const text = message.text()
+      if (expectingRejection?.pattern.test(text))
+        expectedRejections.push(`${viewport} ${expectingRejection.label}: ${text.split("\n")[0]}`)
+      else errors.push(`${viewport} console: ${text}`)
     })
-    await login(page)
-    await walk(page, viewport)
-    await context.close()
+    return { context, page }
   }
+  for (const [viewport, size] of Object.entries(viewports)) {
+    if (only && only !== viewport) continue
+    if (!onlyToday) {
+      const { context, page } = await open(viewport, size)
+      await login(page)
+      await walk(page, viewport)
+      await context.close()
+    }
+    await walkToday(viewport, () => open(viewport, size))
+  }
+  for (const line of expectedRejections) console.log(`expected ${line}`)
   assert.deepEqual(errors, [], `브라우저 오류:\n${errors.join('\n')}`)
   console.log('mind-map local check passed')
 } finally {

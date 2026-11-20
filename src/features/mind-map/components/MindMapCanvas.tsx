@@ -12,6 +12,7 @@ import { clipText } from '../model/text'
 import { centerOn, fitView, keepVisible, pageScale, zoomStep } from '../model/viewport'
 import type { View } from '../model/viewport'
 import MindMapActionBar from './MindMapActionBar'
+import { measure, sameSizes } from './measureNodes'
 import MindMapWorld from './MindMapWorld'
 import MindMapZoom from './MindMapZoom'
 
@@ -25,24 +26,6 @@ type Props = {
 }
 
 const DOT_SPACING = 22
-
-const measure = (ids: string[], elements: ReadonlyMap<string, HTMLElement>): Map<string, Size> => {
-  const sizes = new Map<string, Size>()
-  for (const id of ids) {
-    const el = elements.get(id)
-    if (el) sizes.set(id, { w: el.offsetWidth, h: el.offsetHeight })
-  }
-  return sizes
-}
-
-const sameSizes = (a: ReadonlyMap<string, Size>, b: ReadonlyMap<string, Size>) => {
-  if (a.size !== b.size) return false
-  for (const [id, size] of a) {
-    const other = b.get(id)
-    if (!other || other.w !== size.w || other.h !== size.h) return false
-  }
-  return true
-}
 
 const caretToEnd = (el: HTMLElement) => {
   const range = document.createRange()
