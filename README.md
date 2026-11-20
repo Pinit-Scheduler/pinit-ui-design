@@ -50,7 +50,8 @@ Playwright(Chromium)로 실제 앱을 PC 1280×860과 폰 390×800에서 걷습�
 개발자 도구의 `__pinitMock`으로 서버의 경우를 흉내 냅니다.
 
 - `__pinitMock.mindMap.failNextSave('server' | 'lost' | null)`: 다음 저장 한 번을 실패시킵니다. `server`는 반영하지 않고 500, `lost`는 반영한 뒤 503(응답을 받지 못한 저장)입니다.
-- `__pinitMock.mindMap.failNextLoad(true)`: 다음 맵 읽기 한 번을 500으로 답합니다.
+- `__pinitMock.mindMap.failNextLoad(true)`: 다음 맵 읽기 한 번을 500으로 답합니다(본문은 BE가 저장된 맵을 읽지 못했을 때와 같습니다).
+- `__pinitMock.mindMap.withdraw(memberId = 1)`: 회원을 탈퇴시킵니다. 맵을 지우고, 그 뒤의 처음 저장을 409 `MEMBER_WITHDRAWN`으로 거절합니다(새로 고치면 되돌아갑니다).
 - `__pinitMock.mindMap.remoteEdit()`: 다른 기기나 MCP가 고친 것처럼 주제 바로 아래 첫 가지 글 끝에 ` (다른 기기)`를 붙이고 version을 올립니다.
 - `__pinitMock.setLatency(ms)`: 모든 mock 응답을 늦춥니다(새로 고쳐도 남으니 끝나면 `0`으로 되돌립니다).
 
