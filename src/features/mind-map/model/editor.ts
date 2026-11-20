@@ -312,16 +312,21 @@ const apply = (state: EditorState, command: EditorCommand, ctx: EditorContext): 
 
 const writing = new Set<EditorCommand['type']>(['input', 'commit', 'commitAndAddChild', 'cancel'])
 
-/** 고른 가지에 하는 지우기·체크·접기. 처음 쓰는 새 가지에서는 그 가지를 없애는 것(취소)으로 끝난다. */
-const targetsNewBranch = (editing: Editing, command: EditorCommand): boolean => {
+/**
+ * 처음 쓰는 새 가지에 하는 명령 가운데 취소로 끝나는 것: 지우기는 늘, 체크·접기는 글이 비었을 때.
+ * 글이 있으면 체크·접기는 확정한 새 가지에 한다. 어느 쪽이든 이전 선택에는 하지 않는다.
+ */
+const cancelsNewBranch = (state: EditorState, editing: Editing, command: EditorCommand): boolean => {
   if (!editing.isNew) return false
+  const blank = () => normalizeText(findNode(state.tree, editing.id)?.text ?? '') === ''
   switch (command.type) {
     case 'delete':
-    case 'toggleCheckbox':
       return true
+    case 'toggleCheckbox':
+      return blank()
     case 'toggleCheck':
     case 'toggleCollapse':
-      return command.id === undefined || command.id === editing.id
+      return (command.id === undefined || command.id === editing.id) && blank()
     default:
       return false
   }
@@ -337,11 +342,11 @@ export const initialEditor = (map: ServerMap): EditorState => ({
 
 /**
  * 쓰는 중에 쓰기 밖의 명령이 오면 먼저 확정한다. 확정하지 못하면(글이 너무 길면) 그 명령은 하지 않는다.
- * 처음 쓰는 새 가지에 하는 지우기·체크·접기는 취소다(없앤 뒤 이전 선택에 하지 않는다).
+ * 처음 쓰는 새 가지의 지우기와 빈 새 가지의 체크·접기는 취소다(없앤 뒤 이전 선택에 하지 않는다).
  */
 export const reduce = (state: EditorState, command: EditorCommand, ctx: EditorContext): EditorResult => {
   if (!state.editing || writing.has(command.type)) return apply(state, command, ctx)
-  if (targetsNewBranch(state.editing, command)) return cancel(state)
+  if (cancelsNewBranch(state, state.editing, command)) return cancel(state)
   const committed = commit(state)
   if (committed.state.editing) return committed
   return chain(committed, apply(committed.state, command, ctx))

@@ -422,24 +422,46 @@ test('쓰던 새 가지에서 지우기를 누르면 그 가지만 없어진다'
   }
 })
 
-test('쓰던 새 가지에서 체크·접기를 누르면 취소하고 다른 가지는 그대로다', () => {
+const onNewBranch = [
+  { type: 'toggleCheck' },
+  { type: 'toggleCheck', id: 'n1' },
+  { type: 'toggleCheckbox' },
+  { type: 'toggleCollapse' },
+  { type: 'toggleCollapse', id: 'n1' },
+]
+
+test('빈 새 가지에서 체크·접기를 누르면 취소하고 다른 가지는 그대로다', () => {
   const editing = run(start, [{ type: 'select', id: 'a' }, { type: 'addChild' }]).state
-  for (const command of [
-    { type: 'toggleCheck' },
-    { type: 'toggleCheck', id: 'n1' },
-    { type: 'toggleCheckbox' },
-    { type: 'toggleCollapse' },
-    { type: 'toggleCollapse', id: 'n1' },
-  ]) {
-    const { state, save } = run(editing, [{ type: 'input', text: '새 글' }, command])
+  for (const command of onNewBranch) {
+    const { state, save } = run(editing, [{ type: 'input', text: ' \t' }, command])
     assert.deepEqual(plain(state.tree), plain(map), command.type)
     assert.equal(state.selectedId, 'a')
     assert.equal(state.editing, null)
+    assert.equal(state.history.past.length, 0)
     assert.equal(save, null)
   }
-  const other = run(editing, [{ type: 'input', text: '새 글' }, { type: 'toggleCheck', id: 'c' }]).state
+})
+
+test('글을 쓴 새 가지에서 체크를 누르면 확정하고 그 가지에 체크박스를 붙인다', () => {
+  const editing = run(start, [{ type: 'select', id: 'a' }, { type: 'addChild' }, { type: 'input', text: ' 새  글 ' }]).state
+  for (const command of onNewBranch) {
+    const { state, save } = run(editing, [command])
+    const branch = tree.findNode(state.tree, 'n1')
+    assert.equal(branch.text, '새 글', command.type)
+    assert.equal(branch.check, command.type === 'toggleCollapse' ? 'NONE' : 'OPEN')
+    assert.equal(tree.findNode(state.tree, 'a').check, 'NONE')
+    assert.deepEqual(childIds(state, 'a'), ['a1', 'a2', 'n1'])
+    assert.equal(state.selectedId, 'n1')
+    assert.equal(state.editing, null)
+    assert.equal(save, 'now')
+  }
+  const undone = run(editing, [{ type: 'toggleCheckbox' }, { type: 'undo' }]).state
+  assert.equal(tree.findNode(undone.tree, 'n1').check, 'NONE', '체크를 되돌리면 확정한 글이 남는다')
+  const other = run(editing, [{ type: 'toggleCheck', id: 'c' }]).state
   assert.equal(text(other, 'n1'), '새 글')
   assert.equal(tree.findNode(other.tree, 'c').check, 'OPEN')
+  const removed = run(editing, [{ type: 'delete' }]).state
+  assert.deepEqual(plain(removed.tree), plain(map), '지우기는 글이 있어도 그 새 가지만 없앤다')
 })
 
 test('다시 읽은 맵으로 바꾸면 기록을 비우고 선택을 지킨다', () => {
