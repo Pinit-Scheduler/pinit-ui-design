@@ -13,8 +13,9 @@ export const SAVE_LABELS: Record<SaveStatus, string> = {
 
 export type InFlight = { saveId: string; json: string; expectedVersion: number }
 /**
- * `serverJson`은 `version`의 서버 나무로 아는 것이다. `unanswered`는 응답을 받지 못한 저장(번호, 나무)이고,
- * 모두 같은 `version`을 기대했으므로 서버에 들어간 것은 많아야 하나다.
+ * `serverJson`은 `version`의 서버 나무로 아는 것이다. `unanswered`는 응답을 받지 못한 저장(번호, 나무)이고
+ * (응답을 잃은 저장과 탭을 닫을 때 응답을 기다리지 않고 보낸 저장), 모두 같은 `version`을 기대했으므로
+ * 서버에 들어간 것은 많아야 하나다.
  */
 export type SaveState = {
   version: number
@@ -30,6 +31,7 @@ export type SaveEvent =
   | { type: 'timer' }
   | { type: 'retry' }
   | { type: 'leave' }
+  | { type: 'hidden' }
   | { type: 'succeeded'; saveId: string; version: number }
   | { type: 'conflicted'; saveId: string; latestVersion: number; lastSaveId: string | null; message: string }
   | { type: 'rejected'; saveId: string; message: string }
@@ -83,15 +85,26 @@ export const focusAction = (input: {
   return 'refetch'
 }
 
-/** 한 번에 하나만 보낸다. 보내는 중이면 응답 뒤로 미룬다. */
-const trySend = (state: SaveState, ctx: SaveContext): Step => {
+const utf8Length = (text: string): number => new TextEncoder().encode(text).length
+
+/** 탭을 닫는 순간에도 끝까지 보내 주는 전송(keepalive)에 실을 수 있는 본문인가. */
+const fitsKeepalive = (saveId: string, expectedVersion: number, json: string): boolean =>
+  utf8Length(requestBody(saveId, expectedVersion, json)) <= KEEPALIVE_LIMIT_BYTES
+
+/**
+ * 한 번에 하나만 보낸다. 보내는 중이면 응답 뒤로 미룬다. `keepalive`이면 본문이 한도 안일 때
+ * 탭이 닫혀도 끝까지 가는 전송으로 보낸다(응답은 그대로 받는다).
+ */
+const trySend = (state: SaveState, ctx: SaveContext, keepalive = false): Step => {
   if (state.reloading) return { state, effects: [] }
   if (state.inFlight) return { state: { ...state, queued: true }, effects: [] }
   if (!isDirty(state, ctx.confirmedJson)) return { state: { ...state, failure: null }, effects: [] }
   const inFlight = { saveId: ctx.newSaveId(), json: ctx.confirmedJson, expectedVersion: state.version }
   return {
     state: { ...state, inFlight },
-    effects: [{ type: 'send', ...inFlight, keepalive: false }],
+    effects: [
+      { type: 'send', ...inFlight, keepalive: keepalive && fitsKeepalive(inFlight.saveId, state.version, inFlight.json) },
+    ],
   }
 }
 
@@ -99,17 +112,20 @@ const trySend = (state: SaveState, ctx: SaveContext): Step => {
 const flushQueued = (state: SaveState, ctx: SaveContext): Step =>
   state.queued ? trySend({ ...state, queued: false }, ctx) : { state, effects: [] }
 
-const utf8Length = (text: string): number => new TextEncoder().encode(text).length
-
 /**
  * 탭을 닫을 때. 보내는 중인 저장이 있으면 보내지 않는다. 그 저장이 성공했다고 짐작한 version은
  * 그사이 다른 곳이 만든 version과 같을 수 있어 말없이 덮는다. 남은 변경은 64KB 한도처럼 잃는다.
+ * 보낸 저장의 응답은 기다리지 않으므로 응답을 받지 못한 저장으로 둔다. 페이지가 살아 돌아오면(bfcache)
+ * 다음 저장이 받은 충돌의 저장 번호로 이 저장이 들어갔는지 안다.
  */
-const leave = (state: SaveState, ctx: SaveContext): SaveEffect[] => {
-  if (state.reloading || state.inFlight || !isDirty(state, ctx.confirmedJson)) return []
+const leave = (state: SaveState, ctx: SaveContext): Step => {
+  if (state.reloading || state.inFlight || !isDirty(state, ctx.confirmedJson)) return { state, effects: [] }
   const saveId = ctx.newSaveId()
-  if (utf8Length(requestBody(saveId, state.version, ctx.confirmedJson)) > KEEPALIVE_LIMIT_BYTES) return []
-  return [{ type: 'send', saveId, expectedVersion: state.version, json: ctx.confirmedJson, keepalive: true }]
+  if (!fitsKeepalive(saveId, state.version, ctx.confirmedJson)) return { state, effects: [] }
+  return {
+    state: { ...state, unanswered: [...state.unanswered, [saveId, ctx.confirmedJson]] },
+    effects: [{ type: 'send', saveId, expectedVersion: state.version, json: ctx.confirmedJson, keepalive: true }],
+  }
 }
 
 export const stepSave = (state: SaveState, event: SaveEvent, ctx: SaveContext): Step => {
@@ -124,8 +140,13 @@ export const stepSave = (state: SaveState, event: SaveEvent, ctx: SaveContext): 
     case 'timer':
     case 'retry':
       return trySend(state, ctx)
+    case 'hidden': {
+      // 창이 숨으면(탭 바꾸기, 폰에서 앱 나가기) 기다리던 변경을 바로 보낸다. 숨은 채로 닫히거나 끝날 수 있다.
+      const sent = trySend(state, ctx, true)
+      return { state: sent.state, effects: [{ type: 'cancelSchedule' }, ...sent.effects] }
+    }
     case 'leave':
-      return { state, effects: leave(state, ctx) }
+      return leave(state, ctx)
     case 'reloaded':
       return { state: initialSave(event.version, event.json), effects: [] }
   }

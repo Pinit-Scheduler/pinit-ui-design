@@ -127,6 +127,8 @@ export default function MindMapNodeView({
         className={'mind-map-node__label' + (normalizeText(node.text) === '' ? ' is-blank' : '')}
         data-placeholder={place.depth === 0 ? '주제 적기' : '할 일 적기'}
         contentEditable={editing ? editable() : undefined}
+        role={editing ? 'textbox' : undefined}
+        aria-label={editing ? '가지 글' : undefined}
         suppressContentEditableWarning
         spellCheck={editing ? false : undefined}
         onInput={

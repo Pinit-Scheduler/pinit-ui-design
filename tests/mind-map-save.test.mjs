@@ -252,8 +252,57 @@ test('떠날 때: 바뀐 것이 있으면 keepalive로 보낸다', () => {
   assert.deepEqual(effects, [
     { type: 'send', saveId: 's1', expectedVersion: 3, json: 'B', keepalive: true },
   ])
-  assert.deepEqual(plain(state), plain(save.initialSave(3, 'A')))
+  // 응답을 받지 않는 저장이라 응답을 잃은 저장으로 둔다. 같은 version을 기대했다.
+  assert.deepEqual(plain(state), { ...plain(save.initialSave(3, 'A')), unanswered: [['s1', 'B']] })
   assert.deepEqual(run(save.initialSave(3, 'A'), [[{ type: 'leave' }, 'A']], ctx).effects, [])
+})
+
+test('떠날 때 보낸 저장이 들어갔으면, 페이지가 돌아와 다음 저장이 받은 충돌은 내 것으로 알아본다', () => {
+  const ctx = contexts()
+  const left = run(save.initialSave(3, 'A'), [[{ type: 'leave' }, 'B']], ctx)
+  // 돌아온 페이지(bfcache)에서 아직 저장된 것이 아니다.
+  assert.equal(save.isDirty(left.state, 'B'), true)
+  const next = run(left.state, [[now, 'C']], ctx)
+  assert.deepEqual(sends(next.effects), [
+    { type: 'send', saveId: 's2', expectedVersion: 3, json: 'C', keepalive: false },
+  ])
+  const resumed = run(
+    next.state,
+    [[{ type: 'conflicted', saveId: 's2', latestVersion: 4, lastSaveId: 's1', message: CONFLICT }, 'C']],
+    ctx,
+  )
+  assert.deepEqual(resumed.effects, [
+    { type: 'send', saveId: 's3', expectedVersion: 4, json: 'C', keepalive: false },
+  ])
+  assert.equal(resumed.state.reloading, false)
+})
+
+test('창이 숨으면 남은 변경을 바로 보내고(keepalive) 그 응답을 받는다', () => {
+  const ctx = contexts()
+  const scheduled = run(save.initialSave(3, 'A'), [[later, 'B']], ctx)
+  const hidden = run(scheduled.state, [[{ type: 'hidden' }, 'B']], ctx)
+  assert.deepEqual(hidden.effects, [
+    { type: 'cancelSchedule' },
+    { type: 'send', saveId: 's1', expectedVersion: 3, json: 'B', keepalive: true },
+  ])
+  assert.equal(save.saveStatus(hidden.state, 'B'), 'saving')
+  const done = run(hidden.state, [[{ type: 'succeeded', saveId: 's1', version: 4 }, 'B']], ctx)
+  assert.equal(save.saveStatus(done.state, 'B'), 'saved')
+  assert.equal(done.state.version, 4)
+  // 이어 탭이 닫혀도(pagehide) 보내는 중이라 또 보내지 않는다.
+  assert.deepEqual(run(hidden.state, [[{ type: 'leave' }, 'B']], ctx).effects, [])
+  // 바뀐 것이 없으면 보내지 않는다.
+  assert.deepEqual(sends(run(save.initialSave(3, 'A'), [[{ type: 'hidden' }, 'A']], ctx).effects), [])
+  // 보내는 중이면 응답 뒤로 미룬다.
+  const busy = run(save.initialSave(3, 'A'), [[now, 'B'], [{ type: 'hidden' }, 'C']], contexts())
+  assert.deepEqual(sends(busy.effects), [])
+  assert.equal(busy.state.queued, true)
+})
+
+test('창이 숨을 때 64KB를 넘는 본문은 keepalive 없이 보낸다', () => {
+  const huge = '{"x":"' + 'a'.repeat(65536) + '"}'
+  const { effects } = run(save.initialSave(3, 'A'), [[{ type: 'hidden' }, huge]], contexts())
+  assert.deepEqual(sends(effects).map((effect) => effect.keepalive), [false])
 })
 
 test('다른 저장이 가는 중에 떠나면 keepalive로 보내지 않는다', () => {

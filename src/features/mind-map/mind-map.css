@@ -71,6 +71,10 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* 알림 자리는 비어 있어도 둔다. 빈 자리는 간격을 차지하지 않는다. */
+.mind-map-save__reason:empty {
+  margin-inline-start: -8px;
+}
 .mind-map-save__retry {
   flex: none;
   padding: 3px 9px;
@@ -105,6 +109,10 @@
   background-color: var(--workspace-map-bg);
   background-image: radial-gradient(var(--workspace-map-dot) 1px, transparent 1.2px);
   background-size: 22px 22px;
+}
+.mind-map-canvas:focus-visible {
+  outline: 2px solid var(--workspace-blue);
+  outline-offset: -2px;
 }
 .mind-map-world {
   position: absolute;

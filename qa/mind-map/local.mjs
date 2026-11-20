@@ -241,6 +241,8 @@ const parentOfSelected = async (page) => {
 const CONFLICT_TOAST = '다른 곳에서 마인드맵이 먼저 바뀌었어요. 최신 내용을 불러온 뒤 다시 고쳐 주세요.'
 /** 기억한 가지는 선택이 바뀌고 800ms 뒤에 저장한다. 떠나기 전에 이만큼 기다려 돌아왔을 때 같은 가지가 골라져 있게 한다. */
 const CURSOR_WAIT = 1000
+const LEFT_SAVE_FAILED = '마인드맵의 마지막 변경을 저장하지 못했어요. 마인드맵을 다시 열면 이어서 저장해요.'
+const LEFT_CHANGE_LOST = '마인드맵의 마지막 변경을 저장하지 못했어요. 그사이 다른 곳에서 바뀌어 최신 내용을 불러왔어요.'
 /** 저장(`PUT /v2/mind-map`)이 실패할 때 앱의 HTTP 도우미가 남기는 console error. */
 const saveError = (statuses) => new RegExp(`API Error.*status: (${statuses}).*/v2/mind-map\\b`)
 
@@ -292,6 +294,13 @@ const watchToasts = (page) =>
     window.__mindMapToasts = shown
   })
 const toastsShown = (page) => page.evaluate(() => [...window.__mindMapToasts])
+/** 떠 있는 토스트를 모두 닫는다(오류 토스트는 스스로 닫히지 않는다). 같은 문구가 다시 뜨면 새 토스트로 센다. */
+const closeToasts = async (page) => {
+  const toasts = page.locator('.toast:not([data-state="closing"])')
+  while ((await toasts.count()) > 0) await toasts.first().locator('.toast__dismiss').click()
+  await page.locator('.toast').first().waitFor({ state: 'detached' }).catch(() => {})
+  await page.waitForFunction(() => document.querySelectorAll('.toast').length === 0)
+}
 
 /**
  * 맵 저장(`PUT /v2/mind-map`, 기억한 가지 저장은 빼고)이 동시에 몇 개 열려 있었는지 센다. mock은 화면 안의 `fetch`에서 답해
@@ -320,6 +329,26 @@ const countSaves = (page) =>
       }
     }
   })
+
+/**
+ * 켜 두는 동안 맵 저장(`PUT /v2/mind-map`)을 모두 500으로 답한다. `failNextSave`는 한 번뿐이라, 떠나는 순간의
+ * 저장(글 확정과 페이지가 사라질 때의 저장)이 다 실패하는 경우를 화면의 `fetch`를 감싸 만든다.
+ */
+const failSaves = (page, on) =>
+  page.evaluate((fail) => {
+    window.__mindMapFailSaves = fail
+    if (window.__mindMapFailWrapped) return
+    window.__mindMapFailWrapped = true
+    const original = window.fetch
+    window.fetch = async (input, init) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+      const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
+      const isSave = method === 'PUT' && new URL(url, window.location.href).pathname === '/v2/mind-map'
+      if (!isSave || !window.__mindMapFailSaves) return original(input, init)
+      const body = { status: 500, error: 'Internal Server Error', message: '마인드맵을 저장하지 못했어요.', path: '/v2/mind-map' }
+      return new Response(JSON.stringify(body), { status: 500, headers: { 'Content-Type': 'application/json' } })
+    }
+  }, on)
 
 /** `run` 동안 `pattern`에 맞는 console error를 기대한 것으로 세고, 그 기록을 돌려준다. */
 const expectErrors = async (label, pattern, run) => {
@@ -1091,6 +1120,53 @@ const walk = async (page, viewport) => {
     assert.equal((await saveLabel(page).innerText()).trim(), '저장됨')
   })
 
+  await step(page, viewport, 'leave-fails', async () => {
+    // 떠나며 건 저장이 실패하면 다른 화면에서 알리고, 다시 들어오면 그 나무로 시작해 이어서 저장한다.
+    assert.equal(await selectedLabel(page), '떠나며 확정')
+    await watchToasts(page)
+    await failSaves(page, true)
+    const logged = await expectErrors('leave-fails', saveError('500'), async () => {
+      await rewriteSelected(page, '떠나며 실패', { confirm: false })
+      await goMenu(page, viewport, '통계', '/app/statistics')
+      await page.locator('.toast__message', { hasText: LEFT_SAVE_FAILED }).waitFor()
+    })
+    await failSaves(page, false)
+    assert.ok(logged.some((line) => /status: 500/.test(line)), '500을 받지 않았다')
+    await capture(page, viewport, 'leave-fails-toast')
+    await returnToMap(page, viewport)
+    assert.equal(await nodeByText(page, '떠나며 실패').count(), 1)
+    await waitSaved(page)
+    assert.deepEqual(await toastsShown(page), [LEFT_SAVE_FAILED])
+    // 서버에 들어갔다: 나갔다 와도 그대로다.
+    await page.waitForTimeout(CURSOR_WAIT)
+    await roundTrip(page, viewport)
+    assert.equal(await nodeByText(page, '떠나며 실패').count(), 1)
+    assert.equal(await selectedLabel(page), '떠나며 실패')
+
+    // 그사이 다른 곳에서 바뀌었으면 덮지 않고 알린다.
+    await closeToasts(page)
+    await canvas(page).focus()
+    await watchToasts(page)
+    await failSaves(page, true)
+    await expectErrors('leave-fails-moved', saveError('500'), async () => {
+      await rewriteSelected(page, '덮으면 안 되는 글', { confirm: false })
+      await goMenu(page, viewport, '통계', '/app/statistics')
+      await page.locator('.toast__message', { hasText: LEFT_SAVE_FAILED }).waitFor()
+    })
+    await failSaves(page, false)
+    await page.evaluate(() => window.__pinitMock.mindMap.remoteEdit())
+    await returnToMap(page, viewport)
+    await page.locator('.toast__message', { hasText: LEFT_CHANGE_LOST }).waitFor()
+    assert.equal(await nodeByText(page, '덮으면 안 되는 글').count(), 0)
+    assert.equal(await nodeByText(page, '떠나며 실패').count(), 1)
+    assert.equal(await page.locator('.mind-map-node__label', { hasText: /\(다른 기기\)$/ }).count() > 0, true)
+    assert.equal((await saveLabel(page).innerText()).trim(), '저장됨')
+    assert.deepEqual(await toastsShown(page), [LEFT_SAVE_FAILED, LEFT_CHANGE_LOST])
+    await capture(page, viewport, 'leave-fails-moved-toast')
+    await closeToasts(page)
+    await canvas(page).focus()
+  })
+
   await step(
     page,
     viewport,
@@ -1128,6 +1204,31 @@ const walk = async (page, viewport) => {
       assert.deepEqual(tree.boxes, { 'aria-checked': 'false' })
       assert.deepEqual(tree.leaf, { 'aria-expanded': null, 'aria-checked': null })
       assert.equal(await canvas(page).getAttribute('aria-activedescendant'), await page.locator('.mind-map-node.is-selected').getAttribute('id'))
+      // 쓰는 글 상자는 이름이 있는 글 상자다. 키보드로 캔버스에 돌아오면 초점 테두리가 보인다.
+      await canvas(page).focus()
+      await page.keyboard.press('F2')
+      await editingLabel(page).waitFor()
+      assert.deepEqual(
+        await editingLabel(page).evaluate((el) => [el.getAttribute('role'), el.getAttribute('aria-label')]),
+        ['textbox', '가지 글'],
+      )
+      await page.keyboard.press('Escape')
+      await editingLabel(page).waitFor({ state: 'detached' })
+      const ring = await canvas(page).evaluate((el) => ({
+        focused: document.activeElement === el,
+        visible: el.matches(':focus-visible'),
+        style: getComputedStyle(el).outlineStyle,
+        width: getComputedStyle(el).outlineWidth,
+      }))
+      assert.deepEqual(ring, { focused: true, visible: true, style: 'solid', width: '2px' })
+      assert.equal(await page.locator('.mind-map-node__label[role]').count(), 0)
+      // 저장 상태는 바뀔 때마다 알리지 않고, 저장하지 못한 이유만 알린다.
+      const save = await page.locator('.mind-map-save').evaluate((el) => ({
+        role: el.getAttribute('role'),
+        live: [...el.querySelectorAll('[aria-live]')].map((child) => [child.className, child.getAttribute('aria-live')]),
+      }))
+      assert.deepEqual(save, { role: null, live: [['mind-map-save__reason', 'polite']] })
+      await capture(page, viewport, 'a11y-focus-ring')
     },
     { dark: true },
   )

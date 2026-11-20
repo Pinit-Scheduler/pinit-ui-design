@@ -6,6 +6,7 @@ import { readText, STORAGE_KEYS, writeText } from '@shared/utils/safeStorage'
 import { fetchMindMap } from '../api/mindMapApi'
 import type { MindMapResponse } from '../api/mindMapApi'
 import { MIND_MAP_QUERY_KEY } from '../api/mindMapQuery'
+import { afterLeavingSaves } from '../hooks/useMindMapSaver'
 import { cardFocus, cardScale, cardTitle, cardView } from '../model/homeCard'
 import { drawnBounds, layoutMap } from '../model/layout'
 import type { Size } from '../model/layout'
@@ -17,6 +18,9 @@ import { measure, sameSizes } from './measureNodes'
 import '../mind-map.css'
 
 const LOAD_FAILED = '마인드맵을 불러오지 못했어요.'
+
+/** 방금 떠난 페이지의 저장이 끝난 뒤에 읽는다(페이지와 같다). 먼저 읽으면 저장 전의 맵을 보인다. */
+const fetchAfterLeaving = (signal?: AbortSignal) => afterLeavingSaves().then(() => fetchMindMap(signal))
 
 /** 그림 상자 크기와 그때의 배율(화면 폭으로 정한다). */
 type PictureFrame = Frame & { k: number }
@@ -104,7 +108,7 @@ function CardPicture({ root, focusId }: { root: MindMapNode; focusId: string }) 
  * 접은 상태는 이 기기에만 기억한다.
  */
 export default function MindMapHomeCard() {
-  const query = useRevalidatingQuery<MindMapResponse>(MIND_MAP_QUERY_KEY, fetchMindMap, {
+  const query = useRevalidatingQuery<MindMapResponse>(MIND_MAP_QUERY_KEY, fetchAfterLeaving, {
     refetchOnFocus: true,
     errorMessage: LOAD_FAILED,
   })

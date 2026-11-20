@@ -3,7 +3,7 @@ import { readFailureMessage } from '@shared/api/errorMessage'
 import { useToast } from '@shared/contexts/ToastContext'
 import { fetchMindMap } from '../api/mindMapApi'
 import type { MindMapResponse } from '../api/mindMapApi'
-import { rememberMindMap } from '../api/mindMapQuery'
+import { mindMapAccount, rememberMindMap } from '../api/mindMapQuery'
 import { confirmedTree, initialEditor, leaveTree, reduce, replaceFromServer } from '../model/editor'
 import type { Box, EditorCommand, EditorState } from '../model/editor'
 import { saveStatus as statusOf } from '../model/saveMachine'
@@ -11,7 +11,7 @@ import type { SaveStatus } from '../model/saveMachine'
 import { countBranches, treeJson } from '../model/tree'
 import type { MapCounts } from '../model/tree'
 import { useCursorSaver } from './useCursorSaver'
-import { afterLeavingSaves, useMindMapSaver } from './useMindMapSaver'
+import { afterLeavingSaves, resumeLeftChange, useMindMapSaver } from './useMindMapSaver'
 
 export const LOAD_FAILED = '마인드맵을 불러오지 못했어요.'
 
@@ -76,12 +76,12 @@ export function useMindMapEditor() {
       addToast(message, 'info')
       fetchLatest(failLoad)
     },
-    // 다시 읽는 사이에 고쳤거나 보내기 시작했으면 받은 맵을 버린다.
+    // 다시 읽는 사이에 고쳤거나 보내기 시작했으면, 또는 그사이 저장이 성공해 답이 낡았으면 받은 맵을 버린다.
     refetch: () =>
       fetchMindMap().then(
         (map) => {
           const editing = stateRef.current?.editing != null
-          if (editing || map.version === saver.getState()?.version || !saver.isIdle()) return
+          if (editing || !saver.acceptsRefetched(map.version)) return
           rememberMindMap(() => map)
           adoptRef.current(map)
         },
@@ -92,11 +92,20 @@ export function useMindMapEditor() {
   useEffect(() => {
     adoptRef.current = (map) => {
       const current = stateRef.current
-      show(current ? replaceFromServer(current, map) : initialEditor(map))
-      saver.adopt(map)
+      if (current) {
+        show(replaceFromServer(current, map))
+        saver.adopt(map)
+      } else {
+        // 처음 불러오기: 떠난 페이지가 저장하지 못한 변경이 있으면 서버가 그대로일 때만 이어받아 바로 저장한다.
+        const left = resumeLeftChange(map, mindMapAccount())
+        show(initialEditor(left.root ? { ...map, root: left.root } : map))
+        saver.adopt(map)
+        if (left.root) saver.changed('now')
+        if (left.notice) addToast(left.notice, 'error')
+      }
       setLoad({ status: 'ready', error: null })
     }
-  }, [saver, show])
+  }, [saver, show, addToast])
 
   // 방금 떠난 페이지의 저장이 끝난 뒤에 읽는다. 기다림은 비동기라 개발 모드의 두 번 붙이기에서도 한 번만 읽는다.
   useEffect(() => {

@@ -80,6 +80,7 @@ const harness = () => {
   const requests = []
   const remembered = []
   const orphaned = []
+  const orphanFailures = []
   let ids = 0
   const saver = saverModule.createMindMapSaver({
     save: (request, options) =>
@@ -91,6 +92,7 @@ const harness = () => {
       }),
     remember: (update) => remembered.push(update),
     orphanConflict: (message) => orphaned.push(message),
+    orphanFailure: (message) => orphanFailures.push(message),
     newSaveId: () => 's' + ++ids,
     setTimer: time.setTimer,
     clearTimer: time.clearTimer,
@@ -109,9 +111,10 @@ const harness = () => {
     reload: (message) => view.reloads.push(message),
     refetch: () => view.refetches++,
   })
-  return { saver, view, time, requests, remembered, orphaned }
+  return { saver, view, time, requests, remembered, orphaned, orphanFailures }
 }
 
+const plain = (value) => JSON.parse(JSON.stringify(value))
 const status = ({ saver, view }) => machine.saveStatus(saver.getState(), json(view.confirmed))
 
 test('바로 저장은 확정된 나무를 보내고 성공하면 카드가 읽는 값을 바꾼다', async () => {
@@ -351,6 +354,7 @@ test('저장이 가는 중에 나갔다 돌아와도 충돌로 안내하지 않�
         }),
       remember: () => {},
       orphanConflict: (message) => reloads.push(message),
+      orphanFailure: (message) => reloads.push(message),
       newSaveId: () => 's' + ++ids,
       setTimer: time.setTimer,
       clearTimer: time.clearTimer,
@@ -428,4 +432,144 @@ test('맵을 받기 전에 떠난 페이지가 앞 페이지의 저장 기다림
   a.requests[0].resolve({ version: 4 })
   await settle()
   assert.equal(done, true)
+})
+
+const LEFT_SAVE_FAILED = '마인드맵의 마지막 변경을 저장하지 못했어요. 마인드맵을 다시 열면 이어서 저장해요.'
+const LEFT_CHANGE_LOST = '마인드맵의 마지막 변경을 저장하지 못했어요. 그사이 다른 곳에서 바뀌어 최신 내용을 불러왔어요.'
+
+/** 쓰던 글을 남긴 채 떠난 페이지. 그 저장은 아직 답을 받지 않았다. */
+const leftPage = (account, version = 3) => {
+  const h = harness()
+  h.saver.adopt(map(version))
+  h.view.leave = node('r', '내 계획', [node('a', '떠나며 쓴 글')])
+  saverModule.leaveSaver(h.saver, account)
+  assert.equal(h.requests.length, 1)
+  return h
+}
+
+test('떠난 뒤 저장이 실패하면 알린다', async () => {
+  const lost = leftPage('fail-lost')
+  lost.requests[0].reject(new TypeError('Failed to fetch'))
+  await settle()
+  assert.deepEqual(lost.orphanFailures, [LEFT_SAVE_FAILED])
+  assert.deepEqual(lost.orphaned, [])
+
+  const rejected = leftPage('fail-rejected')
+  rejected.requests[0].reject(apiError('가지 글을 적어 주세요.', 400, { errors: [] }))
+  await settle()
+  assert.deepEqual(rejected.orphanFailures, [LEFT_SAVE_FAILED])
+
+  const timedOut = leftPage('fail-timeout')
+  timedOut.time.tick(15000)
+  await settle()
+  assert.deepEqual(timedOut.orphanFailures, [LEFT_SAVE_FAILED])
+
+  // 페이지가 붙어 있는 동안의 실패는 페이지가 저장 상태로 보인다.
+  const shown = harness()
+  shown.saver.adopt(map(3))
+  shown.view.confirmed = node('r', '바꿈')
+  shown.saver.changed('now')
+  shown.requests[0].reject(new TypeError('Failed to fetch'))
+  await settle()
+  assert.deepEqual(shown.orphanFailures, [])
+
+  // 떠난 뒤 성공하면 알리지 않고, 이어받을 것도 없다.
+  const saved = leftPage('fail-none')
+  saved.requests[0].resolve({ version: 4 })
+  await settle()
+  assert.deepEqual(saved.orphanFailures, [])
+  assert.deepEqual(plain(saverModule.resumeLeftChange(map(4), 'fail-none')), { root: null, notice: null })
+})
+
+test('떠난 뒤 실패한 변경은 다시 들어오면 이어서 저장한다', async () => {
+  const left = leftPage('resume')
+  left.requests[0].reject(apiError('', 503))
+  await settle()
+  // 다른 계정의 페이지는 이어받지 않는다.
+  assert.deepEqual(plain(saverModule.resumeLeftChange(map(3), 'someone-else')), { root: null, notice: null })
+  // 서버가 그 변경의 기준 version 그대로다: 떠나며 쓴 나무로 시작한다.
+  const resumed = saverModule.resumeLeftChange(map(3), 'resume')
+  assert.equal(resumed.notice, null)
+  assert.equal(JSON.stringify(resumed.root), json(left.view.leave))
+  // 한 번만 이어받는다.
+  assert.deepEqual(plain(saverModule.resumeLeftChange(map(3), 'resume')), { root: null, notice: null })
+
+  // 새 페이지: 서버의 맵을 저장 기준으로 삼고, 화면은 이어받은 나무로 시작해 바로 저장한다.
+  const page = harness()
+  page.saver.adopt(map(3))
+  page.view.confirmed = resumed.root
+  page.saver.changed('now')
+  assert.equal(page.requests.length, 1)
+  assert.equal(
+    JSON.stringify(page.requests[0].request),
+    JSON.stringify({ expectedVersion: 3, saveId: 's1', root: left.view.leave }),
+  )
+  // 떠난 저장기는 더 보내지 않는다.
+  left.saver.retry()
+  assert.equal(left.requests.length, 1)
+})
+
+test('떠난 뒤 다른 곳에서 바뀌었으면 덮지 않고 알린다', async () => {
+  const left = leftPage('moved')
+  left.requests[0].reject(new TypeError('Failed to fetch'))
+  await settle()
+  const remote = node('r', '내 계획', [node('b', '다른 기기')])
+  assert.deepEqual(plain(saverModule.resumeLeftChange(map(4, remote), 'moved')), { root: null, notice: LEFT_CHANGE_LOST })
+  assert.deepEqual(plain(saverModule.resumeLeftChange(map(4, remote), 'moved')), { root: null, notice: null })
+
+  // 응답만 잃었고 그 저장이 들어갔다면(서버 나무가 떠나며 쓴 나무) 알리지 않는다.
+  const landed = leftPage('landed')
+  landed.requests[0].reject(apiError('', 503))
+  await settle()
+  assert.deepEqual(plain(saverModule.resumeLeftChange(map(4, landed.view.leave), 'landed')), { root: null, notice: null })
+})
+
+test('저장이 성공한 뒤에 온 다시 읽기의 답(그보다 낡은 version)은 받아들이지 않는다', async () => {
+  const h = harness()
+  h.saver.adopt(map(3))
+  // 다시 읽기를 보낸 뒤 고쳐 저장이 성공했다.
+  h.view.confirmed = node('r', '바꿈')
+  h.saver.changed('now')
+  h.requests[0].resolve({ version: 4 })
+  await settle()
+  assert.equal(h.saver.isIdle(), true)
+  assert.equal(h.saver.acceptsRefetched(3), false)
+  assert.equal(h.saver.acceptsRefetched(4), false)
+  assert.equal(h.saver.acceptsRefetched(5), true)
+  // 보낼 것이 있으면 새 version이어도 받아들이지 않는다.
+  h.view.confirmed = node('r', '더 바꿈')
+  assert.equal(h.saver.acceptsRefetched(5), false)
+})
+
+test('창이 숨으면 남은 변경을 keepalive로 보내고 응답을 받는다', async () => {
+  const h = harness()
+  h.saver.adopt(map(3))
+  h.view.confirmed = node('r', '바꿈')
+  h.saver.changed('later')
+  h.saver.hide()
+  assert.equal(h.requests.length, 1)
+  assert.equal(h.requests[0].options.keepalive, true)
+  assert.deepEqual(h.time.pending(), [15000])
+  h.requests[0].resolve({ version: 4 })
+  await settle()
+  assert.equal(status(h), 'saved')
+  assert.equal(h.saver.getState().version, 4)
+  assert.equal(h.remembered.at(-1)(map(3)).version, 4)
+
+  // 숨은 채 실패하면 저장하지 못함으로 보인다.
+  const failed = harness()
+  failed.saver.adopt(map(3))
+  failed.view.confirmed = node('r', '바꿈')
+  failed.saver.hide()
+  failed.requests[0].reject(new TypeError('Failed to fetch'))
+  await settle()
+  assert.equal(status(failed), 'failed')
+})
+
+test('탭을 닫을 때 보낸 저장은 응답을 받지 못한 저장으로 남는다', () => {
+  const h = harness()
+  h.saver.adopt(map(3))
+  h.view.leave = node('r', '쓰던 글')
+  h.saver.leave()
+  assert.deepEqual(plain(h.saver.getState().unanswered), [['s1', json(h.view.leave)]])
 })
