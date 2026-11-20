@@ -1306,7 +1306,7 @@ const goMenu = async (page, viewport, name, pathname) => {
   await page.waitForURL(new RegExp(`${pathname}$`))
 }
 /**
- * 글을 쓰는 중에 마인드맵을 떠난다. 폰은 쓰는 동안 아래 탭이 숨으므로(키보드 위 공간을 캔버스에 준다) 페이지의 `← 홈`으로 떠난다.
+ * 글을 쓰는 중에 마인드맵을 떠난다. 폰은 쓰는 동안 아래 탭이 숨으므로(키보드 위 자리를 캔버스에 준다) 페이지의 `← 홈`으로 떠난다.
  */
 const leaveWhileWriting = async (page, viewport) => {
   if (viewport !== 'mobile') return goMenu(page, viewport, '통계', '/app/statistics')
