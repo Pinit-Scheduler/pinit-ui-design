@@ -135,7 +135,8 @@ export const dropTarget = (
   const dragParent = parentOf(root, draggedId)
   if (!dragged || !dragParent || !findNode(root, targetId)) return null
   if (findNode(dragged, targetId)) return null
-  if (targetId === root.id) return { targetId, mode: 'child' }
+  // 주제 위에서는 늘 자식이다. 이미 주제의 자식이면 놓을 수 없다.
+  if (targetId === root.id) return dragParent.id === root.id ? null : { targetId, mode: 'child' }
   if (fraction < 1 / 3) return { targetId, mode: 'before' }
   if (fraction > 2 / 3) return { targetId, mode: 'after' }
   return dragParent.id === targetId ? null : { targetId, mode: 'child' }

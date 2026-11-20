@@ -439,6 +439,18 @@ const walk = async (page, viewport) => {
     })
     assert.deepEqual(await packing.evaluate((el) => [el.getAttribute('aria-level'), el.getAttribute('aria-posinset')]), before)
     assert.deepEqual(await order(), childrenBefore)
+    if (viewport === 'desktop') {
+      // 이미 주제의 자식인 가지는 주제 위에 놓을 수 없다(폰은 주제가 화면 왼쪽 끝에 걸쳐 PC에서만 본다).
+      const workshop = nodeByText(page, '팀 워크숍')
+      const topic = page.locator('.mind-map-node[data-depth="0"]')
+      const posinset = await workshop.getAttribute('aria-posinset')
+      await dragBetween(page, viewport, await center(workshop), await center(topic), async () => {
+        assert.equal(await page.locator('.mind-map-ghost').innerText(), '팀 워크숍')
+        await page.waitForTimeout(100)
+        assert.equal(await page.locator('.mind-map-node.is-drop').count(), 0, '주제에 놓는 표시가 있다')
+      })
+      assert.equal(await workshop.getAttribute('aria-posinset'), posinset)
+    }
     await page.waitForTimeout(1200)
     assert.deepEqual(await savedLabels(page), ['저장됨'], '바뀌지 않았는데 저장했다')
   })
