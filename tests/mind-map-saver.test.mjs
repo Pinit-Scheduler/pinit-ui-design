@@ -305,3 +305,107 @@ test('기억한 가지: 떠날 때 남은 값을 keepalive로 보내고 실패�
   h.saver.flush(true)
   assert.equal(h.sent.length, 1)
 })
+
+test('창 활성화가 겹쳐 와도(visibilitychange와 focus) 다시 읽기는 한 번만 보낸다', async () => {
+  const h = harness()
+  let finish
+  h.saver.attach({
+    confirmedJson: () => json(h.view.confirmed),
+    leaveJson: () => json(h.view.confirmed),
+    isEditing: () => false,
+    reload: () => {},
+    refetch: () => {
+      h.view.refetches++
+      return new Promise((resolve) => {
+        finish = resolve
+      })
+    },
+  })
+  h.saver.adopt(map(3))
+  h.saver.activate()
+  h.saver.activate()
+  assert.equal(h.view.refetches, 1)
+  finish()
+  await settle()
+  h.saver.activate()
+  assert.equal(h.view.refetches, 2)
+})
+
+test('저장이 가는 중에 나갔다 돌아와도 충돌로 안내하지 않는다', async () => {
+  // 서버 하나를 두 페이지(저장기 둘)가 차례로 쓴다.
+  const server = { version: 3, root: node('r', '내 계획'), lastSaveId: null }
+  const time = clock()
+  let ids = 0
+  const page = () => {
+    const requests = []
+    const reloads = []
+    const saver = saverModule.createMindMapSaver({
+      save: (request) =>
+        new Promise((resolve, reject) => {
+          requests.push(() => {
+            if (request.expectedVersion !== server.version)
+              return reject(apiError('', 409, { code: 'VERSION_CONFLICT', latestVersion: server.version, lastSaveId: server.lastSaveId }))
+            Object.assign(server, { version: server.version + 1, root: request.root, lastSaveId: request.saveId })
+            resolve({ version: server.version })
+          })
+        }),
+      remember: () => {},
+      orphanConflict: (message) => reloads.push(message),
+      newSaveId: () => 's' + ++ids,
+      setTimer: time.setTimer,
+      clearTimer: time.clearTimer,
+    })
+    const view = { confirmed: null }
+    saver.attach({
+      confirmedJson: () => json(view.confirmed),
+      leaveJson: () => json(view.confirmed),
+      isEditing: () => false,
+      reload: (message) => reloads.push(message),
+      refetch: () => {},
+    })
+    return { saver, view, requests, reloads }
+  }
+
+  const first = page()
+  first.saver.adopt(map(server.version, server.root))
+  first.view.confirmed = node('r', '내 계획', [node('a', '이사')])
+  saverModule.leaveSaver(first.saver)
+  assert.equal(first.requests.length, 1)
+
+  // 새 페이지는 떠난 페이지의 저장이 끝난 뒤에 읽는다.
+  let read = null
+  saverModule.afterLeavingSaves().then(() => {
+    read = map(server.version, server.root)
+  })
+  await settle()
+  assert.equal(read, null)
+  first.requests[0]()
+  await settle()
+  assert.equal(read.version, 4)
+
+  const second = page()
+  second.saver.adopt(read)
+  second.view.confirmed = node('r', '내 계획', [node('a', '이사'), node('b', '건강')])
+  second.saver.changed('now')
+  second.requests[0]()
+  await settle()
+  assert.deepEqual(second.reloads, [])
+  assert.equal(server.version, 5)
+})
+
+test('떠난 페이지의 저장을 기다리는 것은 15초까지다', async () => {
+  const h = harness()
+  h.saver.adopt(map(3))
+  h.view.confirmed = node('r', '바꿈')
+  saverModule.leaveSaver(h.saver)
+  let done = false
+  saverModule.afterLeavingSaves().then(() => {
+    done = true
+  })
+  h.time.tick(14999)
+  await settle()
+  assert.equal(done, false)
+  h.time.tick(1)
+  await settle()
+  assert.equal(done, true)
+})

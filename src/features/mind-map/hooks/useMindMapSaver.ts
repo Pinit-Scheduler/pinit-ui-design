@@ -17,8 +17,8 @@ export type SaverView = {
   isEditing: () => boolean
   /** 충돌: 안내하고 최신 맵을 다시 읽어 `adopt`로 넘긴다. */
   reload: (message: string) => void
-  /** 창이 다시 활성화됐고 보낼 것이 없다: 다시 읽는다. */
-  refetch: () => void
+  /** 창이 다시 활성화됐고 보낼 것이 없다: 다시 읽는다. 돌려준 약속이 끝날 때까지 다시 부르지 않는다. */
+  refetch: () => Promise<unknown> | void
 }
 
 export type SaverDeps = {
@@ -44,9 +44,14 @@ export const createMindMapSaver = (deps: SaverDeps) => {
   let view: SaverView | null = null
   let finalJson: string | null = null
   let timer: unknown = null
+  let refetching = false
   const listeners = new Set<() => void>()
+  const idleWaiters = new Set<() => void>()
 
-  const emit = () => listeners.forEach((listener) => listener())
+  const emit = () => {
+    listeners.forEach((listener) => listener())
+    if (!state?.inFlight) idleWaiters.forEach((resolve) => resolve())
+  }
   const confirmed = (): string | null => (view ? view.confirmedJson() : finalJson)
   const clearSchedule = () => {
     if (timer !== null) deps.clearTimer(timer)
@@ -157,7 +162,26 @@ export const createMindMapSaver = (deps: SaverDeps) => {
         inFlight: state.inFlight !== null,
       })
       if (action === 'save') step({ type: 'changed', when: 'now' })
-      else if (action === 'refetch') view.refetch()
+      else if (action === 'refetch' && !refetching) {
+        // visibilitychange와 focus가 함께 와도 한 번만 읽는다.
+        refetching = true
+        Promise.resolve(view.refetch()).finally(() => {
+          refetching = false
+        })
+      }
+    },
+    /** 보내는 중인 저장이 없을 때(많아야 `limitMs` 뒤) 끝나는 약속. */
+    settled(limitMs: number = SAVE_TIMEOUT_MS): Promise<void> {
+      if (!state?.inFlight) return Promise.resolve()
+      return new Promise((resolve) => {
+        const done = () => {
+          idleWaiters.delete(done)
+          deps.clearTimer(limit)
+          resolve()
+        }
+        const limit = deps.setTimer(done, limitMs)
+        idleWaiters.add(done)
+      })
     },
     attach(next: SaverView) {
       view = next
@@ -174,6 +198,20 @@ export const createMindMapSaver = (deps: SaverDeps) => {
 }
 
 export type MindMapSaver = ReturnType<typeof createMindMapSaver>
+
+let leaving: Promise<void> = Promise.resolve()
+
+/**
+ * 페이지가 사라질 때 저장기를 떼고, 그 저장의 응답을 새 페이지가 기다릴 수 있게 둔다.
+ * 기다리지 않으면 새 페이지가 저장 전의 version을 읽고, 다음 저장이 모르는 저장 번호의 충돌로 끝난다.
+ */
+export const leaveSaver = (saver: MindMapSaver) => {
+  saver.detach()
+  leaving = saver.settled()
+}
+
+/** 떠난 페이지의 저장이 끝날 때(많아야 `SAVE_TIMEOUT_MS`)까지 기다린다. 페이지는 그 뒤에 맵을 읽는다. */
+export const afterLeavingSaves = (): Promise<void> => leaving
 
 type SaverHandlers = Omit<SaverView, 'confirmedJson'>
 
@@ -224,7 +262,7 @@ export function useMindMapSaver(getConfirmedJson: () => string, handlers: SaverH
       document.removeEventListener('visibilitychange', onVisible)
       window.removeEventListener('focus', onFocus)
       window.removeEventListener('pagehide', onHide)
-      saver.detach()
+      leaveSaver(saver)
     }
   }, [saver])
 

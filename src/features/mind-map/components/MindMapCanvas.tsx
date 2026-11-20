@@ -3,7 +3,7 @@ import type { FocusEvent, KeyboardEvent } from 'react'
 import { flushSync } from 'react-dom'
 import { useToast } from '@shared/contexts/ToastContext'
 import { textNotice } from '../model/editor'
-import type { Box, EditorCommand, EditorState } from '../model/editor'
+import type { Box, EditorCommand, Editing, EditorState } from '../model/editor'
 import { keyAction } from '../model/keymap'
 import { layoutMap } from '../model/layout'
 import type { Size } from '../model/layout'
@@ -54,6 +54,8 @@ export default function MindMapCanvas({ state, dispatch, setGeometry }: Props) {
   const canvasRef = useRef<HTMLDivElement>(null)
   const elements = useRef(new Map<string, HTMLElement>())
   const composing = useRef(false)
+  /** 한도 안내를 이미 띄운 쓰기. 글이 한도 안으로 돌아오거나 새로 쓰기 시작하면 다시 알린다. */
+  const noticedFor = useRef<Editing | null>(null)
   const shown = useRef<{ selectedId: string | null; editingId: string | null }>({
     selectedId: null,
     editingId: null,
@@ -124,7 +126,10 @@ export default function MindMapCanvas({ state, dispatch, setGeometry }: Props) {
         label.textContent = clipped
         caretToEnd(label)
       }
-      addToast(textNotice(limits), 'info')
+      if (noticedFor.current !== editing) addToast(textNotice(limits), 'info')
+      noticedFor.current = editing
+    } else if (!composing.current) {
+      noticedFor.current = null
     }
     dispatch({ type: 'input', text: clipped })
   }
@@ -162,7 +167,7 @@ export default function MindMapCanvas({ state, dispatch, setGeometry }: Props) {
       tabIndex={0}
       role="tree"
       aria-label="마인드맵 편집 화면"
-      aria-activedescendant={`mind-map-node-${selectedId}`}
+      aria-activedescendant={selectedId ? `mind-map-node-${selectedId}` : undefined}
       onKeyDown={onKeyDown}
       onBlur={onBlur}
       onCompositionStart={() => {

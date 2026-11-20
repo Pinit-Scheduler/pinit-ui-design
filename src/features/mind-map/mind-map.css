@@ -218,6 +218,10 @@
   background: var(--workspace-surface);
   cursor: pointer;
 }
+/* 보기 전용(홈 카드)에서는 누를 수 없다. */
+.mind-map-world--readonly .mind-map-node__check {
+  cursor: default;
+}
 .mind-map-node[data-check='DONE'] .mind-map-node__check {
   background: var(--branch);
 }

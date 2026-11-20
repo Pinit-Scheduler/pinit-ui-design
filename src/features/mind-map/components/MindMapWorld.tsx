@@ -49,7 +49,11 @@ export default function MindMapWorld({
 }: Props) {
   const nodes = useMemo(() => byId(root), [root])
   return (
-    <div className="mind-map-world" style={style} aria-hidden={readOnly || undefined}>
+    <div
+      className={'mind-map-world' + (readOnly ? ' mind-map-world--readonly' : '')}
+      style={style}
+      aria-hidden={readOnly || undefined}
+    >
       <svg className="mind-map-edges" aria-hidden="true">
         {layout.edges.map((edge) => (
           <path key={`${edge.fromId}>${edge.toId ?? ''}`} d={edge.d} style={{ stroke: stroke(edge.color) }} />

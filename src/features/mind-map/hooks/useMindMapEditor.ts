@@ -11,7 +11,7 @@ import type { SaveStatus } from '../model/saveMachine'
 import { countBranches, treeJson } from '../model/tree'
 import type { MapCounts } from '../model/tree'
 import { useCursorSaver } from './useCursorSaver'
-import { useMindMapSaver } from './useMindMapSaver'
+import { afterLeavingSaves, useMindMapSaver } from './useMindMapSaver'
 
 export const LOAD_FAILED = '마인드맵을 불러오지 못했어요.'
 
@@ -98,10 +98,10 @@ export function useMindMapEditor() {
     }
   }, [saver, show])
 
-  // 개발 모드의 두 번 붙이기에서 요청을 한 번만 보내도록 다음 마이크로태스크에 보낸다.
+  // 방금 떠난 페이지의 저장이 끝난 뒤에 읽는다. 기다림은 비동기라 개발 모드의 두 번 붙이기에서도 한 번만 읽는다.
   useEffect(() => {
     let live = true
-    queueMicrotask(() => {
+    afterLeavingSaves().then(() => {
       if (live) fetchLatest(failLoad)
     })
     return () => {
