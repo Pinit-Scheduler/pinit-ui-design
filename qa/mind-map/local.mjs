@@ -353,6 +353,43 @@ const walk = async (page, viewport) => {
     { dark: true },
   )
 
+  if (viewport === 'desktop') {
+    // PC 폭이 좁으면(900~1,215px) 단축키를 숨겨 일곱 단추가 캔버스 안에 다 보인다. 1280px에서는 단축키가 보인다.
+    await step(page, viewport, 'action-bar-narrow', async () => {
+      for (const size of [
+        { width: 900, height: 860 },
+        { width: 1024, height: 768 },
+        { width: 1280, height: 860 },
+      ]) {
+        await page.setViewportSize(size)
+        await page.waitForTimeout(150)
+        const fit = await actionBar(page).evaluate((bar) => {
+          const frame = document.querySelector('.mind-map-canvas').getBoundingClientRect()
+          return {
+            kbd: getComputedStyle(bar.querySelector('kbd')).display !== 'none',
+            buttons: [...bar.querySelectorAll('button')].map((b) => {
+              const r = b.getBoundingClientRect()
+              const label = b.querySelector('.mind-map-actions__label')
+              return {
+                text: label.textContent,
+                inside: r.left >= frame.left && r.right <= frame.right,
+                clipped: b.scrollWidth > b.clientWidth || label.scrollWidth > label.clientWidth,
+                right: Math.round(r.right),
+                frameRight: Math.round(frame.right),
+              }
+            }),
+          }
+        })
+        for (const b of fit.buttons) {
+          assert.ok(b.inside, `${size.width}px ${b.text}: 캔버스 밖(${b.right} > ${b.frameRight})`)
+          assert.ok(!b.clipped, `${size.width}px ${b.text}: 잘린다`)
+        }
+        assert.equal(fit.kbd, size.width >= 1280, `${size.width}px 단축키 보임: ${fit.kbd}`)
+        await page.screenshot({ path: path.join(output, `${viewport}-action-bar-${size.width}.png`) })
+      }
+    })
+  }
+
   if (viewport === 'mobile') {
     await step(page, viewport, 'actions-fit', async () => {
       const fit = await actionBar(page).evaluate((bar) => {
@@ -554,6 +591,18 @@ const walk = async (page, viewport) => {
       await page.keyboard.press('Escape')
       await editingLabel(page).waitFor({ state: 'detached' })
       assert.equal(await page.evaluate(() => document.activeElement?.classList.contains('mind-map-canvas')), true)
+      if (viewport === 'desktop') {
+        // 끌 수 없는 주제를 끈 누르기는 두 번 누르기로 세지 않는다.
+        const topic = await center(page.locator('.mind-map-node[data-depth="0"]'))
+        for (let i = 0; i < 2; i++) {
+          await page.mouse.move(topic.x, topic.y)
+          await page.mouse.down()
+          await page.mouse.move(topic.x + 20, topic.y + 10, { steps: 3 })
+          await page.mouse.up()
+        }
+        await page.waitForTimeout(100)
+        assert.equal(await editingLabel(page).count(), 0, '움직인 누르기 두 번에 글 고치기가 열렸다')
+      }
     },
     { dark: true },
   )

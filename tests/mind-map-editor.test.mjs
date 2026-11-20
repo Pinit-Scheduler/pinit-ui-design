@@ -511,3 +511,21 @@ test('단추 줄: 주제에서는 삭제·체크박스를, 자식이 없으면 �
   assert.equal(folded.collapsed, true)
   assert.equal(folded.canCollapse, true)
 })
+
+test('같은 부모의 같은 자리로 놓으면 바뀐 것이 없어 기록·저장하지 않는다', () => {
+  for (const drop of [
+    { targetId: 'a2', mode: 'before' },
+    { targetId: 'a1', mode: 'before' },
+  ]) {
+    const result = run(start, [{ type: 'drop', draggedId: 'a1', drop }])
+    assert.equal(result.state.tree, start.tree, JSON.stringify(drop))
+    assert.equal(result.save, null)
+    assert.equal(result.state.history.past.length, 0)
+  }
+  const sameEnd = run(start, [{ type: 'drop', draggedId: 'c', drop: { targetId: 'b', mode: 'after' } }])
+  assert.equal(sameEnd.save, null)
+  assert.equal(sameEnd.state.history.past.length, 0)
+  const moved = run(start, [{ type: 'drop', draggedId: 'a1', drop: { targetId: 'a2', mode: 'after' } }])
+  assert.equal(moved.save, 'later')
+  assert.deepEqual(childIds(moved.state, 'a'), ['a2', 'a1'])
+})

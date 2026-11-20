@@ -15,7 +15,8 @@ const NODE_ID_PREFIX = 'mind-map-node-'
 
 type Point = { x: number; y: number }
 type Press =
-  | { type: 'node'; id: string; sx: number; sy: number; moved: boolean }
+  /** travelled: 6px 넘게 움직였다(누르기로 치지 않는다). moved: 끌기를 시작했다(주제는 끌지 않는다). */
+  | { type: 'node'; id: string; sx: number; sy: number; travelled: boolean; moved: boolean }
   | { type: 'pan'; lx: number; ly: number }
 export type Drag = {
   text: string
@@ -94,7 +95,7 @@ export function useCanvasPointer({ canvasRef, state, view, setView, dispatch, on
     if (id && findNode(latest.current.tree, id)) {
       onPointerSelect(id)
       dispatch({ type: 'select', id })
-      press.current = { type: 'node', id, sx: event.clientX, sy: event.clientY, moved: false }
+      press.current = { type: 'node', id, sx: event.clientX, sy: event.clientY, travelled: false, moved: false }
     } else {
       press.current = { type: 'pan', lx: event.clientX, ly: event.clientY }
     }
@@ -129,6 +130,7 @@ export function useCanvasPointer({ canvasRef, state, view, setView, dispatch, on
     const { tree } = latest.current
     if (!current.moved) {
       if (Math.hypot(event.clientX - current.sx, event.clientY - current.sy) <= DRAG_START) return
+      current.travelled = true
       if (current.id === tree.id) return
       current.moved = true
     }
@@ -169,7 +171,11 @@ export function useCanvasPointer({ canvasRef, state, view, setView, dispatch, on
       if (drop && event.type === 'pointerup') dispatch({ type: 'drop', draggedId: current.id, drop })
       return
     }
-    if (event.type !== 'pointerup') return
+    // 움직인 누르기(끌 수 없는 주제를 끈 것)는 두 번 누르기로 세지 않는다.
+    if (event.type !== 'pointerup' || current.travelled) {
+      lastTap.current = { id: null, t: 0 }
+      return
+    }
     const now = performance.now()
     if (lastTap.current.id === current.id && now - lastTap.current.t < DOUBLE_TAP_MS) {
       lastTap.current = { id: null, t: 0 }

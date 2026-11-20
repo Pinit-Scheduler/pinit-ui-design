@@ -252,9 +252,16 @@ const changeCheck = (
   )
 }
 
+/** 부모 id와 그 안의 차례. */
+const slotOf = (root: MindMapNode, id: string): string => {
+  const parent = parentOf(root, id)
+  return parent ? `${parent.id}#${parent.children.findIndex((child) => child.id === id)}` : ''
+}
+
+/** 놓은 자리가 원래 자리(같은 부모, 같은 차례)면 바뀐 것이 없어 기록·저장하지 않는다. */
 const drop = (state: EditorState, draggedId: string, target: Drop): EditorResult => {
   const moved = applyDrop(state.tree, draggedId, target)
-  if (moved === state.tree) return result(state)
+  if (moved === state.tree || slotOf(moved, draggedId) === slotOf(state.tree, draggedId)) return result(state)
   const deepest = depthOf(moved, draggedId) + subtreeHeight(findNode(moved, draggedId)!)
   if (deepest > state.limits.maxDepth) return result(state, null, depthNotice(state.limits))
   return result({ ...recorded(state), tree: moved, selectedId: draggedId }, 'later')
