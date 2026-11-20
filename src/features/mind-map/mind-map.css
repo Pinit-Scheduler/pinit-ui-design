@@ -85,13 +85,22 @@
   background: var(--workspace-blue-soft);
 }
 
-/* 캔버스 */
-.mind-map-canvas {
+/* 캔버스와 그 위에 뜬 상자(확대 단추, 동작 단추 줄) */
+.mind-map-stage {
   position: relative;
   flex: 1;
   min-height: 0;
+  display: flex;
+  isolation: isolate;
+}
+.mind-map-canvas {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
   overflow: hidden;
   outline: none;
+  touch-action: none;
   background-color: var(--workspace-map-bg);
   background-image: radial-gradient(var(--workspace-map-dot) 1px, transparent 1.2px);
   background-size: 22px 22px;
@@ -115,6 +124,143 @@
   fill: none;
   stroke-width: 1.75;
   stroke-linecap: round;
+}
+
+.mind-map-canvas.is-panning {
+  cursor: grabbing;
+}
+
+/* 끄는 동안: 사이에 끼울 자리의 선과 포인터를 따라가는 유령 상자 */
+.mind-map-insert-line {
+  position: absolute;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--workspace-blue);
+  pointer-events: none;
+}
+.mind-map-ghost {
+  position: absolute;
+  max-width: 220px;
+  box-sizing: border-box;
+  padding: 5px 10px;
+  border: 1.5px solid var(--workspace-blue);
+  border-radius: 8px;
+  background: var(--workspace-surface);
+  color: var(--workspace-ink);
+  font-size: 13.5px;
+  font-weight: 550;
+  line-height: 1.45;
+  box-shadow: 0 6px 24px color-mix(in srgb, var(--workspace-ink), transparent 88%);
+  opacity: 0.92;
+  transform: translate(10px, 10px);
+  pointer-events: none;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+/*
+ * 오른쪽 위 확대 단추.
+ * 미니 플레이어(진행 중인 일정)는 캔버스 아래에 PC 24px·폰 32px 걸쳐 뜬다. 단추 줄은 그만큼 올려 그 위에 둔다.
+ * 플레이어가 없으면 --workspace-player-height가 0이라 올리지 않는다.
+ */
+.mind-map-zoom {
+  position: absolute;
+  top: 12px;
+  right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--workspace-line);
+  border-radius: 10px;
+  background: var(--workspace-surface);
+  cursor: default;
+}
+.mind-map-zoom button {
+  min-width: 30px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 7px;
+  color: var(--workspace-ink);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mind-map-zoom button:hover {
+  background: var(--workspace-blue-soft);
+}
+.mind-map-zoom output {
+  min-width: 44px;
+  color: var(--workspace-muted);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+/* 아래 가운데 동작 단추 줄 */
+.mind-map-actions {
+  --mind-map-player-overlap: 24px;
+  position: absolute;
+  left: 50%;
+  bottom: calc(
+    16px + min(var(--workspace-player-height, 0px), var(--mind-map-player-overlap)) + env(safe-area-inset-bottom, 0px)
+  );
+  transform: translateX(-50%);
+  display: flex;
+  gap: 2px;
+  max-width: calc(100% - 32px);
+  box-sizing: border-box;
+  padding: 5px;
+  border: 1px solid var(--workspace-line);
+  border-radius: 14px;
+  background: var(--workspace-surface);
+  box-shadow: 0 6px 24px color-mix(in srgb, var(--workspace-ink), transparent 88%);
+  cursor: default;
+}
+.mind-map-actions__button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 11px;
+  border-radius: 9px;
+  color: var(--workspace-ink);
+  font-size: 13.5px;
+  font-weight: 550;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.mind-map-actions__button:hover:not(:disabled) {
+  background: var(--workspace-blue-soft);
+}
+.mind-map-actions__button[aria-pressed='true'] {
+  color: var(--workspace-blue);
+}
+.mind-map-actions__button svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.mind-map-actions kbd {
+  display: inline-block;
+  padding: 0 5px;
+  border: 1px solid var(--workspace-control-line);
+  border-radius: 5px;
+  background: var(--workspace-bg);
+  color: var(--workspace-muted);
+  font: inherit;
+  font-size: 11px;
+  line-height: 17px;
+}
+.mind-map-actions__sep {
+  flex: none;
+  width: 1px;
+  margin: 6px 4px;
+  background: var(--workspace-line);
 }
 
 /* 가지 */
@@ -286,5 +432,26 @@
   }
   .mind-map-page__status {
     padding: 18px;
+  }
+  /* 폰: 좌우 16px까지 펴고 일곱 단추를 같은 폭으로, 아이콘 위·글 아래. 단축키와 구분선은 숨긴다. */
+  .mind-map-actions {
+    --mind-map-player-overlap: 32px;
+    left: max(16px, env(safe-area-inset-left, 0px));
+    right: max(16px, env(safe-area-inset-right, 0px));
+    transform: none;
+    max-width: none;
+    justify-content: space-between;
+  }
+  .mind-map-actions__button {
+    flex: 1 1 0;
+    min-width: 0;
+    flex-direction: column;
+    gap: 3px;
+    padding: 7px 2px;
+    font-size: 11.5px;
+  }
+  .mind-map-actions kbd,
+  .mind-map-actions__sep {
+    display: none;
   }
 }

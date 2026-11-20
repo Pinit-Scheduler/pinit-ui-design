@@ -487,3 +487,27 @@ test('처음 상태는 보이는 기억한 가지를 고르고 기록이 비었�
   assert.equal(editor.initialEditor({ root: map, cursorNodeId: 'b1', limits }).selectedId, 'b')
   assert.equal(editor.initialEditor({ root: map, cursorNodeId: 'zz', limits }).selectedId, 'r')
 })
+
+test('단추 줄: 주제에서는 삭제·체크박스를, 자식이 없으면 접기를, 기록이 없으면 되돌리기를 막는다', () => {
+  const atRoot = editor.actionState(run(start, [{ type: 'select', id: 'r' }]).state)
+  assert.deepEqual(plain(atRoot), {
+    canDelete: false,
+    canCheckbox: false,
+    hasCheckbox: false,
+    canCollapse: true,
+    collapsed: false,
+    canUndo: false,
+  })
+  const leaf = run(start, [{ type: 'select', id: 'c' }, { type: 'toggleCheckbox' }]).state
+  assert.deepEqual(plain(editor.actionState(leaf)), {
+    canDelete: true,
+    canCheckbox: true,
+    hasCheckbox: true,
+    canCollapse: false,
+    collapsed: false,
+    canUndo: true,
+  })
+  const folded = editor.actionState(run(start, [{ type: 'select', id: 'b' }]).state)
+  assert.equal(folded.collapsed, true)
+  assert.equal(folded.canCollapse, true)
+})

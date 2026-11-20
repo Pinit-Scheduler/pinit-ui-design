@@ -6,6 +6,9 @@ import { LOAD_FAILED, useMindMapEditor } from '../hooks/useMindMapEditor'
 import { TODAY_PATH } from '../paths'
 import '../mind-map.css'
 
+/** Mac에서는 단축키를 `⌘`로 적는다. */
+const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
+
 /** `/app/mind-map`: 위 막대(숫자·저장 상태)와 남은 높이를 모두 쓰는 편집 화면. */
 export default function MindMapPage() {
   const editor = useMindMapEditor()
@@ -34,7 +37,9 @@ export default function MindMapPage() {
       </div>
     )
   } else {
-    body = <MindMapCanvas state={state} dispatch={editor.dispatch} setGeometry={editor.setGeometry} />
+    body = (
+      <MindMapCanvas state={state} dispatch={editor.dispatch} setGeometry={editor.setGeometry} isMac={IS_MAC} />
+    )
   }
 
   return (

@@ -47,3 +47,20 @@ test('카드 제목과 기준 가지', () => {
   assert.equal(home.cardTitle(m, 'a1'), 'a 주변')
   assert.equal(home.cardTitle({ ...m, text: '' }, 'gone'), '주제 주변')
 })
+test('확대 단추는 캔버스 가운데를 기준으로 1.2배씩', () => {
+  const frame = { w: 1000, h: 700 }
+  const twice = view.zoomStep(view.zoomStep({ x: 0, y: 0, k: 1 }, frame, 1), frame, 1)
+  assert.equal(Math.round(twice.k * 100), 144)
+  assert.deepEqual(plain(r2(view.zoomStep({ x: 0, y: 0, k: 1.2 }, frame, -1))), { x: 83.33, y: 58.33, k: 1 })
+})
+test('두 손가락: 시작 배율에 거리 비율을 곱하고 가운데를 고정한다', () => {
+  const pinch = { k: 1, distance: 100 }
+  assert.deepEqual(plain(r2(view.pinchView({ x: 0, y: 0, k: 1 }, pinch, 150, 100, 100))), { x: -50, y: -50, k: 1.5 })
+  assert.equal(view.pinchView({ x: 0, y: 0, k: 1.5 }, pinch, 1000, 0, 0).k, 2)
+  assert.equal(view.pinchView({ x: 0, y: 0, k: 1 }, pinch, 1, 0, 0).k, 0.25)
+})
+test('사이에 끼울 자리의 선: 위는 top-5, 아래는 bottom+2, 폭은 56 이상', () => {
+  const target = { left: 40, top: 100, bottom: 124, width: 30 }
+  assert.deepEqual(plain(view.insertLine(target, 'before')), { left: 40, top: 95, width: 56 })
+  assert.deepEqual(plain(view.insertLine({ ...target, width: 120 }, 'after')), { left: 40, top: 126, width: 120 })
+})

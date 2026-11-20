@@ -340,6 +340,29 @@ export const initialEditor = (map: ServerMap): EditorState => ({
   limits: map.limits,
 })
 
+export type ActionState = {
+  canDelete: boolean
+  canCheckbox: boolean
+  hasCheckbox: boolean
+  canCollapse: boolean
+  collapsed: boolean
+  canUndo: boolean
+}
+
+/** 동작 단추 줄이 고른 가지에 대해 보이는 상태: 주제는 지우거나 체크박스를 붙이지 않고, 자식이 없으면 접지 않는다. */
+export const actionState = (state: EditorState): ActionState => {
+  const node = findNode(state.tree, state.selectedId)
+  const isBranch = node !== null && node.id !== state.tree.id
+  return {
+    canDelete: isBranch,
+    canCheckbox: isBranch,
+    hasCheckbox: isBranch && node.check !== 'NONE',
+    canCollapse: (node?.children.length ?? 0) > 0,
+    collapsed: node?.collapsed === true,
+    canUndo: state.history.past.length > 0,
+  }
+}
+
 /**
  * 쓰는 중에 쓰기 밖의 명령이 오면 먼저 확정한다. 확정하지 못하면(글이 너무 길면) 그 명령은 하지 않는다.
  * 처음 쓰는 새 가지의 지우기와 빈 새 가지의 체크·접기는 취소다(없앤 뒤 이전 선택에 하지 않는다).

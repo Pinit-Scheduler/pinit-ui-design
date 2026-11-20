@@ -24,6 +24,29 @@ export const zoomAt = (view: View, cx: number, cy: number, factor: number): View
 
 export const wheelFactor = (deltaY: number): number => Math.exp(-deltaY * ZOOM.WHEEL)
 
+/** 확대·축소 단추: 캔버스 가운데를 기준으로 `ZOOM.STEP`씩. */
+export const zoomStep = (view: View, frame: Frame, dir: 1 | -1): View =>
+  zoomAt(view, frame.w / 2, frame.h / 2, dir > 0 ? ZOOM.STEP : 1 / ZOOM.STEP)
+
+/** 두 손가락을 대기 시작한 때의 배율과 두 점 사이 거리. */
+export type Pinch = { k: number; distance: number }
+
+/** 두 손가락: 시작 배율에 거리 비율을 곱한 배율로, 두 점의 가운데(cx, cy)를 고정한다. */
+export const pinchView = (view: View, pinch: Pinch, distance: number, cx: number, cy: number): View => {
+  const k = clamp((pinch.k * distance) / pinch.distance, ZOOM.MIN, ZOOM.MAX)
+  return zoomAt(view, cx, cy, k / view.k)
+}
+
+/** 화면상의 상자(캔버스 기준). */
+export type ScreenRect = { left: number; top: number; bottom: number; width: number }
+
+/** 같은 단계 사이에 끼울 자리의 3px 선: 앞이면 그 가지 위, 뒤면 아래. 폭은 56px 이상. */
+export const insertLine = (target: ScreenRect, mode: 'before' | 'after'): { left: number; top: number; width: number } => ({
+  left: target.left,
+  top: mode === 'before' ? target.top - 5 : target.bottom + 2,
+  width: Math.max(target.width, 56),
+})
+
 /** 가로는 가운데, 세로는 위·아래 막대를 뺀 칸의 가운데. */
 export const centerOn = (box: Box, frame: Frame, k: number): View => ({
   x: frame.w / 2 - (box.x + box.w / 2) * k,

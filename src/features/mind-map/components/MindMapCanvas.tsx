@@ -2,21 +2,26 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { FocusEvent, KeyboardEvent } from 'react'
 import { flushSync } from 'react-dom'
 import { useToast } from '@shared/contexts/ToastContext'
+import { useCanvasPointer } from '../hooks/useCanvasPointer'
 import { textNotice } from '../model/editor'
 import type { Box, EditorCommand, Editing, EditorState } from '../model/editor'
 import { keyAction } from '../model/keymap'
-import { layoutMap } from '../model/layout'
+import { drawnBounds, layoutMap } from '../model/layout'
 import type { Size } from '../model/layout'
 import { clipText } from '../model/text'
-import { centerOn, keepVisible, pageScale } from '../model/viewport'
+import { centerOn, fitView, keepVisible, pageScale, zoomStep } from '../model/viewport'
 import type { View } from '../model/viewport'
+import MindMapActionBar from './MindMapActionBar'
 import MindMapWorld from './MindMapWorld'
+import MindMapZoom from './MindMapZoom'
 
 type Props = {
   state: EditorState
   dispatch: (command: EditorCommand) => void
   /** 보이는 가지의 상자를 편집기에 알린다(화면상 위·아래 고르기). */
   setGeometry: (boxes: ReadonlyMap<string, Box>) => void
+  /** 단추 옆 단축키를 Mac 표기(`⌘`)로 쓴다. */
+  isMac: boolean
 }
 
 const DOT_SPACING = 22
@@ -48,8 +53,11 @@ const caretToEnd = (el: HTMLElement) => {
   selection?.addRange(range)
 }
 
-/** 편집 화면. 키를 편집기 명령으로 바꾸고, 가지 크기를 재 배치하고, 고른 가지가 보이게 화면을 옮긴다. */
-export default function MindMapCanvas({ state, dispatch, setGeometry }: Props) {
+/**
+ * 편집 화면. 키·마우스·터치를 편집기 명령으로 바꾸고, 가지 크기를 재 배치하고, 고른 가지가 보이게 화면을 옮긴다.
+ * 오른쪽 위에 확대 단추, 아래에 동작 단추 줄을 띄운다.
+ */
+export default function MindMapCanvas({ state, dispatch, setGeometry, isMac }: Props) {
   const { addToast } = useToast()
   const canvasRef = useRef<HTMLDivElement>(null)
   const elements = useRef(new Map<string, HTMLElement>())
@@ -63,6 +71,8 @@ export default function MindMapCanvas({ state, dispatch, setGeometry }: Props) {
   const [sizes, setSizes] = useState<ReadonlyMap<string, Size>>(() => new Map())
   const [view, setView] = useState<View | null>(null)
   const [fontsLoaded, setFontsLoaded] = useState(false)
+  /** 눌러서 고른 가지. 누른 가지는 이미 보이므로 화면을 옮기지 않는다. */
+  const pointerPicked = useRef<string | null>(null)
   const layout = useMemo(() => layoutMap(state.tree, sizes), [state.tree, sizes])
   const { editing, selectedId, limits } = state
 
@@ -102,7 +112,9 @@ export default function MindMapCanvas({ state, dispatch, setGeometry }: Props) {
       canvas.focus({ preventScroll: true })
       return
     }
-    if (previous.selectedId !== selectedId || editing) {
+    const picked = pointerPicked.current
+    if (previous.selectedId !== selectedId) pointerPicked.current = null
+    if ((previous.selectedId !== selectedId && picked !== selectedId) || editing) {
       const next = keepVisible(view, box, frame)
       if (next.x !== view.x || next.y !== view.y) setView(next)
     }
@@ -159,51 +171,92 @@ export default function MindMapCanvas({ state, dispatch, setGeometry }: Props) {
     if (!editing) canvasRef.current?.focus({ preventScroll: true })
   }
 
+  const { drag, panning, handlers } = useCanvasPointer({
+    canvasRef,
+    state,
+    view,
+    setView,
+    dispatch,
+    onPointerSelect: (id) => {
+      pointerPicked.current = id
+    },
+  })
+
+  /** 단추 줄의 명령. 글 쓰기가 시작되지 않았으면 초점을 캔버스에 둔다(키보드가 이어서 듣는다). */
+  const runAction = (command: EditorCommand) => {
+    flushSync(() => dispatch(command))
+    const active = document.activeElement as HTMLElement | null
+    if (!active?.isContentEditable) canvasRef.current?.focus({ preventScroll: true })
+  }
+
+  const frame = () => ({ w: canvasRef.current?.clientWidth ?? 0, h: canvasRef.current?.clientHeight ?? 0 })
+  const zoom = (dir: 1 | -1) => setView((v) => v && zoomStep(v, frame(), dir))
+  const fit = () => setView(fitView(drawnBounds(layout), frame()))
+
   const k = view?.k ?? 1
+  const childDrop = drag?.drop?.mode === 'child' ? drag.drop.targetId : null
   return (
-    <div
-      ref={canvasRef}
-      className="mind-map-canvas"
-      tabIndex={0}
-      role="tree"
-      aria-label="마인드맵 편집 화면"
-      aria-activedescendant={selectedId ? `mind-map-node-${selectedId}` : undefined}
-      onKeyDown={onKeyDown}
-      onBlur={onBlur}
-      onCompositionStart={() => {
-        composing.current = true
-      }}
-      onCompositionEnd={(event) => {
-        composing.current = false
-        const label = event.target as HTMLElement
-        if (label.isContentEditable) onLabelInput((label.textContent ?? '').replace(/[\r\n]/g, ' '))
-      }}
-      style={{
-        backgroundPosition: `${view?.x ?? 0}px ${view?.y ?? 0}px`,
-        backgroundSize: `${DOT_SPACING * k}px ${DOT_SPACING * k}px`,
-      }}
-    >
-      <MindMapWorld
-        root={state.tree}
-        layout={layout}
-        selectedId={selectedId}
-        editing={editing}
-        readOnly={false}
-        nodeRef={nodeRef}
-        onLabelInput={onLabelInput}
-        onCheckClick={(id) => {
-          dispatch({ type: 'toggleCheck', id })
-          focusCanvas()
+    <div className="mind-map-stage">
+      <div
+        ref={canvasRef}
+        className={'mind-map-canvas' + (panning ? ' is-panning' : '')}
+        tabIndex={0}
+        role="tree"
+        aria-label="마인드맵 편집 화면"
+        aria-activedescendant={selectedId ? `mind-map-node-${selectedId}` : undefined}
+        onKeyDown={onKeyDown}
+        onBlur={onBlur}
+        {...handlers}
+        onCompositionStart={() => {
+          composing.current = true
         }}
-        onToggleClick={(id) => {
-          dispatch({ type: 'toggleCollapse', id })
-          focusCanvas()
+        onCompositionEnd={(event) => {
+          composing.current = false
+          const label = event.target as HTMLElement
+          if (label.isContentEditable) onLabelInput((label.textContent ?? '').replace(/[\r\n]/g, ' '))
         }}
         style={{
-          transform: view ? `translate(${view.x}px, ${view.y}px) scale(${view.k})` : undefined,
-          visibility: view ? undefined : 'hidden',
+          backgroundPosition: `${view?.x ?? 0}px ${view?.y ?? 0}px`,
+          backgroundSize: `${DOT_SPACING * k}px ${DOT_SPACING * k}px`,
         }}
-      />
+      >
+        <MindMapWorld
+          root={state.tree}
+          layout={layout}
+          selectedId={selectedId}
+          editing={editing}
+          readOnly={false}
+          dropId={childDrop}
+          nodeRef={nodeRef}
+          onLabelInput={onLabelInput}
+          onCheckClick={(id) => {
+            dispatch({ type: 'toggleCheck', id })
+            focusCanvas()
+          }}
+          onToggleClick={(id) => {
+            dispatch({ type: 'toggleCollapse', id })
+            focusCanvas()
+          }}
+          style={{
+            transform: view ? `translate(${view.x}px, ${view.y}px) scale(${view.k})` : undefined,
+            visibility: view ? undefined : 'hidden',
+          }}
+        />
+        {drag?.line && (
+          <div
+            className="mind-map-insert-line"
+            style={{ left: drag.line.left, top: drag.line.top, width: drag.line.width }}
+            aria-hidden="true"
+          />
+        )}
+        {drag && (
+          <div className="mind-map-ghost" style={{ left: drag.x, top: drag.y }} aria-hidden="true">
+            {drag.text}
+          </div>
+        )}
+      </div>
+      {view && <MindMapZoom k={view.k} onZoom={zoom} onFit={fit} />}
+      <MindMapActionBar state={state} dispatch={runAction} isMac={isMac} />
     </div>
   )
 }
