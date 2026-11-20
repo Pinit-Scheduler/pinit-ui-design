@@ -71,7 +71,7 @@ const chain = (first: EditorResult, second: EditorResult): EditorResult => ({
 
 const branchesNotice = (limits: Limits) => `가지는 ${limits.maxBranches}개까지 만들 수 있어요.`
 const depthNotice = (limits: Limits) => `가지는 주제 아래 ${limits.maxDepth}단계까지 만들 수 있어요.`
-const textNotice = (limits: Limits) => `글은 ${limits.maxTextLength}자까지 쓸 수 있어요.`
+export const textNotice = (limits: Limits) => `글은 ${limits.maxTextLength}자까지 쓸 수 있어요.`
 
 const snapshotOf = (state: EditorState): Snapshot => ({ tree: state.tree, selectedId: state.selectedId })
 const recorded = (state: EditorState): EditorState => ({

@@ -28,3 +28,15 @@ test('이모지 100개는 100자, 101개는 101자', () => {
   assert.equal(text.textLength('😀'.repeat(100)), 100)
   assert.equal(text.textLength('😀'.repeat(101)), 101)
 })
+
+test('정리한 길이가 한도를 넘지 않게 앞에서부터 자른다', () => {
+  assert.equal(text.clipText('가나다', 3), '가나다')
+  assert.equal(text.clipText('가나다라', 3), '가나다')
+  assert.equal(text.clipText('😀'.repeat(101), 100), '😀'.repeat(100))
+  // 이어진 공백은 하나로 세고, 앞뒤 공백은 세지 않는다.
+  assert.equal(text.clipText('  가   나', 3), '  가   나')
+  assert.equal(text.clipText('가 나다', 3), '가 나')
+  // 마지막 글자 앞의 공백 하나를 더할 자리가 없으면 그 글자도 넣지 않는다.
+  assert.equal(text.textLength(text.normalizeText(text.clipText('가나 다', 2))), 2)
+  assert.equal(text.clipText('가나 다', 2), '가나 ')
+})

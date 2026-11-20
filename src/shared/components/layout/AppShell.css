@@ -34,6 +34,16 @@
   margin-inline: auto;
   width: 100%;
 }
+/* 본문 전체를 캔버스로 쓰는 화면(마인드맵): 안쪽 여백과 스크롤이 없다. */
+.app-shell--canvas .app-shell__content {
+  display: flex;
+  flex-direction: column;
+  padding: 0 0 var(--workspace-player-height);
+  overflow: hidden;
+}
+.app-shell--canvas .app-shell__content > * {
+  max-width: none;
+}
 .workspace-sidebar {
   background: var(--c-surface);
   border-right: 1px solid var(--c-slate-200);
@@ -282,5 +292,12 @@
   }
   .app-shell--editing .app-shell__content {
     padding-bottom: 24px;
+  }
+  .app-shell--canvas .app-shell__content {
+    padding: 0 0
+      calc(
+        var(--workspace-nav-height) + var(--workspace-player-height) +
+          env(safe-area-inset-bottom, 0px)
+      );
   }
 }

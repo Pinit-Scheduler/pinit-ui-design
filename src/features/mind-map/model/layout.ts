@@ -19,6 +19,9 @@ export const LAYOUT = {
   CHILD_GAP: 8,
   CORNER: 10,
   STUB: 15,
+  /** 접힌 가지의 숫자 단추 최소 폭(짧은 선 끝에 붙는다). */
+  TOGGLE: 18,
+  STROKE: 1.75,
   BRANCH_COLORS: 5,
 } as const
 
@@ -111,4 +114,17 @@ export const layoutMap = (root: MindMapNode, sizes: ReadonlyMap<string, Size>): 
     y1 = Math.max(y1, b.y + b.h)
   }
   return { nodes, boxes, edges, bounds: { x0, y0, w: x1 - x0, h: y1 - y0 } }
+}
+
+/** 화면에 그린 것 전체의 경계: 가지 상자에 선 굵기의 절반과 접힌 가지의 짧은 선·숫자 단추를 더한다. */
+export const drawnBounds = (layout: MapLayout): MapLayout['bounds'] => {
+  const half = LAYOUT.STROKE / 2
+  let right = layout.bounds.x0 + layout.bounds.w
+  for (const edge of layout.edges) {
+    if (edge.toId !== null) continue
+    const box = layout.boxes.get(edge.fromId) as Box
+    right = Math.max(right, box.x + box.w + LAYOUT.STUB + LAYOUT.TOGGLE)
+  }
+  const { x0, y0, h } = layout.bounds
+  return { x0: x0 - half, y0: y0 - half, w: right - x0 + 2 * half, h: h + 2 * half }
 }

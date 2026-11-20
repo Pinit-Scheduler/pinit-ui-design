@@ -53,3 +53,14 @@ test('보이는 가지의 차례와 형제 정보', () => {
     ['r', 0, 1, 1], ['a', 1, 1, 2], ['a1', 2, 1, 2], ['a2', 2, 2, 2], ['b', 1, 2, 2],
   ])
 })
+
+test('그린 경계는 선 굵기와 접힌 가지의 짧은 선·숫자 단추를 더한다', () => {
+  const half = layout.LAYOUT.STROKE / 2
+  assert.deepEqual(plain(layout.drawnBounds(layout.layoutMap(map, s))), {
+    x0: -half, y0: -half, w: 384 + 2 * half, h: 94 + 2 * half,
+  })
+  const folded = layout.layoutMap(n('r', [n('a', [n('a1')], { collapsed: true }), n('b')]), s)
+  // a의 오른쪽 232에 짧은 선 15px와 숫자 단추 18px가 붙는다. 레이아웃 경계는 상자만이다.
+  assert.equal(folded.bounds.w, 232)
+  assert.equal(layout.drawnBounds(folded).w, 232 + 15 + 18 + 2 * half)
+})

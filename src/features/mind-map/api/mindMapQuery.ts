@@ -9,3 +9,9 @@ export const MIND_MAP_QUERY_KEY = 'mind-map'
 export const rememberMindMap = (
   update: (previous: MindMapResponse | undefined) => MindMapResponse | undefined,
 ) => queryStore.setData<MindMapResponse>(`${currentAccountScope()}|${MIND_MAP_QUERY_KEY}`, update)
+
+/** 서버의 맵이 화면이 아는 것과 다르다: 질의 저장소의 값을 낡은 것으로 표시해 다음에 읽을 때 다시 받게 한다. */
+export const refreshMindMap = () => {
+  const key = `${currentAccountScope()}|${MIND_MAP_QUERY_KEY}`
+  queryStore.invalidate((candidate) => candidate === key)
+}

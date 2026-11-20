@@ -1,0 +1,232 @@
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { useToast } from '@shared/contexts/ToastContext'
+import { classifySaveError, saveMindMap } from '../api/mindMapApi'
+import type { MindMapResponse, MindMapSaveRequest } from '../api/mindMapApi'
+import { refreshMindMap, rememberMindMap } from '../api/mindMapQuery'
+import { focusAction, initialSave, isDirty, SAVE_TIMEOUT_MS, stepSave } from '../model/saveMachine'
+import type { SaveEffect, SaveEvent, SaveState } from '../model/saveMachine'
+import { treeJson } from '../model/tree'
+import type { MindMapNode } from '../model/tree'
+
+/** 페이지가 저장기에 알려 주는 것. 늘 지금의 편집 상태를 읽는다. */
+export type SaverView = {
+  /** 서버에 보낼 확정된 나무(`treeJson`). */
+  confirmedJson: () => string
+  /** 쓰던 글을 확정한 것으로 친 나무(`treeJson`). 떠날 때 보낸다. */
+  leaveJson: () => string
+  isEditing: () => boolean
+  /** 충돌: 안내하고 최신 맵을 다시 읽어 `adopt`로 넘긴다. */
+  reload: (message: string) => void
+  /** 창이 다시 활성화됐고 보낼 것이 없다: 다시 읽는다. */
+  refetch: () => void
+}
+
+export type SaverDeps = {
+  save: (
+    request: MindMapSaveRequest,
+    options: { signal: AbortSignal; keepalive: boolean },
+  ) => Promise<{ version: number }>
+  remember: (update: (previous: MindMapResponse | undefined) => MindMapResponse | undefined) => void
+  /** 페이지가 사라진 뒤에 온 충돌: 안내하고 카드가 다시 읽게 한다. */
+  orphanConflict: (message: string) => void
+  newSaveId: () => string
+  setTimer: (run: () => void, ms: number) => unknown
+  clearTimer: (handle: unknown) => void
+}
+
+/**
+ * `stepSave`의 효과를 실행하는 저장기. 페이지 밖의 일반 객체라 페이지가 사라진 뒤에도 보낸 저장의 응답을 마친다.
+ * 페이지가 붙어 있는 동안은 `view`로 지금의 나무를 읽고, 떠날 때 마지막 나무를 붙잡아 둔다.
+ */
+export const createMindMapSaver = (deps: SaverDeps) => {
+  let state: SaveState | null = null
+  let base: MindMapResponse | null = null
+  let view: SaverView | null = null
+  let finalJson: string | null = null
+  let timer: unknown = null
+  const listeners = new Set<() => void>()
+
+  const emit = () => listeners.forEach((listener) => listener())
+  const confirmed = (): string | null => (view ? view.confirmedJson() : finalJson)
+  const clearSchedule = () => {
+    if (timer !== null) deps.clearTimer(timer)
+    timer = null
+  }
+
+  const step = (event: SaveEvent, json: string | null = confirmed()) => {
+    if (!state || json === null) return
+    const result = stepSave(state, event, { confirmedJson: json, newSaveId: deps.newSaveId })
+    if (result.state !== state) {
+      state = result.state
+      emit()
+    }
+    result.effects.forEach(run)
+  }
+
+  const remember = (json: string, version: number) => {
+    const root = JSON.parse(json) as MindMapNode
+    deps.remember((previous) => {
+      const known = previous ?? base
+      return known ? { ...known, version, root } : undefined
+    })
+  }
+
+  const send = async (effect: Extract<SaveEffect, { type: 'send' }>) => {
+    const { saveId, expectedVersion, json, keepalive } = effect
+    const controller = new AbortController()
+    const timeout = deps.setTimer(() => controller.abort(), SAVE_TIMEOUT_MS)
+    const request = { expectedVersion, saveId, root: JSON.parse(json) as MindMapNode }
+    try {
+      const { version } = await deps.save(request, { signal: controller.signal, keepalive })
+      // 탭을 닫을 때 보낸 저장은 저장기 상태에 들지 않는다.
+      if (keepalive || state?.inFlight?.saveId !== saveId) return
+      remember(json, version)
+      step({ type: 'succeeded', saveId, version })
+    } catch (error) {
+      if (keepalive) return
+      const failure = classifySaveError(error)
+      if (failure.kind === 'conflict') {
+        const { latestVersion, lastSaveId, message } = failure
+        step({ type: 'conflicted', saveId, latestVersion, lastSaveId, message })
+      } else if (failure.kind === 'rejected') step({ type: 'rejected', saveId, message: failure.message })
+      else step({ type: 'lost', saveId, message: failure.message })
+    } finally {
+      deps.clearTimer(timeout)
+    }
+  }
+
+  const run = (effect: SaveEffect) => {
+    switch (effect.type) {
+      case 'schedule':
+        clearSchedule()
+        timer = deps.setTimer(() => {
+          timer = null
+          step({ type: 'timer' })
+        }, effect.ms)
+        return
+      case 'cancelSchedule':
+        clearSchedule()
+        return
+      case 'send':
+        void send(effect)
+        return
+      case 'reload':
+        if (view) view.reload(effect.message)
+        else deps.orphanConflict(effect.message)
+        return
+    }
+  }
+
+  return {
+    getState: (): SaveState | null => state,
+    subscribe(listener: () => void) {
+      listeners.add(listener)
+      return () => {
+        listeners.delete(listener)
+      }
+    },
+    /** 서버에서 읽은 맵을 지금의 저장 기준으로 삼는다(처음 불러오기, 충돌 뒤 다시 불러오기, 다시 읽기). */
+    adopt(map: MindMapResponse) {
+      base = map
+      clearSchedule()
+      const json = treeJson(map.root)
+      state = state ? stepSave(state, { type: 'reloaded', version: map.version, json }, {
+        confirmedJson: json,
+        newSaveId: deps.newSaveId,
+      }).state : initialSave(map.version, json)
+      emit()
+    },
+    changed: (when: 'now' | 'later') => step({ type: 'changed', when }),
+    retry: () => step({ type: 'retry' }),
+    /** 탭을 닫을 때. */
+    leave: () => step({ type: 'leave' }, view ? view.leaveJson() : finalJson),
+    /** 충돌로 다시 불러오는 중이면 편집 명령을 받지 않는다. */
+    isBlocked: () => state?.reloading === true,
+    /** 보낼 것도 보내는 중인 것도 없다: 다시 읽은 맵을 받아들여도 된다. */
+    isIdle: () => {
+      const json = confirmed()
+      return !!state && json !== null && !state.reloading && !state.inFlight && !isDirty(state, json)
+    },
+    /** 창이 다시 활성화될 때(`focusAction`). */
+    activate() {
+      const json = confirmed()
+      if (!view || !state || state.reloading || json === null) return
+      const action = focusAction({
+        editing: view.isEditing(),
+        dirty: isDirty(state, json),
+        inFlight: state.inFlight !== null,
+      })
+      if (action === 'save') step({ type: 'changed', when: 'now' })
+      else if (action === 'refetch') view.refetch()
+    },
+    attach(next: SaverView) {
+      view = next
+      finalJson = null
+    },
+    /** 페이지가 사라질 때: 쓰던 글을 확정한 나무를 붙잡아 두고 바로 저장을 건다. */
+    detach() {
+      if (!view) return
+      finalJson = view.leaveJson()
+      view = null
+      step({ type: 'changed', when: 'now' })
+    },
+  }
+}
+
+export type MindMapSaver = ReturnType<typeof createMindMapSaver>
+
+type SaverHandlers = Omit<SaverView, 'confirmedJson'>
+
+/**
+ * 페이지의 저장기. 저장기 상태는 컴포넌트 밖의 객체에 있어 페이지가 사라진 뒤에도 응답을 마친다.
+ * 창이 다시 활성화될 때(`visibilitychange`가 `visible`, `focus`)마다 `focusAction`을 따르고,
+ * 페이지가 사라질 때 쓰던 글을 확정한 나무로 저장을 걸며, `pagehide`에서 keepalive로 보낸다.
+ */
+export function useMindMapSaver(getConfirmedJson: () => string, handlers: SaverHandlers) {
+  const { addToast } = useToast()
+  const latest = useRef({ getConfirmedJson, handlers })
+  useLayoutEffect(() => {
+    latest.current = { getConfirmedJson, handlers }
+  })
+  // addToast는 알림 공급자가 있는 동안 늘 같은 함수다. 페이지가 사라진 뒤의 안내에도 쓴다.
+  const [saver] = useState(() =>
+    createMindMapSaver({
+      save: (request, options) => saveMindMap(request, options),
+      remember: rememberMindMap,
+      orphanConflict: (message) => {
+        addToast(message, 'info')
+        refreshMindMap()
+      },
+      newSaveId: () => crypto.randomUUID(),
+      setTimer: (run, ms) => window.setTimeout(run, ms),
+      clearTimer: (handle) => window.clearTimeout(handle as number),
+    }),
+  )
+  const state = useSyncExternalStore(saver.subscribe, saver.getState)
+
+  useEffect(() => {
+    saver.attach({
+      confirmedJson: () => latest.current.getConfirmedJson(),
+      leaveJson: () => latest.current.handlers.leaveJson(),
+      isEditing: () => latest.current.handlers.isEditing(),
+      reload: (message) => latest.current.handlers.reload(message),
+      refetch: () => latest.current.handlers.refetch(),
+    })
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') saver.activate()
+    }
+    const onFocus = () => saver.activate()
+    const onHide = () => saver.leave()
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onFocus)
+    window.addEventListener('pagehide', onHide)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onFocus)
+      window.removeEventListener('pagehide', onHide)
+      saver.detach()
+    }
+  }, [saver])
+
+  return { saver, state }
+}

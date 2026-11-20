@@ -38,3 +38,22 @@ export const normalizeText = (raw: string): string => {
 
 /** 코드 포인트 수. */
 export const textLength = (text: string): number => [...text].length
+
+/** 정리한 길이가 `max`를 넘지 않도록 앞에서부터 남긴 글. 한도 안이면 그대로다. */
+export const clipText = (raw: string, max: number): string => {
+  let out = ''
+  let length = 0
+  let pendingSpace = false
+  for (const char of raw) {
+    if (isWhiteSpace(char.codePointAt(0)!)) {
+      pendingSpace = length > 0
+    } else {
+      const added = pendingSpace ? 2 : 1
+      if (length + added > max) break
+      length += added
+      pendingSpace = false
+    }
+    out += char
+  }
+  return out
+}
