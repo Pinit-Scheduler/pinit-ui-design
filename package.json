@@ -4,10 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "start": "vite --host 127.0.0.1 --port 4173",
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint ."
+    "test": "node --test",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "start": "vite --host 127.0.0.1 --port 4173"
   },
   "dependencies": {
     "dayjs": "^1.11.19",

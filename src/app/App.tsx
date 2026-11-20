@@ -28,6 +28,8 @@ import { usePresence } from '@shared/motion/usePresence'
 import { registerTransitionNavigate } from '@shared/routing/viewTransitionNavigation'
 import ScheduleDetailPage from '@features/schedules/pages/ScheduleDetailPage'
 import { TaskMapPage } from '@features/task-map'
+import SplitInboxPage from '@features/task-split/pages/SplitInboxPage'
+import SplitProposalPage from '@features/task-split/pages/SplitProposalPage'
 import { useEffect, useMemo, useState } from 'react'
 import { getAccessToken, getTokenSubject } from '@shared/api/authTokens'
 import AppShell from '@shared/components/layout/AppShell'
@@ -69,8 +71,6 @@ import { RoutinesPage } from '@features/routines'
 import { RecurrencesPage } from '@features/recurrence'
 import { OAuthConsentPage } from '@features/oauth'
 import { OnboardingGuidePage } from '@features/onboarding'
-import SplitInboxPage from '@features/task-split/SplitInbox'
-import SplitProposalPage from '@features/task-split/SplitProposalPage'
 
 const WorkspaceRoutes = () => {
   useWorkspaceEvents()

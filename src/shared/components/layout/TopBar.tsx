@@ -5,20 +5,21 @@ type Props = {
   title: string
   scopeLabel: string
   leading?: ReactNode
+  /** 설정 버튼 왼쪽에 놓는 도구(알림 종 등). */
+  tools?: ReactNode
   showBackButton?: boolean
   onBack?: () => void
   showSettingsButton?: boolean
-  tools?: ReactNode
   onSettings?: () => void
 }
 export default function TopBar({
   title,
   scopeLabel,
   leading,
+  tools,
   showBackButton,
   onBack,
   showSettingsButton = true,
-  tools,
   onSettings,
 }: Props) {
   return (

@@ -2,7 +2,7 @@
 
 [pinit-fe](https://github.com/Pinit-Scheduler/pinit-fe)와 같은 화면에서 UI를 검토하고 바꿔 보는 비공개 저장소입니다. 화면 코드는 pinit-fe 소스를 그대로 가져온 것이며, 데이터는 브라우저 안의 예시(mock) API로만 동작합니다.
 
-- 기준 FE: `Pinit-Scheduler/pinit-fe` master `883ad0d` (2026-11-14)
+- 기준 FE: `Pinit-Scheduler/pinit-fe` master `a963f03` (2026-11-18)
 
 ## 실행
 
@@ -22,3 +22,5 @@ git -C ../pinit-fe archive <commit> -- src public index.html package.json packag
 ```
 
 `package.json`의 이름과 `start` 스크립트는 이 저장소 값으로 유지합니다.
+
+가져온 뒤 FE에 없는 `src/` 파일은 지운다(`tar -x`는 지우지 않는다).
