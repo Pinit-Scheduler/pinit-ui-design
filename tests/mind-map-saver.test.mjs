@@ -573,3 +573,20 @@ test('탭을 닫을 때 보낸 저장은 응답을 받지 못한 저장으로 �
   h.saver.leave()
   assert.deepEqual(plain(h.saver.getState().unanswered), [['s1', json(h.view.leave)]])
 })
+
+test('글을 쓰는 중에 숨으면 보내지 않고 떠날 때 쓰던 글까지 보낸다', () => {
+  const h = harness()
+  h.saver.adopt(map(3))
+  // 1초 뒤로 미룬 변경이 있고, 이어 글을 쓰는 중이다.
+  h.view.confirmed = node('r', '내 계획', [node('a', '옮긴 가지')])
+  h.saver.changed('later')
+  h.view.editing = true
+  h.view.leave = node('r', '내 계획', [node('a', '쓰던 글')])
+  h.saver.hide()
+  assert.equal(h.requests.length, 0)
+  // 탭이 닫힌다: 보내는 중인 저장이 없으니 쓰던 글을 확정한 나무를 keepalive로 보낸다.
+  h.saver.leave()
+  assert.equal(h.requests.length, 1)
+  assert.equal(h.requests[0].options.keepalive, true)
+  assert.equal(JSON.stringify(h.requests[0].request.root), json(h.view.leave))
+})

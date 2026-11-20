@@ -163,8 +163,14 @@ export const createMindMapSaver = (deps: SaverDeps) => {
     retry: () => step({ type: 'retry' }),
     /** 탭을 닫을 때. */
     leave: () => step({ type: 'leave' }, view ? view.leaveJson() : finalJson),
-    /** 창이 숨을 때(`visibilitychange`가 `hidden`): 기다리던 변경을 바로 보낸다. */
-    hide: () => step({ type: 'hidden' }),
+    /**
+     * 창이 숨을 때(`visibilitychange`가 `hidden`): 기다리던 변경을 바로 보낸다. 글을 쓰는 중이면 보내지 않는다.
+     * 보내면 쓰던 글이 빠진 나무가 가는 중이라, 이어 탭이 닫힐 때 `leave`가 쓰던 글까지 보내지 못한다.
+     */
+    hide: () => {
+      if (view?.isEditing()) return
+      step({ type: 'hidden' })
+    },
     /** 충돌로 다시 불러오는 중이면 편집 명령을 받지 않는다. */
     isBlocked: () => state?.reloading === true,
     /** 보낼 것도 보내는 중인 것도 없다. */
