@@ -650,11 +650,12 @@ const DESIGN_TOPS = {
   mobile: { tasks: 375, schedules: 2792 },
 }
 
-const menu = (page, viewport) =>
-  page.getByRole('navigation', { name: viewport === 'mobile' ? '모바일 주 메뉴' : '주 메뉴', exact: true })
-/** 메뉴(PC 왼쪽 메뉴, 폰 아래 탭)로 옮긴다. 새로 읽지 않는다. */
+const bottomTabs = (page) => page.getByRole('navigation', { name: '모바일 주 메뉴', exact: true })
+const sidebar = (page) => page.locator('aside.workspace-sidebar')
+/** 메뉴(PC 왼쪽 메뉴의 두 묶음, 폰 아래 탭)로 옮긴다. 새로 읽지 않는다. */
 const goMenu = async (page, viewport, name, pathname) => {
-  await press(page, viewport, menu(page, viewport).getByRole('link', { name, exact: true }))
+  const scope = viewport === 'mobile' ? bottomTabs(page) : sidebar(page)
+  await press(page, viewport, scope.getByRole('link', { name, exact: true }))
   await page.waitForURL(new RegExp(`${pathname}$`))
 }
 const homeCard = (page) => page.locator('section.mind-map-card')
@@ -998,6 +999,95 @@ const walkToday = async (viewport, openContext) => {
   }
 }
 
+/** 왼쪽 메뉴의 차례·간격과 폰의 아래 탭·설정 줄(Task 13). */
+const walkMenu = async (viewport, openContext, size) => {
+  const { context, page } = await openContext()
+  await login(page)
+  await page.waitForURL(/\/app\/today$/)
+  await todayReady(page, { picture: false })
+  if (viewport === 'desktop') {
+    await step(
+      page,
+      viewport,
+      'sidebar',
+      async () => {
+        // 그리는 차례: 로고 → 내 화면 → 스페이스 상자 → 스페이스 메뉴 → 프로젝트 → 관리.
+        const order = await sidebar(page).evaluate((aside) =>
+          [...aside.querySelectorAll('.workspace-brand, nav, .space-switcher, .space-projects-nav')].map((el) =>
+            el.matches('nav') ? el.getAttribute('aria-label') : el.className.split(' ')[0],
+          ),
+        )
+        console.log(`사이드바 차례 ${JSON.stringify(order)}`)
+        const names = (label) => sidebar(page).getByRole('navigation', { name: label, exact: true }).getByRole('link').allInnerTexts()
+        assert.deepEqual((await names('내 화면')).map((text) => text.trim()), ['오늘', '마인드맵', '통계'])
+        assert.deepEqual((await names('스페이스 메뉴')).map((text) => text.trim()), ['스페이스', '일정', '작업', '작업 맵'])
+        // 보이는 묶음 제목이 없다(관리의 이름표는 기존 것).
+        assert.equal(await sidebar(page).getByText('나만 보기', { exact: true }).count(), 0)
+        assert.equal(await sidebar(page).getByText('내 화면', { exact: true }).count(), 0)
+        const gaps = await sidebar(page).evaluate((aside) => {
+          const bottom = (el) => el.getBoundingClientRect().bottom
+          const top = (el) => el.getBoundingClientRect().top
+          const brand = aside.querySelector('.workspace-brand')
+          const mine = aside.querySelector('nav[aria-label="내 화면"]')
+          const box = aside.querySelector('.space-switcher')
+          const after = aside.querySelector('nav[aria-label="스페이스 메뉴"]')
+          return {
+            logoToGroup: top(mine.firstElementChild) - bottom(brand),
+            groupToBox: top(box) - bottom(mine.lastElementChild),
+            boxToSpaceMenu: top(after) - bottom(box),
+          }
+        })
+        console.log(`사이드바 간격 ${JSON.stringify(gaps)}`)
+        assert.ok(near(gaps.logoToGroup, 24, 1), `로고→내 화면 ${gaps.logoToGroup}px ≠ 24px`)
+        assert.ok(near(gaps.groupToBox, 18, 1), `내 화면→스페이스 상자 ${gaps.groupToBox}px ≠ 18px`)
+      },
+      { dark: true },
+    )
+    // 마인드맵을 누르면 그 항목이 active다.
+    await step(page, viewport, 'sidebar-mind-map-active', async () => {
+      await goMenu(page, viewport, '마인드맵', '/app/mind-map')
+      await canvas(page).waitFor()
+      const link = sidebar(page).getByRole('link', { name: '마인드맵', exact: true })
+      assert.match((await link.getAttribute('class')) ?? '', /\bactive\b/)
+      assert.equal(await sidebar(page).locator('nav a.active').count(), 1)
+    }, { dark: true })
+    await goMenu(page, viewport, '오늘', '/app/today')
+    // 화면 전환(View Transition)이 끝난 뒤에 창 크기를 바꾼다. 도중에 바꾸면 브라우저가 전환을 중단하고 pageerror를 낸다.
+    await page.waitForFunction(() => !document.documentElement.matches(':active-view-transition'))
+    // 900px: 메뉴가 보이고 마인드맵이 있다. 899px: 사이드바가 없고 아래 탭이 그대로다.
+    await page.setViewportSize({ width: 900, height: 860 })
+    await step(page, viewport, 'sidebar-900', async () => {
+      await sidebar(page).waitFor({ state: 'visible' })
+      assert.equal(await sidebar(page).getByRole('link', { name: '마인드맵', exact: true }).isVisible(), true)
+      assert.equal(await bottomTabs(page).isVisible(), false)
+    })
+    await page.setViewportSize({ width: 899, height: 860 })
+    await step(page, viewport, 'sidebar-899', async () => {
+      assert.equal(await sidebar(page).isVisible(), false)
+      assert.deepEqual((await bottomTabs(page).getByRole('link').allInnerTexts()).map((text) => text.trim()), ['오늘', '일정', '작업', '작업 맵', '통계'])
+    })
+    await page.setViewportSize(size)
+  } else {
+    await step(page, viewport, 'bottom-tabs', async () => {
+      assert.equal(await sidebar(page).isVisible(), false)
+      assert.deepEqual((await bottomTabs(page).getByRole('link').allInnerTexts()).map((text) => text.trim()), ['오늘', '일정', '작업', '작업 맵', '통계'])
+    })
+    await step(page, viewport, 'settings-row', async () => {
+      await press(page, viewport, page.getByRole('button', { name: '설정', exact: true }))
+      await page.waitForURL(/\/app\/settings$/)
+      const row = page.getByRole('link', { name: /^마인드맵 큰 일을/ })
+      assert.equal(await page.getByRole('region', { name: '마인드맵', exact: true }).locator('h2').innerText(), '마인드맵')
+      assert.equal(await row.getAttribute('class'), 'settings__row settings__row--link')
+    }, { dark: true })
+    await press(page, viewport, page.getByRole('link', { name: /^마인드맵 큰 일을/ }))
+    await page.waitForURL(/\/app\/mind-map$/)
+    await canvas(page).waitFor()
+    await press(page, viewport, page.getByRole('link', { name: '← 홈', exact: true }))
+    await page.waitForURL(/\/app\/today$/)
+  }
+  await context.close()
+}
+
 let browser
 try {
   await mkdir(output, { recursive: true })
@@ -1005,6 +1095,8 @@ try {
   const only = process.env.QA_VIEWPORT
   /** `QA_TODAY=1`이면 오늘 화면의 홈 카드 단계만 걷는다. */
   const onlyToday = process.env.QA_TODAY === '1'
+  /** `QA_MENU=1`이면 왼쪽 메뉴·아래 탭·설정 줄 단계만 걷는다. */
+  const onlyMenu = process.env.QA_MENU === '1'
   const open = async (viewport, size) => {
     const context = await browser.newContext({
       viewport: size,
@@ -1028,13 +1120,14 @@ try {
   }
   for (const [viewport, size] of Object.entries(viewports)) {
     if (only && only !== viewport) continue
-    if (!onlyToday) {
+    if (!onlyToday && !onlyMenu) {
       const { context, page } = await open(viewport, size)
       await login(page)
       await walk(page, viewport)
       await context.close()
     }
-    await walkToday(viewport, () => open(viewport, size))
+    if (!onlyMenu) await walkToday(viewport, () => open(viewport, size))
+    if (!onlyToday) await walkMenu(viewport, () => open(viewport, size), size)
   }
   for (const line of expectedRejections) console.log(`expected ${line}`)
   assert.deepEqual(errors, [], `브라우저 오류:\n${errors.join('\n')}`)
