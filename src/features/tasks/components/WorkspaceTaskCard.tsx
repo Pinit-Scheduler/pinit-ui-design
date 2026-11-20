@@ -24,12 +24,11 @@ import CompletionCheck from '@shared/components/motion/CompletionCheck'
 import './WorkspaceTaskCard.css'
 import { saveTaskCompletion } from '../utils/taskCompletion'
 import { getRequestFailureMessage } from '@shared/api/errorMessage'
-import { useSplitLock } from '@features/task-split/store'
-import {
-  SPLIT_RECOMMEND_MINUTES,
-  taskMinutes,
-  useSplitStart,
-} from '@features/task-split/SplitStart'
+import { isLockedBySplit } from '@features/task-split/api/splitErrors'
+import SplitChip from '@features/task-split/components/SplitChip'
+import { useSplitSummary } from '@features/task-split/hooks/useSplitSummary'
+import { requestSplitStart } from '@features/task-split/splitStartStore'
+import { cardRetryOf, splitEntryOf } from '@features/task-split/utils/splitEntry'
 export default function WorkspaceTaskCard({
   task,
   onOpen,
@@ -52,8 +51,9 @@ export default function WorkspaceTaskCard({
   const [optimisticDone, setOptimisticDone] = useState<boolean | null>(null)
   const shownDone = optimisticDone ?? done
   const lock = useRef(false)
-  const splitLock = useSplitLock(item.id)
-  const split = useSplitStart()
+  const { summary } = useSplitSummary()
+  const entry = splitEntryOf(item.split, summary?.available ?? false)
+  const retry = cardRetryOf(entry, refreshOnly)
   const toggle = async () => {
     if (lock.current) return
     lock.current = true
@@ -85,13 +85,22 @@ export default function WorkspaceTaskCard({
           setError(`${conflictMessage(e)} 최신 내용을 불러오지 못했어요.`)
           setRefreshOnly(true)
         }
-      } else
+      } else {
         setError(
           getRequestFailureMessage(
             e,
             '작업 상태를 바꾸지 못했어요.',
           ),
         )
+        // 화면이 낡아 잠긴 원본에 보냈다. 다시 읽어 잠금 표시가 뜨게 한다(ADR-0035 §9).
+        if (isLockedBySplit(e))
+          try {
+            setTask(await fetchTaskDetail(item.id))
+          } catch {
+            // 잠금 표시를 아직 못 받았다. 같은 요청을 다시 보내지 않고 작업만 다시 읽게 한다.
+            setRefreshOnly(true)
+          }
+      }
     } finally {
       lock.current = false
       setPending(false)
@@ -123,7 +132,6 @@ export default function WorkspaceTaskCard({
         className="workspace-task__check"
         checked={shownDone}
         disabled={
-          splitLock !== null ||
           !(done ? item.allowedActions?.reopen : item.allowedActions?.complete)
         }
         onChange={() => void toggle()}
@@ -147,25 +155,7 @@ export default function WorkspaceTaskCard({
           />
           <span>{item.assigneeNickname ?? '담당자 미정'}</span>
           {item.recurrence && <span>반복</span>}
-          {splitLock ? (
-            <button
-              className="split-chip"
-              data-status={splitLock.status}
-              onClick={() => split.start(item)}
-            >
-              <WorkspaceIcon name="split" />
-              {splitLock.status === 'READY' ? '쪼개기 제안 준비됨' : '쪼개는 중'}
-            </button>
-          ) : (
-            !shownDone &&
-            !item.recurrence &&
-            taskMinutes(item) >= SPLIT_RECOMMEND_MINUTES && (
-              <button className="split-chip" onClick={() => split.start(item)}>
-                <WorkspaceIcon name="split" />
-                4시간 이상 · 쪼개기
-              </button>
-            )
-          )}
+          <SplitChip entry={entry} onPress={() => requestSplitStart(item)} />
           {!shownDone && (item.inboundDependencyCount ?? 0) > 0 && (
             <span>이전 작업 {item.inboundDependencyCount}개 남음</span>
           )}
@@ -217,19 +207,22 @@ export default function WorkspaceTaskCard({
           ))}
         </div>
       </div>
-      {split.dialog}
       {error && (
         <div
           className="workspace-inline-error workspace-task__error"
           role="alert"
         >
           <span>{error}</span>
-          <button
-            disabled={pending}
-            onClick={() => void (refreshOnly ? refreshDetail() : toggle())}
-          >
-            {refreshOnly ? '정보 다시 불러오기' : '다시 시도'}
-          </button>
+          {retry && (
+            <button
+              disabled={pending}
+              onClick={() =>
+                void (retry === 'refresh' ? refreshDetail() : toggle())
+              }
+            >
+              {retry === 'refresh' ? '정보 다시 불러오기' : '다시 시도'}
+            </button>
+          )}
         </div>
       )}
     </article>

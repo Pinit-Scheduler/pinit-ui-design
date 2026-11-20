@@ -25,6 +25,7 @@ import {
 } from '@features/categories'
 import WorkspaceTaskCard from '../components/WorkspaceTaskCard'
 import TaskArchiveModal from '../components/modals/TaskArchiveModal'
+import SplitInboxLink from '@features/task-split/components/SplitInboxLink'
 import TaskFilterPanel from '../components/TaskFilterPanel'
 import {
   activeFilterCount,
@@ -39,7 +40,6 @@ import {
 import { isCompletionOnly, readShownPages } from '../utils/taskListRefresh'
 import { getRequestFailureMessage } from '@shared/api/errorMessage'
 import './TaskPages.css'
-import { SplitInboxLink } from '@features/task-split/SplitInbox'
 
 const PAGE_SIZE = 20
 const FILTER_KEY = 'task-list-filters'

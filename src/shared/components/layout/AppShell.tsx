@@ -6,6 +6,9 @@ import BottomTabBar from './BottomTabBar'
 import { InstallBanner, OfflineBanner, UpdateBanner } from './AppBanners'
 import MiniPlayerBar from '@features/schedules/components/MiniPlayerBar'
 import { OnboardingTourProvider } from '@features/onboarding'
+import { ConfirmHost } from '@shared/components/common'
+import SplitStartHost from '@features/task-split/components/SplitStartHost'
+import NoticeButton from '@features/notices/components/NoticeButton'
 import { refreshSession } from '@shared/api/authSession'
 import { startSessionRestore } from '@features/auth/utils/sessionRestore'
 import {
@@ -21,11 +24,11 @@ import { useSpaces } from '@features/spaces/store'
 import { routeScope, scopeCrumb } from '@features/spaces/scope'
 import { prefersReducedMotion } from '@shared/motion/tokens'
 import { playRise } from '@shared/motion/playRise'
-import { NoticeButton, SplitNotifier } from '@features/task-split/SplitInbox'
-import { SplitConfirmHost } from '@features/task-split/SplitConfirmHost'
+import { backTarget } from '@shared/routing/backTarget'
 
 const TAB_TITLES: Record<string, string> = {
   '/app/today': '오늘의 내 작업',
+  '/app/mind-map': '마인드맵',
   '/app/spaces': '스페이스',
   '/app/plan': '하루 계획',
   '/app/deadline-risk': '마감 위험 예보',
@@ -151,11 +154,15 @@ const AppShell = () => {
   const title = getPageTitle(pathname)
   const personalSpace =
     spaces.find((space) => space.id === defaultSpaceId) ?? null
-  const scopeLabel = scopeCrumb(
-    routeScope(pathname),
-    routeScope(pathname) === 'personal' ? personalSpace : selectedSpace,
-    selectedProject,
-  )
+  // 마인드맵은 스페이스와 상관없는 내 화면이고 본문 전체를 캔버스로 쓴다. 범위 표시를 두지 않는다.
+  const isCanvasPage = pathname === '/app/mind-map'
+  const scopeLabel = isCanvasPage
+    ? null
+    : scopeCrumb(
+        routeScope(pathname),
+        routeScope(pathname) === 'personal' ? personalSpace : selectedSpace,
+        selectedProject,
+      )
   const showSettingsButton = !pathname.startsWith('/app/settings')
   const isScheduleDetail =
     pathname.startsWith('/app/schedules/') && pathname.split('/').length > 3
@@ -177,35 +184,32 @@ const AppShell = () => {
     isOnboardingGuide
 
   const handleBack = () => {
-    // 온보딩 가이드는 딥링크로 열 수 있다. 앱 안에서 쌓인 history가 없으면 설정으로 간다.
-    if (isOnboardingGuide) {
-      const historyIndex = (window.history.state as { idx?: number } | null)
-        ?.idx
-      if (historyIndex === undefined || historyIndex <= 0) {
-        navigate('/app/settings', { replace: true })
-        return
-      }
-    }
-    navigate(-1)
+    // 딥링크로 열어 앱 안에 돌아갈 history가 없으면 상위 화면으로 간다.
+    const target = backTarget(
+      pathname,
+      (window.history.state as { idx?: number } | null)?.idx,
+    )
+    if (target) navigate(target, { replace: true })
+    else navigate(-1)
   }
 
   return (
     <div
-      className={`app-shell${isNewPage || /\/edit$/.test(pathname) ? ' app-shell--editing' : ''}`}
+      className={`app-shell${isNewPage || /\/edit$/.test(pathname) ? ' app-shell--editing' : ''}${isCanvasPage ? ' app-shell--canvas' : ''}`}
     >
       <OnboardingTourProvider>
-        <SplitNotifier />
-        <SplitConfirmHost />
+        <ConfirmHost />
+        <SplitStartHost />
         <WorkspaceSidebar />
         <TopBar
           title={title}
           scopeLabel={scopeLabel}
           leading={<SpaceSwitcher variant="bar" />}
+          tools={<NoticeButton />}
           showBackButton={showBackButton}
           onBack={handleBack}
           onSettings={() => navigate('/app/settings')}
           showSettingsButton={showSettingsButton}
-          tools={<NoticeButton />}
         />
         {/*  리액트 라우터 호출: app-shell__content */}
         <main className="app-shell__content" ref={contentRef}>

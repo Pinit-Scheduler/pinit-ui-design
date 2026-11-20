@@ -5,7 +5,9 @@ import Modal from '@shared/components/common/Modal'
 import WorkspaceIcon from '@shared/components/common/WorkspaceIcon'
 import useMediaQuery from '@shared/hooks/useMediaQuery'
 import { usePresence } from '@shared/motion'
+import { usePageSpace } from './pageSpace'
 import { useSpaces } from './store'
+import ProjectHead from './ProjectHead'
 import SpaceMark from './SpaceMark'
 import {
   projectSelectionTarget,
@@ -254,8 +256,16 @@ export function SpaceContextBar() {
   const deadlineRisk = pathname === '/app/deadline-risk'
   const statistics = pathname === '/app/statistics'
   const { selectedSpace, selectedProject } = useSpaces()
+  const pageSpace = usePageSpace()
+  // 쪼개기 화면이 다른 스페이스의 요청을 보이면 고른 스페이스의 목적을 그 위에 두지 않는다.
+  const foreign =
+    pathname.startsWith('/app/tasks/splits') &&
+    pageSpace != null &&
+    pageSpace !== selectedSpace?.id
   // 허브는 목적과 프로젝트를 본문에 크게 보여 주므로 같은 정보를 위에 다시 두지 않는다.
   if (pathname === '/app/spaces') return null
+  // 마인드맵은 스페이스와 상관없는 내 화면이라 범위 표시를 두지 않는다.
+  if (pathname === '/app/mind-map') return null
   return (
     <section className="space-context" aria-label="목적과 프로젝트">
       {today && (
@@ -274,7 +284,7 @@ export function SpaceContextBar() {
       {statistics && (
         <span className="space-context__project">모든 스페이스 · 내 기록</span>
       )}
-      {!today && !trash && !deadlineRisk && !statistics && selectedSpace?.purpose && (
+      {!today && !trash && !deadlineRisk && !statistics && !foreign && selectedSpace?.purpose && (
         <details>
           <summary>
             <span>목적</span>
@@ -284,17 +294,23 @@ export function SpaceContextBar() {
             <span aria-hidden>⌄</span>
           </summary>
           <p>{selectedSpace.purpose}</p>
-          {selectedProject?.outcome && (
-            <p>목적에 기여할 성과 · {selectedProject.outcome}</p>
-          )}
         </details>
       )}
-      {!today && !trash && !deadlineRisk && !statistics && selectedProject && (
-        <span className="space-context__project">
-          {selectedProject.name}
-          {selectedProject.completed ? ' · 완료' : ''}
-        </span>
-      )}
+      {/* 프로젝트를 고르면 그 프로젝트의 성과와 진행이 화면 맨 위에 온다. */}
+      {!today &&
+        !trash &&
+        !deadlineRisk &&
+        !statistics &&
+        selectedSpace &&
+        selectedProject &&
+        selectedProject.spaceId === selectedSpace.id && (
+          // 프로젝트마다 새로 세워, 쓰던 편집 칸과 펼침이 다른 프로젝트로 넘어가지 않는다.
+          <ProjectHead
+            key={selectedProject.id}
+            space={selectedSpace}
+            project={selectedProject}
+          />
+        )}
     </section>
   )
 }
