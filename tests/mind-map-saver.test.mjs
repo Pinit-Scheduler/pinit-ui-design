@@ -409,3 +409,23 @@ test('떠난 페이지의 저장을 기다리는 것은 15초까지다', async (
   await settle()
   assert.equal(done, true)
 })
+
+test('맵을 받기 전에 떠난 페이지가 앞 페이지의 저장 기다림을 지우지 않는다', async () => {
+  const a = harness()
+  a.saver.adopt(map(3))
+  a.view.confirmed = node('r', '바꿈')
+  saverModule.leaveSaver(a.saver)
+  assert.equal(a.requests.length, 1)
+  // 처음 불러오기 전에 떠난 페이지(개발 모드의 첫 붙이기 정리 같은 것)
+  const b = harness()
+  saverModule.leaveSaver(b.saver)
+  let done = false
+  saverModule.afterLeavingSaves().then(() => {
+    done = true
+  })
+  await settle()
+  assert.equal(done, false)
+  a.requests[0].resolve({ version: 4 })
+  await settle()
+  assert.equal(done, true)
+})

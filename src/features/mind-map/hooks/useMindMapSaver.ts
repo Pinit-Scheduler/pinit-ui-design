@@ -207,7 +207,8 @@ let leaving: Promise<void> = Promise.resolve()
  */
 export const leaveSaver = (saver: MindMapSaver) => {
   saver.detach()
-  leaving = saver.settled()
+  // 앞서 떠난 페이지의 저장도 함께 기다린다(저장기마다 많아야 SAVE_TIMEOUT_MS).
+  leaving = Promise.all([leaving, saver.settled()]).then(() => {})
 }
 
 /** 떠난 페이지의 저장이 끝날 때(많아야 `SAVE_TIMEOUT_MS`)까지 기다린다. 페이지는 그 뒤에 맵을 읽는다. */
