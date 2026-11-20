@@ -90,8 +90,11 @@ const step = async (page, viewport, name, run, { dark = false } = {}) => {
 
 const button = (scope, name) => scope.getByRole('button', { name, exact: true }).filter({ visible: true }).first()
 const canvas = (page) => page.locator('.mind-map-canvas')
+const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const nodeByText = (page, text) =>
-  page.locator('.mind-map-node').filter({ has: page.locator('.mind-map-node__label', { hasText: new RegExp(`^${text}$`) }) })
+  page
+    .locator('.mind-map-node')
+    .filter({ has: page.locator('.mind-map-node__label', { hasText: new RegExp(`^${escapeRegExp(text)}$`) }) })
 const counts = (page) => page.locator('.mind-map-page__counts')
 const saveLabel = (page) => page.locator('.mind-map-save__label')
 const editingLabel = (page) => page.locator('.mind-map-node.is-editing .mind-map-node__label')
@@ -208,22 +211,188 @@ const press = async (page, viewport, locator) => {
   else await locator.click()
 }
 
-/** 끄는 동안의 화면을 밝은·어두운 테마로 찍는다. */
-const captureHeld = async (page, viewport, name) => {
-  await page.screenshot({ path: path.join(output, `${viewport}-${name}-held.png`) })
+/**
+ * 지금 화면을 밝은·어두운 테마로 찍는다(`{viewport}-{name}.png`, `…-dark.png`). 단계 도중의 상태를 남길 때 쓴다.
+ * 테마를 바꾼 뒤 색 전환이 끝나기를 기다린다(끌기 중에는 기다리지 않는다).
+ */
+const capture = async (page, viewport, name, { wait = true } = {}) => {
+  await page.screenshot({ path: path.join(output, `${viewport}-${name}.png`) })
   await page.evaluate(() => {
     document.documentElement.dataset.theme = 'dark'
   })
-  await page.screenshot({ path: path.join(output, `${viewport}-${name}-held-dark.png`) })
+  if (wait) await settle(page)
+  await page.screenshot({ path: path.join(output, `${viewport}-${name}-dark.png`) })
   await page.evaluate(() => {
     delete document.documentElement.dataset.theme
   })
 }
 
+/** 끄는 동안의 화면을 밝은·어두운 테마로 찍는다. */
+const captureHeld = (page, viewport, name) => capture(page, viewport, `${name}-held`, { wait: false })
+
 /** 선택한 가지의 부모 글. `←`로 부모를 고르고 그 글을 읽는다(선택은 부모에 남는다). */
 const parentOfSelected = async (page) => {
   await page.keyboard.press('ArrowLeft')
   return selectedLabel(page)
+}
+
+// ---- 흐름 단계(Task 14)의 도우미 ----
+
+const CONFLICT_TOAST = '다른 곳에서 마인드맵이 먼저 바뀌었어요. 최신 내용을 불러온 뒤 다시 고쳐 주세요.'
+/** 기억한 가지는 선택이 바뀌고 800ms 뒤에 저장한다. 떠나기 전에 이만큼 기다려 돌아왔을 때 같은 가지가 골라져 있게 한다. */
+const CURSOR_WAIT = 1000
+/** 저장(`PUT /v2/mind-map`)이 실패할 때 앱의 HTTP 도우미가 남기는 console error. */
+const saveError = (statuses) => new RegExp(`API Error.*status: (${statuses}).*/v2/mind-map\\b`)
+
+const branchCount = async (page) => Number((await counts(page).locator('strong').first().innerText()).trim())
+const undoButton = (page) => button(actionBar(page), '되돌리기')
+const mapReady = async (page) => {
+  await canvas(page).waitFor()
+  await page.waitForFunction(() => document.querySelector('.mind-map-canvas .mind-map-world')?.style.visibility !== 'hidden')
+  await settle(page)
+}
+
+/**
+ * 메뉴로 마인드맵에 돌아온다. PC는 왼쪽 메뉴의 `마인드맵`, 폰은 아래 탭의 `오늘` → 홈 카드의 `크게 보기 →`
+ * (폰의 아래 탭에는 마인드맵이 없다). 새로 읽지 않는다.
+ */
+const returnToMap = async (page, viewport) => {
+  if (viewport === 'desktop') await goMenu(page, viewport, '마인드맵', '/app/mind-map')
+  else {
+    if (!page.url().endsWith('/app/today')) await goMenu(page, viewport, '오늘', '/app/today')
+    await todayReady(page, { picture: false })
+    await press(page, viewport, homeCard(page).getByRole('link', { name: '크게 보기 →', exact: true }))
+    await page.waitForURL(/\/app\/mind-map$/)
+  }
+  await mapReady(page)
+}
+
+/** 메뉴로 오늘 화면에 갔다가 마인드맵으로 돌아온다. */
+const roundTrip = async (page, viewport) => {
+  await goMenu(page, viewport, '오늘', '/app/today')
+  await returnToMap(page, viewport)
+}
+
+/** 이제부터 새로 뜨는 토스트 글을 모은다. */
+const watchToasts = (page) =>
+  page.evaluate(() => {
+    window.__mindMapToastObserver?.disconnect()
+    const seen = new WeakSet(document.querySelectorAll('.toast__message'))
+    const shown = []
+    const read = () => {
+      for (const el of document.querySelectorAll('.toast__message')) {
+        if (seen.has(el)) continue
+        seen.add(el)
+        shown.push(el.textContent)
+      }
+    }
+    const observer = new MutationObserver(read)
+    observer.observe(document.body, { subtree: true, childList: true })
+    window.__mindMapToastObserver = observer
+    window.__mindMapToasts = shown
+  })
+const toastsShown = (page) => page.evaluate(() => [...window.__mindMapToasts])
+
+/**
+ * 맵 저장(`PUT /v2/mind-map`, 기억한 가지 저장은 빼고)이 동시에 몇 개 열려 있었는지 센다. mock은 화면 안의 `fetch`에서 답해
+ * 네트워크 요청이 생기지 않으므로(`page.on('request')`에 잡히지 않는다) 화면의 `fetch`를 감싸 센다.
+ */
+const countSaves = (page) =>
+  page.evaluate(() => {
+    window.__mindMapSaves = { open: 0, max: 0, total: 0 }
+    if (window.__mindMapFetchWrapped) return
+    window.__mindMapFetchWrapped = true
+    const original = window.fetch
+    window.fetch = async (input, init) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+      const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
+      const isSave = method === 'PUT' && new URL(url, window.location.href).pathname === '/v2/mind-map'
+      const saves = window.__mindMapSaves
+      if (isSave) {
+        saves.open += 1
+        saves.total += 1
+        saves.max = Math.max(saves.max, saves.open)
+      }
+      try {
+        return await original(input, init)
+      } finally {
+        if (isSave) saves.open -= 1
+      }
+    }
+  })
+
+/** `run` 동안 `pattern`에 맞는 console error를 기대한 것으로 세고, 그 기록을 돌려준다. */
+const expectErrors = async (label, pattern, run) => {
+  const start = expectedRejections.length
+  expectingRejection = { label, pattern }
+  try {
+    await run()
+    // console 기록은 조금 늦게 온다.
+    await new Promise((resolve) => setTimeout(resolve, 150))
+  } finally {
+    expectingRejection = null
+  }
+  return expectedRejections.slice(start)
+}
+
+/** `전체 보기` 뒤 그 가지를 눌러 고른다(폰은 손가락). 가지가 다른 상자에 가려 있으면 실패한다. */
+const pick = async (page, viewport, text) => {
+  await press(page, viewport, button(page, '전체 보기'))
+  await settle(page)
+  const label = nodeByText(page, text).locator('.mind-map-node__label')
+  const at = await center(label)
+  const hit = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest('.mind-map-node__label')?.textContent ?? null, at)
+  assert.equal(hit, text, `${text}이(가) 가려 있다`)
+  await press(page, viewport, label)
+  assert.equal(await selectedLabel(page), text)
+  await canvas(page).focus()
+}
+
+/** 고른 가지의 글을 고친다(F2는 기존 글을 모두 골라 친 글이 대신한다). `confirm`이 아니면 쓰는 중에 둔다. */
+const rewriteSelected = async (page, text, { confirm = true } = {}) => {
+  await page.keyboard.press('F2')
+  await editingLabel(page).waitFor()
+  await page.keyboard.type(text)
+  if (!confirm) return
+  await page.keyboard.press('Enter')
+  await editingLabel(page).waitFor({ state: 'detached' })
+}
+
+/**
+ * 위 막대: 저장 상태는 제목과 같은 줄 오른쪽 끝에 있고(폰에서 혼자 다음 줄로 밀려나지 않는다), 숫자는 한 줄이다.
+ * 저장 상태와 숫자는 막대 안에 다 보인다.
+ */
+const assertHeaderRows = async (page) => {
+  const header = await page.locator('.mind-map-page__bar').evaluate((bar) => {
+    const box = (el) => el.getBoundingClientRect()
+    /** 글이 놓인 줄 수(줄의 위치가 3px 넘게 다르면 다른 줄). */
+    const lines = (el) => {
+      const range = document.createRange()
+      range.selectNodeContents(el)
+      const tops = [...range.getClientRects()].map((r) => r.top).sort((a, b) => a - b)
+      return tops.filter((top, i) => i === 0 || top - tops[i - 1] > 3).length
+    }
+    const title = box(bar.querySelector('h1'))
+    const save = box(bar.querySelector('.mind-map-save'))
+    const counts = bar.querySelector('.mind-map-page__counts')
+    const frame = box(bar)
+    const pad = parseFloat(getComputedStyle(bar).paddingRight)
+    return {
+      sameRow: Math.abs(save.top + save.height / 2 - (title.top + title.height / 2)) <= 2,
+      saveRight: save.right,
+      inner: frame.right - pad,
+      countLines: lines(counts),
+      overflow: bar.scrollWidth > bar.clientWidth,
+      children: [...bar.querySelector('.mind-map-save').children].map((el) => {
+        const r = box(el)
+        return { text: el.textContent, inside: r.left >= frame.left && r.right <= frame.right - pad + 0.5 }
+      }),
+    }
+  })
+  assert.ok(header.sameRow, `저장 상태가 제목 줄에 있지 않다 ${JSON.stringify(header)}`)
+  assert.ok(Math.abs(header.saveRight - header.inner) <= 0.5, `저장 상태가 오른쪽 끝이 아니다 ${JSON.stringify(header)}`)
+  assert.equal(header.countLines, 1, `숫자가 한 줄이 아니다 ${JSON.stringify(header)}`)
+  assert.ok(!header.overflow && header.children.every((child) => child.inside), `막대가 넘친다 ${JSON.stringify(header)}`)
 }
 
 const walk = async (page, viewport) => {
@@ -283,6 +452,7 @@ const walk = async (page, viewport) => {
       const home = page.getByRole('link', { name: '← 홈', exact: true })
       assert.equal(await home.isVisible(), viewport === 'mobile')
       assert.equal((await saveLabel(page).innerText()).trim(), '저장됨')
+      await assertHeaderRows(page)
     },
     { dark: true },
   )
@@ -640,11 +810,335 @@ const walk = async (page, viewport) => {
     },
     { dark: true },
   )
+
+  // ---- 흐름(Task 14). 앞 단계가 남긴 맵에서 이어 간다. 새로 읽지 않는다. ----
+
+  await step(page, viewport, 'split-fast', async () => {
+    // 짐 정리를 고르고 쉬지 않고 키를 친다.
+    await pick(page, viewport, '짐 정리')
+    const before = await branchCount(page)
+    await recordSaveLabels(page)
+    for (const key of ['Tab', '냉장고 비우기', 'Enter', 'Enter', '전기 해지', 'Tab', '한전 전화', 'Enter']) {
+      if (key === 'Tab' || key === 'Enter') await page.keyboard.press(key)
+      else await page.keyboard.type(key)
+    }
+    await editingLabel(page).waitFor({ state: 'detached' })
+    await waitSaved(page)
+    assert.equal((await savedLabels(page)).at(-1), '저장됨')
+    assert.equal(await branchCount(page), before + 3)
+    assert.equal(await selectedLabel(page), '한전 전화')
+    // 메뉴로 오늘에 갔다가 돌아와도 셋이 그대로다(한전 전화 ← 전기 해지 ← 짐 정리, 냉장고 비우기는 전기 해지의 형).
+    await page.waitForTimeout(CURSOR_WAIT)
+    await roundTrip(page, viewport)
+    assert.equal(await branchCount(page), before + 3)
+    for (const text of ['냉장고 비우기', '전기 해지', '한전 전화']) assert.equal(await nodeByText(page, text).count(), 1, text)
+    const place = (text) => nodeByText(page, text).evaluate((el) => [el.getAttribute('aria-level'), el.getAttribute('aria-posinset')])
+    const [fridgeLevel, fridgeAt] = await place('냉장고 비우기')
+    const [powerLevel, powerAt] = await place('전기 해지')
+    assert.equal(fridgeLevel, powerLevel)
+    assert.equal(Number(powerAt), Number(fridgeAt) + 1)
+    assert.equal(await selectedLabel(page), '한전 전화')
+    assert.equal(await parentOfSelected(page), '전기 해지')
+    assert.equal(await parentOfSelected(page), '짐 정리')
+    assert.equal(String(Number(await nodeByText(page, '짐 정리').getAttribute('aria-level')) + 1), fridgeLevel)
+  })
+
+  await step(page, viewport, 'rapid-split', async () => {
+    // 짐 정리에서 Tab·글·Enter를 다섯 번. 응답이 1.5초씩 늦어 저장이 겹치려 한다.
+    assert.equal(await selectedLabel(page), '짐 정리')
+    const before = await branchCount(page)
+    await watchToasts(page)
+    await countSaves(page)
+    await page.evaluate(() => window.__pinitMock.setLatency(1500))
+    try {
+      for (let i = 1; i <= 5; i++) {
+        await page.keyboard.press('Tab')
+        await page.keyboard.type(`빠른 가지 ${i}`)
+        await page.keyboard.press('Enter')
+      }
+      await editingLabel(page).waitFor({ state: 'detached' })
+      await page.waitForFunction(
+        () => window.__mindMapSaves.open === 0 && document.querySelector('.mind-map-save__label')?.textContent === '저장됨',
+        null,
+        { timeout: 30_000 },
+      )
+    } finally {
+      await page.evaluate(() => window.__pinitMock.setLatency(0))
+    }
+    const saves = await page.evaluate(() => ({ ...window.__mindMapSaves }))
+    console.log(`rapid-split 맵 저장 요청: ${JSON.stringify(saves)}`)
+    assert.equal(saves.max, 1, `저장이 동시에 ${saves.max}개 열렸다`)
+    assert.ok(saves.total >= 2, `저장이 ${saves.total}번뿐이다`)
+    assert.equal(await branchCount(page), before + 5)
+    for (let i = 1; i <= 5; i++) assert.equal(await nodeByText(page, `빠른 가지 ${i}`).count(), 1)
+    assert.equal(await selectedLabel(page), '빠른 가지 5')
+    assert.deepEqual(await toastsShown(page), [])
+  })
+
+  await step(page, viewport, 'ime-guard', async () => {
+    // 한글 조합 중의 Enter(isComposing)와 Tab(keyCode 229)은 확정하지도 가지를 만들지도 않는다.
+    const before = await branchCount(page)
+    const nodes = await page.locator('.mind-map-node').count()
+    await page.keyboard.press('F2')
+    await editingLabel(page).waitFor()
+    const sent = await editingLabel(page).evaluate((label) => {
+      const enter = new KeyboardEvent('keydown', { key: 'Enter', isComposing: true, bubbles: true, cancelable: true })
+      const tab = new KeyboardEvent('keydown', { key: 'Tab', keyCode: 229, bubbles: true, cancelable: true })
+      label.dispatchEvent(enter)
+      label.dispatchEvent(tab)
+      return { enter: enter.isComposing, tab: tab.keyCode }
+    })
+    assert.deepEqual(sent, { enter: true, tab: 229 })
+    await page.waitForTimeout(100)
+    assert.equal(await editingLabel(page).count(), 1, '쓰기가 끝났다')
+    assert.equal(await editingLabel(page).innerText(), '빠른 가지 5')
+    assert.equal(await page.evaluate(() => document.activeElement?.isContentEditable), true)
+    assert.equal(await branchCount(page), before)
+    assert.equal(await page.locator('.mind-map-node').count(), nodes)
+    await capture(page, viewport, 'ime-guard-writing')
+    await page.keyboard.press('Escape')
+    await editingLabel(page).waitFor({ state: 'detached' })
+  })
+
+  await step(page, viewport, 'type-to-edit', async () => {
+    // 고른 가지에서 글자를 치면 그 글자가 기존 글을 대신하고 계속 쓴다.
+    assert.equal(await selectedLabel(page), '빠른 가지 5')
+    await page.keyboard.press('x')
+    await editingLabel(page).waitFor()
+    assert.equal(await editingLabel(page).innerText(), 'x')
+    await page.keyboard.press('y')
+    assert.equal(await editingLabel(page).innerText(), 'xy')
+    await capture(page, viewport, 'type-to-edit-writing')
+    await page.keyboard.press('Escape')
+    await editingLabel(page).waitFor({ state: 'detached' })
+    assert.equal(await selectedLabel(page), '빠른 가지 5')
+  })
+
+  await step(
+    page,
+    viewport,
+    'save-failed',
+    async () => {
+      await page.evaluate(() => window.__pinitMock.mindMap.failNextSave('server'))
+      const logged = await expectErrors('save-failed', saveError('500'), async () => {
+        await rewriteSelected(page, '고친 가지 5')
+        await page.waitForFunction(() => document.querySelector('.mind-map-save__label')?.textContent === '저장하지 못함')
+      })
+      assert.ok(logged.some((line) => /status: 500/.test(line)), '500을 받지 않았다')
+      const retry = page.locator('.mind-map-save__retry')
+      assert.equal(await retry.innerText(), '다시 시도')
+      assert.equal(await nodeByText(page, '고친 가지 5').count(), 1)
+      assert.equal(await selectedLabel(page), '고친 가지 5')
+      // 폰에서도 이유와 다시 시도가 막대 안 제목 줄에 들어간다.
+      await assertHeaderRows(page)
+      await capture(page, viewport, 'save-failed-state')
+      await press(page, viewport, retry)
+      await waitSaved(page)
+      assert.equal(await retry.count(), 0)
+      assert.equal(await nodeByText(page, '고친 가지 5').count(), 1)
+    },
+    { dark: true },
+  )
+
+  await step(page, viewport, 'lost-save', async () => {
+    // 서버는 반영했지만 응답(503)을 잃은 저장. 다음 저장이 409를 받아도 자기 저장이라 안내 없이 다시 보낸다.
+    await canvas(page).focus()
+    await watchToasts(page)
+    await page.evaluate(() => window.__pinitMock.mindMap.failNextSave('lost'))
+    const logged = await expectErrors('lost-save', saveError('503|409'), async () => {
+      await page.keyboard.press('ArrowLeft')
+      assert.equal(await selectedLabel(page), '빠른 가지 4')
+      await rewriteSelected(page, '잃은 저장 4')
+      await page.waitForFunction(() => document.querySelector('.mind-map-save__label')?.textContent === '저장하지 못함')
+      await page.keyboard.press('ArrowLeft')
+      assert.equal(await selectedLabel(page), '빠른 가지 3')
+      await rewriteSelected(page, '두 번째 3')
+      await waitSaved(page)
+    })
+    assert.ok(logged.some((line) => /status: 503/.test(line)), '503을 받지 않았다')
+    assert.ok(logged.some((line) => /status: 409/.test(line)), '두 번째 저장이 409를 받지 않았다')
+    await page.waitForTimeout(300)
+    assert.deepEqual(await toastsShown(page), [])
+    assert.equal(await page.locator('.mind-map-save__retry').count(), 0)
+    // 메뉴로 나갔다 와도 두 글이 다 있다.
+    await page.waitForTimeout(CURSOR_WAIT)
+    await roundTrip(page, viewport)
+    for (const text of ['잃은 저장 4', '두 번째 3']) assert.equal(await nodeByText(page, text).count(), 1, text)
+    for (const text of ['빠른 가지 4', '빠른 가지 3']) assert.equal(await nodeByText(page, text).count(), 0, text)
+    assert.equal(await selectedLabel(page), '두 번째 3')
+  })
+
+  await step(
+    page,
+    viewport,
+    'conflict',
+    async () => {
+      // 다른 기기가 먼저 고친 뒤 가지를 지운다(1초 뒤 저장) → 409: 한 번 안내하고 최신 맵으로 바꾼다.
+      assert.equal(await selectedLabel(page), '두 번째 3')
+      await watchToasts(page)
+      await page.evaluate(() => window.__pinitMock.mindMap.remoteEdit())
+      const logged = await expectErrors('conflict', saveError('409'), async () => {
+        await page.keyboard.press('Delete')
+        await nodeByText(page, '두 번째 3').waitFor({ state: 'detached' })
+        assert.equal(await undoButton(page).isEnabled(), true)
+        await nodeByText(page, '두 번째 3').waitFor()
+      })
+      assert.ok(logged.some((line) => /status: 409/.test(line)), '409를 받지 않았다')
+      assert.equal(await nodeByText(page, '이사 준비 (다른 기기)').count(), 1)
+      assert.equal(await nodeByText(page, '잃은 저장 4').count(), 1, '지운 가지의 아래가 돌아오지 않았다')
+      assert.equal(await undoButton(page).isDisabled(), true)
+      await page.locator('.toast__message', { hasText: CONFLICT_TOAST }).waitFor()
+      await capture(page, viewport, 'conflict-toast')
+      await waitSaved(page)
+      await page.waitForTimeout(1500)
+      assert.deepEqual(await toastsShown(page), [CONFLICT_TOAST])
+    },
+    { dark: true },
+  )
+
+  await step(page, viewport, 'focus-refetch', async () => {
+    await canvas(page).focus()
+    const selected = await selectedLabel(page)
+    // 되돌릴 것이 있게 체크박스를 붙인다(바로 저장).
+    await page.keyboard.press('Control+Enter')
+    await waitSaved(page)
+    assert.equal(await undoButton(page).isEnabled(), true)
+    await watchToasts(page)
+    // 창이 다시 활성화되면 안내 없이 다른 기기의 맵으로 바꾸고 되돌리기를 비운다.
+    await page.evaluate(() => window.__pinitMock.mindMap.remoteEdit())
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')))
+    await nodeByText(page, '이사 준비 (다른 기기) (다른 기기)').waitFor({ state: 'attached' })
+    assert.equal(await undoButton(page).isDisabled(), true)
+    assert.equal(await selectedLabel(page), selected)
+    // 쓰는 중에는 바꾸지 않는다.
+    await page.keyboard.press('F2')
+    await editingLabel(page).waitFor()
+    await page.evaluate(() => window.__pinitMock.mindMap.remoteEdit())
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')))
+    await page.waitForTimeout(300)
+    assert.equal(await editingLabel(page).count(), 1)
+    assert.equal(await nodeByText(page, '이사 준비 (다른 기기) (다른 기기)').count(), 1)
+    assert.equal(await nodeByText(page, '이사 준비 (다른 기기) (다른 기기) (다른 기기)').count(), 0)
+    await page.keyboard.press('Escape')
+    await editingLabel(page).waitFor({ state: 'detached' })
+    // 쓰기를 마친 뒤 다시 활성화되면 따라잡는다.
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')))
+    await nodeByText(page, '이사 준비 (다른 기기) (다른 기기) (다른 기기)').waitFor({ state: 'attached' })
+    assert.deepEqual(await toastsShown(page), [])
+  })
+
+  await step(
+    page,
+    viewport,
+    'limits',
+    async () => {
+      // 하위 가지에 101자를 붙여 넣는다. 100자까지만 들어가고 안내가 뜨며 계속 쓴다.
+      await page.keyboard.press('Tab')
+      await editingLabel(page).waitFor()
+      await watchToasts(page)
+      const long = '가나다라마바사아자차'.repeat(10) + '끝'
+      assert.equal([...long].length, 101)
+      await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin })
+      await page.evaluate((text) => navigator.clipboard.writeText(text), long)
+      await page.keyboard.press('Control+V')
+      await page.locator('.toast__message', { hasText: '글은 100자까지 쓸 수 있어요.' }).waitFor()
+      assert.equal(await editingLabel(page).count(), 1)
+      assert.equal(await page.evaluate(() => document.activeElement?.isContentEditable), true)
+      assert.equal(await editingLabel(page).innerText(), long.slice(0, 100))
+      // 붙여 넣은 글이 이미 한도 안으로 잘려 있으므로 Enter는 100자를 확정한다(안내는 한 번).
+      await page.keyboard.press('Enter')
+      await editingLabel(page).waitFor({ state: 'detached' })
+      assert.equal(await selectedLabel(page), long.slice(0, 100))
+      await waitSaved(page)
+      assert.deepEqual(await toastsShown(page), ['글은 100자까지 쓸 수 있어요.'])
+    },
+    { dark: true },
+  )
+
+  await step(
+    page,
+    viewport,
+    'delete-cursor',
+    async () => {
+      // 긴 가지를 형 두 번째 3 앞으로 올리고(Alt+↑) 지우면 다음 가지(두 번째 3)가 골라진다. 홈 카드도 그 가지 주변이다.
+      const doomed = await selectedLabel(page)
+      await page.keyboard.press('Alt+ArrowUp')
+      assert.equal(await nodeByText(page, doomed).getAttribute('aria-posinset'), '1')
+      await page.keyboard.press('Delete')
+      await nodeByText(page, doomed).waitFor({ state: 'detached' })
+      assert.equal(await selectedLabel(page), '두 번째 3')
+      await page.waitForTimeout(CURSOR_WAIT)
+      await waitSaved(page)
+      await goMenu(page, viewport, '오늘', '/app/today')
+      await todayReady(page)
+      await assertCardPicture(page, viewport, '두 번째 3', viewport === 'mobile' ? 200 : 220)
+      await homeCard(page).scrollIntoViewIfNeeded()
+      await settle(page)
+    },
+    { dark: true },
+  )
+
+  await step(page, viewport, 'leave-saves', async () => {
+    // 글을 쓰는 중에 메뉴의 통계로 떠나도 쓰던 글이 확정·저장된다.
+    await returnToMap(page, viewport)
+    assert.equal(await selectedLabel(page), '두 번째 3')
+    await rewriteSelected(page, '떠나며 확정', { confirm: false })
+    await goMenu(page, viewport, '통계', '/app/statistics')
+    await returnToMap(page, viewport)
+    assert.equal(await nodeByText(page, '떠나며 확정').count(), 1)
+    assert.equal(await nodeByText(page, '두 번째 3').count(), 0)
+    assert.equal(await editingLabel(page).count(), 0)
+    assert.equal((await saveLabel(page).innerText()).trim(), '저장됨')
+  })
+
+  await step(
+    page,
+    viewport,
+    'a11y',
+    async () => {
+      const tree = await page.evaluate(() => {
+        const canvas = document.querySelector('.mind-map-canvas')
+        const nodes = [...canvas.querySelectorAll('.mind-map-node')]
+        const byText = (text) => nodes.find((el) => el.querySelector('.mind-map-node__label')?.textContent === text)
+        const attrs = (text, names) => Object.fromEntries(names.map((name) => [name, byText(text).getAttribute(name)]))
+        const selected = nodes.filter((el) => el.getAttribute('aria-selected') === 'true')
+        return {
+          role: canvas.getAttribute('role'),
+          active: canvas.getAttribute('aria-activedescendant'),
+          selectedIds: selected.map((el) => el.id),
+          selectedClass: selected.map((el) => el.classList.contains('is-selected')),
+          roles: [...new Set(nodes.map((el) => el.getAttribute('role')))],
+          others: [...new Set(nodes.filter((el) => !selected.includes(el)).map((el) => el.getAttribute('aria-selected')))],
+          place: attrs('장소', ['aria-expanded', 'aria-checked']),
+          packing: attrs('짐 정리', ['aria-expanded', 'aria-checked']),
+          toss: attrs('버릴 것 고르기', ['aria-checked', 'aria-expanded']),
+          boxes: attrs('박스와 테이프 사기', ['aria-checked']),
+          leaf: attrs('예산과 지역 정하기', ['aria-expanded', 'aria-checked']),
+        }
+      })
+      assert.equal(tree.role, 'tree')
+      assert.equal(tree.selectedIds.length, 1)
+      assert.equal(tree.active, tree.selectedIds[0])
+      assert.deepEqual(tree.selectedClass, [true])
+      assert.deepEqual(tree.roles, ['treeitem'])
+      assert.deepEqual(tree.others, ['false'])
+      assert.deepEqual(tree.place, { 'aria-expanded': 'false', 'aria-checked': null })
+      assert.deepEqual(tree.packing, { 'aria-expanded': 'true', 'aria-checked': null })
+      assert.deepEqual(tree.toss, { 'aria-checked': 'true', 'aria-expanded': null })
+      assert.deepEqual(tree.boxes, { 'aria-checked': 'false' })
+      assert.deepEqual(tree.leaf, { 'aria-expanded': null, 'aria-checked': null })
+      assert.equal(await canvas(page).getAttribute('aria-activedescendant'), await page.locator('.mind-map-node.is-selected').getAttribute('id'))
+    },
+    { dark: true },
+  )
 }
 
 // ---- 오늘 화면(`/app/today`)의 홈 카드 ----
 
-/** 설계 §7.2 "실제 화면에서 확인한 것"의 패널 시작 위치(px, 맨 위로 올린 화면에서). */
+/**
+ * 설계 §7.2 "실제 화면에서 확인한 것"의 패널 시작 위치(px, 맨 위로 올린 화면에서). mock의 일정·작업은 오늘 날짜에 따라
+ * 바뀌어 높이가 날마다 다르므로 이 값과 맞추지 않고, 잰 값과 나란히 적기만 한다.
+ */
 const DESIGN_TOPS = {
   desktop: { tasks: 296, schedules: 612 },
   mobile: { tasks: 375, schedules: 2792 },
@@ -686,30 +1180,57 @@ const scrollTodayTo = (page, where) =>
   }, where === 'bottom')
 
 /**
- * "오늘의 작업"·"오늘의 일정"·카드의 상자를 맨 위로 올린 화면에서 잰다. `hideCard`면 카드를 `display: none`으로 숨기고 잰 뒤 되돌린다.
+ * "오늘의 작업"·"오늘의 일정"·카드의 상자를 맨 위로 올린 화면에서 잰다. `withoutCard`면 카드가 없던 때의 배치로 잰 뒤 되돌린다:
+ * 카드를 `display: none`으로 숨기고, 카드 때문에 더한 grid 영역을 끄고 두 패널을 자동 배치로 둔다(카드 전의 TodayPage.css).
  */
-const todayBoxes = async (page, hideCard = false) => {
+const todayBoxes = async (page, withoutCard = false) => {
   await scrollTodayTo(page, 'top')
-  return page.evaluate((hide) => {
+  return page.evaluate((remove) => {
+    const workspace = document.querySelector('.today-workspace')
     const card = document.querySelector('.mind-map-card')
-    if (hide) card.style.display = 'none'
     const panel = (title) =>
-      [...document.querySelectorAll('.today-workspace .workspace-panel h2')]
-        .find((h) => h.textContent === title)
-        .closest('.workspace-panel')
+      [...workspace.querySelectorAll('.workspace-panel h2')].find((h) => h.textContent === title).closest('.workspace-panel')
+    const tasksPanel = panel('오늘의 작업')
+    const schedulesPanel = panel('오늘의 일정')
+    if (remove) {
+      card.style.display = 'none'
+      workspace.style.gridTemplateAreas = 'none'
+      workspace.style.gridTemplateRows = 'none'
+      tasksPanel.style.gridArea = 'auto'
+      schedulesPanel.style.gridArea = 'auto'
+    }
     const rect = (el) => {
       const r = el.getBoundingClientRect()
       return { top: r.top, bottom: r.bottom, left: r.left, right: r.right, height: r.height }
     }
     const out = {
-      tasks: rect(panel('오늘의 작업')),
-      schedules: rect(panel('오늘의 일정')),
-      card: hide ? null : rect(card),
-      rowGap: parseFloat(getComputedStyle(document.querySelector('.today-workspace')).rowGap),
+      tasks: rect(tasksPanel),
+      schedules: rect(schedulesPanel),
+      card: remove ? null : rect(card),
+      rowGap: parseFloat(getComputedStyle(workspace).rowGap),
     }
     card.style.display = ''
+    workspace.style.gridTemplateAreas = ''
+    workspace.style.gridTemplateRows = ''
+    tasksPanel.style.gridArea = ''
+    schedulesPanel.style.gridArea = ''
     return out
-  }, hideCard)
+  }, withoutCard)
+}
+
+/**
+ * 카드가 있어도 "오늘의 작업"은 제자리이고, "오늘의 일정"은 한 칸이면 제자리, 두 칸이면 카드 높이 + 간격만큼만 내려간다.
+ * 카드가 없던 때의 배치(`todayBoxes(page, true)`)와 비교한다.
+ */
+const assertPanelsStay = (shown, removed, columns, label) => {
+  const where = `${label}: 카드 있음 ${JSON.stringify({ tasks: shown.tasks.top, schedules: shown.schedules.top })}, 카드 없음 ${JSON.stringify({ tasks: removed.tasks.top, schedules: removed.schedules.top })}`
+  assert.ok(near(shown.tasks.top, removed.tasks.top), `오늘의 작업이 움직였다 ${where}`)
+  if (columns === 2) {
+    const moved = shown.schedules.top - removed.schedules.top
+    assert.ok(near(moved, shown.card.height + shown.rowGap), `오늘의 일정이 ${moved}px 내려갔다(카드 ${shown.card.height} + 간격 ${shown.rowGap}) ${where}`)
+  } else {
+    assert.ok(near(shown.schedules.top, removed.schedules.top), `오늘의 일정이 움직였다 ${where}`)
+  }
 }
 
 /** mock은 화면 안에서 답해 네트워크 응답 이벤트가 없다. 앱의 HTTP 도우미가 남기는 console 기록으로 응답을 기다린다. */
@@ -790,21 +1311,15 @@ const walkToday = async (viewport, openContext) => {
       async () => {
         const columns = viewport === 'mobile' ? 1 : 2
         const shown = await todayBoxes(page)
-        const hidden = await todayBoxes(page, true)
+        const removed = await todayBoxes(page, true)
         const design = DESIGN_TOPS[viewport]
-        console.log(`${viewport} 위치: 카드 있음 ${JSON.stringify({ tasks: shown.tasks.top, schedules: shown.schedules.top, card: shown.card })}, 카드 없음 ${JSON.stringify({ tasks: hidden.tasks.top, schedules: hidden.schedules.top })}, 설계 ${JSON.stringify(design)}`)
-        // "오늘의 작업"은 카드가 있어도 제자리다.
-        assert.equal(shown.tasks.top, hidden.tasks.top)
-        assert.ok(near(shown.tasks.top, design.tasks, 4), `오늘의 작업 ${shown.tasks.top} ≠ 설계 ${design.tasks}`)
-        if (columns === 2) {
-          // "오늘의 일정"은 카드 높이 + 간격만큼만 내려간다(카드가 없던 때는 "오늘의 작업"과 같은 높이에서 시작했다).
-          // display: none으로 숨겨도 카드 줄의 간격은 남으므로, 숨겼을 때와의 차이는 카드 높이다.
-          assert.ok(near(shown.schedules.top - shown.tasks.top, shown.card.height + shown.rowGap), '일정이 카드 높이 + 간격과 다르게 내려갔다')
-          assert.ok(near(shown.schedules.top - hidden.schedules.top, shown.card.height), '카드를 숨겼을 때와의 차이가 카드 높이가 아니다')
-        } else {
-          assert.equal(shown.schedules.top, hidden.schedules.top)
-        }
-        assert.ok(near(shown.schedules.top, design.schedules, 4), `오늘의 일정 ${shown.schedules.top} ≠ 설계 ${design.schedules}`)
+        // 오늘 잰 절대 위치는 기록만 한다(mock 데이터가 날짜에 따라 바뀐다). 판단은 카드가 없던 때와의 차이로 한다.
+        console.log(
+          `${viewport} 패널 위치(오늘 잰 값): 오늘의 작업 ${shown.tasks.top}, 오늘의 일정 ${shown.schedules.top}` +
+            ` / 카드 없음 ${removed.tasks.top}, ${removed.schedules.top} / 설계 ${design.tasks}, ${design.schedules}` +
+            ` / 카드 ${JSON.stringify(shown.card)}`,
+        )
+        assertPanelsStay(shown, removed, columns, viewport)
         assertCardPlace(shown, columns, viewport)
         // 머리: 제목(초점을 받지 않는다), 고른 가지 주변, 크게 보기, 접기.
         const head = homeCard(page).locator('.workspace-panel__head')
@@ -838,6 +1353,7 @@ const walkToday = async (viewport, openContext) => {
           await settle(page)
           const boxes = await todayBoxes(page)
           console.log(`${width}px 위치: ${JSON.stringify(boxes)}`)
+          assertPanelsStay(boxes, await todayBoxes(page, true), columns, `${width}px`)
           assertCardPlace(boxes, columns, `${width}px`)
           await assertCardPicture(page, viewport, '짐 정리', height)
           await checkOverflow(page, width, `${width}px`)

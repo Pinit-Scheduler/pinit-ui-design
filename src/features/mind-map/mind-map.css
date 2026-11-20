@@ -537,6 +537,15 @@
   .mind-map-page__home {
     display: inline-block;
   }
+  /* 폰: 첫 줄은 홈·제목·저장 상태(오른쪽 끝), 숫자는 둘째 줄. 저장 상태가 혼자 다음 줄로 밀려나지 않는다. */
+  .mind-map-save {
+    flex: 1 1 0;
+    justify-content: flex-end;
+  }
+  .mind-map-page__counts {
+    order: 1;
+    flex-basis: 100%;
+  }
   .mind-map-page__status {
     padding: 18px;
   }
