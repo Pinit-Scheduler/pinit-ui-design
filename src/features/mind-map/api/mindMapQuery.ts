@@ -1,0 +1,11 @@
+import { currentAccountScope } from '@shared/hooks/useRevalidatingQuery'
+import { queryStore } from '@shared/utils/queryStore'
+import type { MindMapResponse } from './mindMapApi'
+
+/** 페이지와 홈 카드가 함께 읽는 질의 키. 계정 범위는 질의 저장소가 앞에 붙인다. */
+export const MIND_MAP_QUERY_KEY = 'mind-map'
+
+/** 저장에 성공한 나무처럼 화면이 이미 아는 맵을 질의 저장소에 넣는다. `undefined`를 돌려주면 바꾸지 않는다. */
+export const rememberMindMap = (
+  update: (previous: MindMapResponse | undefined) => MindMapResponse | undefined,
+) => queryStore.setData<MindMapResponse>(`${currentAccountScope()}|${MIND_MAP_QUERY_KEY}`, update)
