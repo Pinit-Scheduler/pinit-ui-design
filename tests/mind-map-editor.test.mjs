@@ -41,8 +41,13 @@ test('Tab은 하위 가지를 만들고 바로 쓰기 시작한다', () => {
   assert.equal(state.selectedId, 'n1')
   assert.equal(state.editing.isNew, true)
   assert.equal(tree.findNode(state.tree, 'b').collapsed, false)
-  assert.equal(state.history.past.length, 1)
+  assert.equal(state.history.past.length, 0, '확정할 때 기록한다')
   assert.equal(save, null)
+  const committed = run(state, [{ type: 'input', text: '짐 싸기' }, { type: 'commit' }]).state
+  assert.equal(committed.history.past.length, 1)
+  const undone = run(committed, [{ type: 'undo' }]).state
+  assert.equal(tree.findNode(undone.tree, 'n1'), null)
+  assert.equal(undone.selectedId, 'b')
 })
 
 test('주제에서 Enter는 하위 가지다', () => {
@@ -118,7 +123,39 @@ test('글은 정리해서 확정한다', () => {
 test('쓰는 중의 글은 받은 그대로 나무에 넣고 기록하지 않는다', () => {
   const { state } = run(start, [{ type: 'startEdit' }, { type: 'input', text: ' x\ty ' }])
   assert.equal(text(state, 'a1'), ' x\ty ')
-  assert.equal(state.history.past.length, 1)
+  assert.equal(state.history.past.length, 0)
+  const committed = run(state, [{ type: 'commit' }]).state
+  assert.equal(committed.history.past.length, 1)
+  const undone = run(committed, [{ type: 'undo' }]).state
+  assert.equal(text(undone, 'a1'), 'a1')
+  assert.equal(undone.selectedId, 'a1')
+})
+
+test('편집을 시작했다가 바꾸지 않고 끝내면 다시 하기가 남는다', () => {
+  const undone = run(start, [{ type: 'delete' }, { type: 'undo' }]).state
+  for (const end of [
+    [{ type: 'cancel' }],
+    [{ type: 'commit' }],
+    [{ type: 'input', text: '' }, { type: 'commit' }],
+  ]) {
+    const ended = run(undone, [{ type: 'startEdit', id: 'c' }, ...end]).state
+    assert.deepEqual(plain(ended.history), plain(undone.history))
+    const redone = run(ended, [{ type: 'redo' }]).state
+    assert.equal(tree.findNode(redone.tree, 'a1'), null)
+  }
+  const fresh = run(undone, [{ type: 'addChild' }, { type: 'input', text: 'q' }, { type: 'cancel' }]).state
+  assert.deepEqual(plain(fresh.history), plain(undone.history))
+})
+
+test('200단계에서 바꾸지 않은 편집은 오래된 단계를 잃지 않는다', () => {
+  const commands = Array.from({ length: 200 }, (_, i) => ({ type: 'reorder', step: i % 2 === 0 ? 1 : -1 }))
+  const full = run(start, commands).state
+  assert.equal(full.history.past.length, 200)
+  const ended = run(full, [{ type: 'startEdit' }, { type: 'input', text: 'zz' }, { type: 'cancel' }]).state
+  assert.equal(ended.history.past.length, 200)
+  assert.equal(ended.history.past[0], full.history.past[0])
+  const fresh = run(full, [{ type: 'addChild' }, { type: 'commit' }]).state
+  assert.equal(fresh.history.past[0], full.history.past[0])
 })
 
 test('100자를 넘으면 확정하지 않고 알린다', () => {
@@ -369,6 +406,40 @@ test('쓰는 중 글이 너무 길면 다른 명령을 하지 않고 알린다',
   assert.equal(state.editing.id, 'a1')
   assert.equal(notice, '글은 100자까지 쓸 수 있어요.')
   assert.equal(save, null)
+})
+
+test('쓰던 새 가지에서 지우기를 누르면 그 가지만 없어진다', () => {
+  for (const typed of ['', '새 글']) {
+    const editing = run(start, [{ type: 'select', id: 'a' }, { type: 'addChild' }, { type: 'input', text: typed }]).state
+    const { state, save } = run(editing, [{ type: 'delete' }])
+    assert.equal(tree.findNode(state.tree, 'n1'), null)
+    assert.deepEqual(childIds(state, 'a'), ['a1', 'a2'])
+    assert.deepEqual(plain(state.tree), plain(map))
+    assert.equal(state.selectedId, 'a')
+    assert.equal(state.editing, null)
+    assert.equal(state.history.past.length, 0)
+    assert.equal(save, null)
+  }
+})
+
+test('쓰던 새 가지에서 체크·접기를 누르면 취소하고 다른 가지는 그대로다', () => {
+  const editing = run(start, [{ type: 'select', id: 'a' }, { type: 'addChild' }]).state
+  for (const command of [
+    { type: 'toggleCheck' },
+    { type: 'toggleCheck', id: 'n1' },
+    { type: 'toggleCheckbox' },
+    { type: 'toggleCollapse' },
+    { type: 'toggleCollapse', id: 'n1' },
+  ]) {
+    const { state, save } = run(editing, [{ type: 'input', text: '새 글' }, command])
+    assert.deepEqual(plain(state.tree), plain(map), command.type)
+    assert.equal(state.selectedId, 'a')
+    assert.equal(state.editing, null)
+    assert.equal(save, null)
+  }
+  const other = run(editing, [{ type: 'input', text: '새 글' }, { type: 'toggleCheck', id: 'c' }]).state
+  assert.equal(text(other, 'n1'), '새 글')
+  assert.equal(tree.findNode(other.tree, 'c').check, 'OPEN')
 })
 
 test('다시 읽은 맵으로 바꾸면 기록을 비우고 선택을 지킨다', () => {

@@ -1,4 +1,4 @@
-import { dropLast, emptyHistory, record, redo as redoHistory, undo as undoHistory } from './history'
+import { emptyHistory, record, redo as redoHistory, undo as undoHistory } from './history'
 import type { History, Snapshot } from './history'
 import { normalizeText, textLength } from './text'
 import {
@@ -96,7 +96,7 @@ const createBranch = (
   if (depth > state.limits.maxDepth) return result(state, null, depthNotice(state.limits))
   const id = ctx.newId()
   return result({
-    ...recorded(state),
+    ...state,
     tree: place(state.tree, newNode(id)),
     selectedId: id,
     editing: { id, isNew: true, original: '', from: state.selectedId },
@@ -118,7 +118,7 @@ const startEdit = (state: EditorState, id: string = state.selectedId): EditorRes
   const node = findNode(state.tree, id)
   if (!node) return result(state)
   return result({
-    ...recorded(selected(state, id)),
+    ...selected(state, id),
     editing: { id, isNew: false, original: node.text, from: state.selectedId },
   })
 }
@@ -126,15 +126,12 @@ const startEdit = (state: EditorState, id: string = state.selectedId): EditorRes
 const input = (state: EditorState, text: string): EditorResult =>
   result(state.editing ? { ...state, tree: withText(state.tree, state.editing.id, text) } : state)
 
-/** 새 가지는 없애고 선택을 돌리며, 기존 가지는 원래 글로 둔다. 쓰기를 시작할 때의 기록도 뺀다. */
+/** 새 가지는 없애고 선택을 돌리며, 기존 가지는 원래 글로 둔다. 기록은 쓰기 전 그대로다. */
 const discard = (state: EditorState, editing: Editing): EditorState => ({
   ...state,
-  tree: editing.isNew
-    ? (removeNode(state.tree, editing.id)?.root ?? state.tree)
-    : withText(state.tree, editing.id, editing.original),
+  tree: confirmedTree(state),
   selectedId: editing.isNew ? editing.from : state.selectedId,
   editing: null,
-  history: dropLast(state.history),
 })
 
 const commit = (state: EditorState): EditorResult => {
@@ -144,9 +141,10 @@ const commit = (state: EditorState): EditorResult => {
   if (text === '') return result(discard(state, editing))
   if (textLength(text) > state.limits.maxTextLength) return result(state, null, textNotice(state.limits))
   const tree = withText(state.tree, editing.id, text)
-  if (!editing.isNew && text === editing.original)
-    return result({ ...state, tree, editing: null, history: dropLast(state.history) })
-  return result({ ...state, tree, editing: null }, 'now')
+  if (!editing.isNew && text === editing.original) return result({ ...state, tree, editing: null })
+  // 쓰기 전의 나무(확정된 나무)를 바꾼 확정에서만 기록한다. 기존 가지면 그 가지를 고른 채로 되살린다.
+  const before: Snapshot = { tree: confirmedTree(state), selectedId: editing.isNew ? editing.from : editing.id }
+  return result({ ...state, tree, editing: null, history: record(state.history, before) }, 'now')
 }
 
 const commitAndAddChild = (state: EditorState, ctx: EditorContext): EditorResult => {
@@ -314,6 +312,21 @@ const apply = (state: EditorState, command: EditorCommand, ctx: EditorContext): 
 
 const writing = new Set<EditorCommand['type']>(['input', 'commit', 'commitAndAddChild', 'cancel'])
 
+/** 고른 가지에 하는 지우기·체크·접기. 처음 쓰는 새 가지에서는 그 가지를 없애는 것(취소)으로 끝난다. */
+const targetsNewBranch = (editing: Editing, command: EditorCommand): boolean => {
+  if (!editing.isNew) return false
+  switch (command.type) {
+    case 'delete':
+    case 'toggleCheckbox':
+      return true
+    case 'toggleCheck':
+    case 'toggleCollapse':
+      return command.id === undefined || command.id === editing.id
+    default:
+      return false
+  }
+}
+
 export const initialEditor = (map: ServerMap): EditorState => ({
   tree: map.root,
   selectedId: visibleAnchor(map.root, map.cursorNodeId),
@@ -322,9 +335,13 @@ export const initialEditor = (map: ServerMap): EditorState => ({
   limits: map.limits,
 })
 
-/** 쓰는 중에 쓰기 밖의 명령이 오면 먼저 확정한다. 확정하지 못하면(글이 너무 길면) 그 명령은 하지 않는다. */
+/**
+ * 쓰는 중에 쓰기 밖의 명령이 오면 먼저 확정한다. 확정하지 못하면(글이 너무 길면) 그 명령은 하지 않는다.
+ * 처음 쓰는 새 가지에 하는 지우기·체크·접기는 취소다(없앤 뒤 이전 선택에 하지 않는다).
+ */
 export const reduce = (state: EditorState, command: EditorCommand, ctx: EditorContext): EditorResult => {
   if (!state.editing || writing.has(command.type)) return apply(state, command, ctx)
+  if (targetsNewBranch(state.editing, command)) return cancel(state)
   const committed = commit(state)
   if (committed.state.editing) return committed
   return chain(committed, apply(committed.state, command, ctx))
