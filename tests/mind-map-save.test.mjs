@@ -125,6 +125,29 @@ test('응답을 잃은 내 저장의 409는 version만 맞추고 이어서 저�
   assert.deepEqual(plain(adopted.state.unanswered), [])
 })
 
+test('응답을 잃은 저장이 둘이고 409가 먼저 것을 가리키면 그 나무를 서버의 것으로 본다', () => {
+  const ctx = contexts()
+  const lost = { type: 'lost', message: '연결이 끊겼어요.' }
+  const { state, effects } = run(
+    save.initialSave(3, 'A'),
+    [
+      [now, 'B'],
+      [{ ...lost, saveId: 's1' }, 'B'],
+      [{ type: 'retry' }, 'C'],
+      [{ ...lost, saveId: 's2' }, 'C'],
+      [{ type: 'retry' }, 'D'],
+      [{ type: 'conflicted', saveId: 's3', latestVersion: 4, lastSaveId: 's1', message: CONFLICT }, 'D'],
+    ],
+    ctx,
+  )
+  assert.equal(state.serverJson, 'B')
+  assert.equal(state.version, 4)
+  assert.deepEqual(plain(state.unanswered), [])
+  assert.deepEqual(effects, [
+    { type: 'send', saveId: 's4', expectedVersion: 4, json: 'D', keepalive: false },
+  ])
+})
+
 test('그 번호의 나무가 지금 확정된 나무와 같으면 더 보내지 않는다', () => {
   const ctx = contexts()
   const { state, effects } = run(
@@ -233,12 +256,11 @@ test('떠날 때: 바뀐 것이 있으면 keepalive로 보낸다', () => {
   assert.deepEqual(run(save.initialSave(3, 'A'), [[{ type: 'leave' }, 'A']], ctx).effects, [])
 })
 
-test('떠날 때: 보내는 중이면 그 저장이 성공했다고 보고 version+1', () => {
+test('다른 저장이 가는 중에 떠나면 keepalive로 보내지 않는다', () => {
+  // 가는 중인 저장이 성공했다고 짐작해 version+1로 보내면, 그사이 다른 곳이 그 version을 만들었을 때 말없이 덮는다.
   const ctx = contexts()
   const sending = run(save.initialSave(3, 'A'), [[now, 'B']], ctx)
-  assert.deepEqual(run(sending.state, [[{ type: 'leave' }, 'C']], ctx).effects, [
-    { type: 'send', saveId: 's2', expectedVersion: 4, json: 'C', keepalive: true },
-  ])
+  assert.deepEqual(run(sending.state, [[{ type: 'leave' }, 'C']], ctx).effects, [])
   assert.deepEqual(run(sending.state, [[{ type: 'leave' }, 'B']], ctx).effects, [])
 })
 

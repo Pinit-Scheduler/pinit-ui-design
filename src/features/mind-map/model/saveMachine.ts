@@ -101,13 +101,15 @@ const flushQueued = (state: SaveState, ctx: SaveContext): Step =>
 
 const utf8Length = (text: string): number => new TextEncoder().encode(text).length
 
-/** 탭을 닫을 때. 보내는 중이면 그 저장이 성공했다고 보고 다음 version으로 보낸다(틀리면 409로 끝나 아무것도 덮지 않는다). */
+/**
+ * 탭을 닫을 때. 보내는 중인 저장이 있으면 보내지 않는다. 그 저장이 성공했다고 짐작한 version은
+ * 그사이 다른 곳이 만든 version과 같을 수 있어 말없이 덮는다. 남은 변경은 64KB 한도처럼 잃는다.
+ */
 const leave = (state: SaveState, ctx: SaveContext): SaveEffect[] => {
-  if (state.reloading || !isDirty(state, ctx.confirmedJson)) return []
-  const expectedVersion = state.inFlight ? state.inFlight.expectedVersion + 1 : state.version
+  if (state.reloading || state.inFlight || !isDirty(state, ctx.confirmedJson)) return []
   const saveId = ctx.newSaveId()
-  if (utf8Length(requestBody(saveId, expectedVersion, ctx.confirmedJson)) > KEEPALIVE_LIMIT_BYTES) return []
-  return [{ type: 'send', saveId, expectedVersion, json: ctx.confirmedJson, keepalive: true }]
+  if (utf8Length(requestBody(saveId, state.version, ctx.confirmedJson)) > KEEPALIVE_LIMIT_BYTES) return []
+  return [{ type: 'send', saveId, expectedVersion: state.version, json: ctx.confirmedJson, keepalive: true }]
 }
 
 export const stepSave = (state: SaveState, event: SaveEvent, ctx: SaveContext): Step => {
